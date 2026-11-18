@@ -14,8 +14,8 @@
   /* ---------- settings (localStorage) ---------- */
   var DEFAULTS = {
     language: "auto", captionMode: "auto", ratio: "9:16", res: "720",
-    mode: "gameplay", facecamPos: "auto", captionPos: "auto",
-    style: "auto", favorites: ["neon", "hype", "hormozi"],
+    mode: "gameplay", facecamPos: "top-left", captionPos: "bottom",
+    style: "auto", favorites: ["hype", "hormozi", "comic", "pill", "bold"],
     autopost: { youtube: true, instagram: false, tiktok: false },
     romanCaption: true,
   };
@@ -308,6 +308,7 @@
         stylesData.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>'; }).join("");
       renderFavbar();
       renderStyles();
+      syncFormFromSettings(); // saved form values wapas lagao (refresh ke baad bhi)
     }).catch(function () {
       $("styles-grid").innerHTML = '<div class="empty">Styles load nahi hue.</div>';
     });
