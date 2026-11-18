@@ -425,14 +425,17 @@
   }
   function clipPlayerHtml(c) {
     if (c.link && /drive\.google\.com\/file\/d\//.test(c.link)) {
-      // In-page player: Drive file seedha <video> me (uc URL) — Drive app
-      // nahi khulta, adaptive down-switch bhi nahi; quality toggle 720p/360p.
+      // In-page player: Drive file seedha <video> me — uc?id= form use karo:
+      // export=download Content-Disposition: attachment deta hai, jise
+      // Chrome <video> me nahi chalata; uc?id= inline serve karta hai.
+      // Drive app nahi khulta, adaptive down-switch bhi nahi; quality
+      // toggle 720p/360p.
       var fid = c.link.match(/\/file\/d\/([^\/]+)/)[1];
-      var uc720 = "https://drive.google.com/uc?export=download&id=" + fid;
+      var uc720 = "https://drive.google.com/uc?id=" + fid;
       var q = "";
       if (c.link360 && /drive\.google\.com\/file\/d\//.test(c.link360)) {
         var fid360 = c.link360.match(/\/file\/d\/([^\/]+)/)[1];
-        var uc360 = "https://drive.google.com/uc?export=download&id=" + fid360;
+        var uc360 = "https://drive.google.com/uc?id=" + fid360;
         q = '<div class="qrow"><span class="q-label">Quality:</span>' +
           '<button class="qbtn on" data-src="' + esc(uc720) + '">720p HD</button>' +
           '<button class="qbtn" data-src="' + esc(uc360) + '">360p (slow net)</button></div>';
@@ -454,7 +457,10 @@
   }
   function clipDownload(c) {
     if (c.link && /drive\.google\.com\/file\/d\//.test(c.link)) {
-      var dl = c.link.replace(/\/file\/d\/([^\/]+)\/.*/, "https://drive.google.com/uc?export=download&id=$1");
+      // export=download sahi hai yahan (download hi chahiye); match se banao
+      // warna replace purana prefix chhor kar URL double kar deta hai.
+      var m = c.link.match(/\/file\/d\/([^\/]+)/);
+      var dl = m ? "https://drive.google.com/uc?export=download&id=" + m[1] : c.link;
       return '<a class="btn small" href="' + esc(dl) + '">⬇ Download</a>';
     }
     if (c.link && /\.mp4(\?|$)/i.test(c.link)) {
