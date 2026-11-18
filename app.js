@@ -284,7 +284,7 @@
     grid.innerHTML = stylesData.map(function (s) {
       var fav = favLabel(s.id);
       return '<div class="style-card' + (fav ? " fav" : "") + '">' +
-        '<video src="' + esc(s.preview) + '" preload="none" loop muted playsinline></video>' +
+        '<video src="' + esc(s.preview) + '" poster="' + esc(s.preview.replace(/\.mp4$/, ".jpg")) + '" preload="metadata" loop muted playsinline></video>' +
         '<div class="tap-hint">▶ Tap karo — preview chalegi</div>' +
         '<div class="body"><div class="name"><span>' + esc(s.name) + '</span>' +
         '<button class="star' + (fav ? " on" : "") + '" data-fav="' + esc(s.id) + '" aria-label="favorite">' + (fav ? "★" + fav : "☆") + '</button></div>' +
