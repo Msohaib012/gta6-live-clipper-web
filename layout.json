@@ -31,6 +31,18 @@
    "still": "positions/facecam-mid-left.jpg"
   },
   {
+   "id": "bottom-left",
+   "name": "Bottom-left",
+   "desc": "Bottom-left corner, above the platform UI strip — captions move up to clear it.",
+   "still": "positions/facecam-bottom-left.jpg"
+  },
+  {
+   "id": "bottom-right",
+   "name": "Bottom-right",
+   "desc": "Bottom-right corner, above the platform UI strip — captions move up to clear it.",
+   "still": "positions/facecam-bottom-right.jpg"
+  },
+  {
    "id": "top-band",
    "name": "Top band (full width)",
    "desc": "Clipie-style: the facecam stretches across the whole top ~33% as a band, gameplay fills below it.",
