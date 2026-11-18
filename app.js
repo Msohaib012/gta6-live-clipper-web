@@ -95,16 +95,25 @@
   var allStreams = [];
   var picked = null; // {url, title, channel, platform}
 
+  function streamAge(iso) {
+    var t = Date.parse(iso);
+    if (!t) return "";
+    var m = Math.max(0, Math.round((Date.now() - t) / 60000));
+    if (m < 60) return m + " min se live";
+    return Math.floor(m / 60) + "h " + (m % 60) + "m se live";
+  }
   function streamCard(s) {
     var thumb = s.thumbnail
       ? '<img class="thumb" src="' + esc(s.thumbnail) + '" alt="" loading="lazy">'
       : '<img class="thumb" src="sample_bg.jpg" alt="" loading="lazy">';
-    var viewers = s.viewers ? '<span class="chip">' + esc(fmtViewers(s.viewers)) + '</span>' : "";
+    var viewers = s.viewers ? '<span class="chip">' + esc(fmtViewers(s.viewers)) + ' dekh rahe</span>' : "";
+    var likes = s.likeCount ? '<span class="chip">♥ ' + esc(fmtViewers(s.likeCount)) + ' likes</span>' : "";
+    var since = s.startedAt ? '<span class="chip">' + esc(streamAge(s.startedAt)) + '</span>' : "";
     return '<div class="card stream">' + thumb +
       '<div class="meta"><div class="t">' + esc(s.title || "Live stream") + '</div>' +
       '<div class="c">' + esc(s.channel || "") + '</div>' +
       '<div style="margin-top:6px"><span class="chip live">● LIVE</span>' +
-      '<span class="chip">' + esc(s.platform || "youtube") + '</span>' + viewers + '</div>' +
+      '<span class="chip">' + esc(s.platform || "youtube") + '</span>' + viewers + likes + since + '</div>' +
       '<div class="actions">' +
       '<button class="btn small" data-pick="' + esc(s.url) + '" data-title="' + esc(s.title || "") + '" data-channel="' + esc(s.channel || "") + '" data-platform="' + esc(s.platform || "youtube") + '">Clip karo</button>' +
       '<a class="btn small ghost" href="' + esc(s.url) + '" target="_blank" rel="noopener">Stream kholo</a>' +
@@ -375,51 +384,91 @@
     }).catch(function () { /* layout optional */ });
   }
 
-  /* ---------- 4. gallery — DIRECT VIDEO, no autoplay ---------- */
-  function clipCard(c) {
+  /* ---------- 4. gallery — COMPACT preview, tap to play ---------- */
+  var galleryClips = [];
+  var openClipCard = null;
+  function clipPoster(c) {
+    if (c.link && /drive\.google\.com\/file\/d\/([^\/]+)/.test(c.link)) {
+      return "https://drive.google.com/thumbnail?id=" + c.link.match(/\/file\/d\/([^\/]+)/)[1] + "&sz=w360";
+    }
+    if (c.link && /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/.test(c.link)) {
+      return "https://i.ytimg.com/vi/" + c.link.match(/(?:watch\?v=|youtu\.be\/)([\w-]{6,})/)[1] + "/hqdefault.jpg";
+    }
+    if (c.link && /\.mp4(\?|$)/i.test(c.link)) return c.link.replace(/\.mp4(\?.*)?$/i, "-poster.jpg");
+    return "sample_bg.jpg";
+  }
+  function clipPlayerHtml(c) {
+    if (c.link && /drive\.google\.com\/file\/d\//.test(c.link)) {
+      // Google Drive preview: adaptive player, full quality (no degraded file)
+      return '<iframe class="gal-video" src="' + esc(c.link) + '" allowfullscreen></iframe>';
+    }
+    if (c.link && /(?:youtube\.com\/watch\?v=|youtu\.be\/)/.test(c.link)) {
+      var vid = c.link.replace(/^.*(?:watch\?v=|youtu\.be\/)([\w-]{6,}).*$/, "$1");
+      return '<iframe class="gal-video" src="https://www.youtube.com/embed/' + esc(vid) + '" allowfullscreen></iframe>';
+    }
+    if (c.link && /\.mp4(\?|$)/i.test(c.link)) {
+      // direct video: inline player (controls only, NO autoplay) + Download
+      return '<video class="gal-video" src="' + esc(c.link) + '" controls preload="metadata" playsinline></video>';
+    }
+    if (c.link) {
+      return '<div style="margin-top:9px"><a class="btn small" href="' + esc(c.link) + '" target="_blank" rel="noopener">▶ YouTube par dekho</a></div>';
+    }
+    return '<div style="margin-top:9px"><button class="btn small ghost" disabled>Link jald aayega</button></div>';
+  }
+  function clipDownload(c) {
+    if (c.link && /drive\.google\.com\/file\/d\//.test(c.link)) {
+      var dl = c.link.replace(/\/file\/d\/([^\/]+)\/.*/, "https://drive.google.com/uc?export=download&id=$1");
+      return '<a class="btn small" href="' + esc(dl) + '">⬇ Download</a>';
+    }
+    if (c.link && /\.mp4(\?|$)/i.test(c.link)) {
+      return '<a class="btn small" href="' + esc(c.link) + '" download>⬇ Download</a>';
+    }
+    return "";
+  }
+  function clipCard(c, idx) {
     var st = (c.status || "ready").toLowerCase();
     var label = st === "ready" ? "Ready" : st === "rendering" ? "Ban raha hai" : "Dekh raha hai";
     var dur = c.duration ? Math.round(c.duration) + "s" : "";
-    var media = "";
-    if (c.link && /drive\.google\.com\/file\/d\//.test(c.link)) {
-      // Google Drive preview: adaptive player, full quality (no degraded file)
-      var dl = c.link.replace(/\/file\/d\/([^\/]+)\/.*/, "https://drive.google.com/uc?export=download&id=$1");
-      media = '<iframe class="gal-video" src="' + esc(c.link) + '" allowfullscreen></iframe>' +
-        '<div style="margin-top:9px"><a class="btn small" href="' + esc(dl) + '">⬇ Download</a></div>';
-    } else if (c.link && /(?:youtube\.com\/watch\?v=|youtu\.be\/)/.test(c.link)) {
-      var vid = c.link.replace(/^.*(?:watch\?v=|youtu\.be\/)([\w-]{6,}).*$/, "$1");
-      media = '<iframe class="gal-video" src="https://www.youtube.com/embed/' + esc(vid) + '" allowfullscreen></iframe>';
-    } else if (c.link && /\.mp4(\?|$)/i.test(c.link)) {
-      // direct video: inline player (controls only, NO autoplay) + Download
-      media = '<video class="gal-video" src="' + esc(c.link) + '" controls preload="metadata" playsinline></video>' +
-        '<div style="margin-top:9px"><a class="btn small" href="' + esc(c.link) + '" download>⬇ Download</a></div>';
-    } else if (c.link) {
-      media = '<div style="margin-top:9px"><a class="btn small" href="' + esc(c.link) + '" target="_blank" rel="noopener">▶ YouTube par dekho</a></div>';
-    } else {
-      media = '<div style="margin-top:9px"><button class="btn small ghost" disabled>Link jald aayega</button></div>';
-    }
+    var dl = clipDownload(c);
     return '<div class="card clip">' +
+      '<div class="gal-thumb" data-idx="' + idx + '">' +
+      '<img src="' + esc(clipPoster(c)) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'">' +
+      '<span class="gal-play">▶</span>' + (dur ? '<span class="gal-dur">' + dur + '</span>' : "") +
+      '</div>' +
+      '<div class="gal-player" style="display:none"></div>' +
       '<div class="meta"><div class="t">' + esc(c.title || "Clip") + '</div>' +
       '<div class="c">' + esc(c.stream || "") + (c.style ? " · " + esc(c.style) : "") + (dur ? " · " + dur : "") + '</div>' +
       '<div style="margin-top:6px"><span class="status ' + esc(st) + '">' + esc(label) + '</span> ' +
       '<span class="chip">' + esc(timeAgo(c.created_at)) + '</span></div>' +
-      '<div style="margin-top:10px">' + media + '</div></div></div>';
+      (dl ? '<div style="margin-top:9px">' + dl + '</div>' : "") +
+      '</div></div>';
+  }
+  function closeOpenClip() {
+    if (!openClipCard) return;
+    var p = openClipCard.querySelector(".gal-player");
+    var v = p && p.querySelector("video");
+    if (v) v.pause();
+    if (p) { p.innerHTML = ""; p.style.display = "none"; }
+    var th = openClipCard.querySelector(".gal-thumb");
+    if (th) th.style.display = "";
+    openClipCard = null;
   }
   function loadGallery() {
     return bridge("/clips").then(function (r) {
-      var clips = (r.json && r.json.clips) || [];
+      var seen = {};
+      var clips = ((r.json && r.json.clips) || []).filter(function (c) {
+        if (!c.id || seen[c.id]) return false;
+        seen[c.id] = 1;
+        return true;
+      });
+      galleryClips = clips;
+      closeOpenClip();
       var box = $("clip-list");
       if (!clips.length) {
         box.innerHTML = '<div class="empty"><div class="big">🎬</div>Abhi koi clip nahi hai — pehla clip tayyar hote hi yahan aayega.</div>';
         return;
       }
-      box.innerHTML = clips.map(clipCard).join("");
-      // ek waqt me ek hi gallery video chale
-      box.querySelectorAll("video.gal-video").forEach(function (v) {
-        v.addEventListener("play", function () {
-          box.querySelectorAll("video.gal-video").forEach(function (o) { if (o !== v) o.pause(); });
-        });
-      });
+      box.innerHTML = clips.map(function (c, i) { return clipCard(c, i); }).join("");
     }).catch(function () {
       $("clip-list").innerHTML = '<div class="empty"><div class="big">📡</div>Gallery load nahi hui — thodi der baad dobara dekho.</div>';
     });
@@ -498,6 +547,22 @@
   $("refresh-streams").addEventListener("click", function () { loadStreams(); toast("Streams taza ho rahe hain…"); });
   $("refresh-gallery").addEventListener("click", function () { loadGallery(); toast("Gallery taza ho rahi hai…"); });
   $("refresh-history").addEventListener("click", function () { loadHistory(); toast("History taza ho rahi hai…"); });
+  // gallery: preview par tap karo to video khule (ek waqt me ek hi)
+  $("clip-list").addEventListener("click", function (e) {
+    var th = e.target.closest ? e.target.closest(".gal-thumb") : null;
+    if (!th) return;
+    var card = th.parentNode;
+    var c = galleryClips[+th.getAttribute("data-idx")];
+    if (!c || openClipCard === card) return;
+    closeOpenClip();
+    var p = card.querySelector(".gal-player");
+    p.innerHTML = clipPlayerHtml(c);
+    p.style.display = "block";
+    th.style.display = "none";
+    openClipCard = card;
+    var v = p.querySelector("video");
+    if (v) v.play().catch(function () {});
+  });
   syncSettingsPanel();
   loadStyles();
   loadLayout();
