@@ -1,0 +1,424 @@
+/* GTA 6 Live Clipper — phone front-end logic.
+   Data comes from the Cloudflare Worker bridge (config.js: CLIPPER_BRIDGE).
+   The site never touches the VM directly. */
+(function () {
+  "use strict";
+  var BRIDGE = window.CLIPPER_BRIDGE || "";
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  };
+
+  /* ---------- settings (localStorage) ---------- */
+  var DEFAULTS = {
+    language: "auto", captionMode: "auto", ratio: "9:16", res: "720",
+    mode: "gameplay", facecamPos: "auto", captionPos: "auto",
+    style: "auto", favorites: ["neon", "hype", "hormozi"],
+    autopost: { youtube: true, instagram: false, tiktok: false },
+    romanCaption: true,
+  };
+  var settings = DEFAULTS;
+  try {
+    var saved = JSON.parse(localStorage.getItem("gta6clipper.settings.v1") || "null");
+    if (saved && typeof saved === "object") {
+      settings = Object.assign({}, DEFAULTS, saved);
+      settings.autopost = Object.assign({}, DEFAULTS.autopost, saved.autopost || {});
+      if (!Array.isArray(settings.favorites)) settings.favorites = DEFAULTS.favorites.slice();
+    }
+  } catch (e) { /* fresh defaults */ }
+  function saveSettings() {
+    try { localStorage.setItem("gta6clipper.settings.v1", JSON.stringify(settings)); } catch (e) {}
+  }
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 3200);
+  }
+
+  /* ---------- bridge fetch (retries; browser UA is fine) ---------- */
+  function bridge(path, opts) {
+    opts = opts || {};
+    var url = BRIDGE + path;
+    var tries = opts.tries || 3;
+    function attempt(n) {
+      return fetch(url, {
+        method: opts.method || "GET",
+        headers: { "Content-Type": "application/json" },
+        body: opts.body ? JSON.stringify(opts.body) : undefined,
+      }).then(function (r) {
+        return r.json().then(function (j) { return { status: r.status, json: j }; });
+      }).catch(function (err) {
+        if (n < tries) return new Promise(function (res) { setTimeout(function () { res(attempt(n + 1)); }, 1200); });
+        throw err;
+      });
+    }
+    return attempt(1);
+  }
+
+  function timeAgo(iso) {
+    if (!iso) return "";
+    var s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
+    if (s < 60) return "abhi abhi";
+    if (s < 3600) return Math.floor(s / 60) + " min pehle";
+    return Math.floor(s / 3600) + " ghante pehle";
+  }
+  function fmtViewers(n) {
+    if (n == null) return "";
+    if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, "") + "k dekh rahe hain";
+    return n + " dekh rahe hain";
+  }
+  function detectPlatform(url) {
+    url = (url || "").toLowerCase();
+    if (url.indexOf("twitch.tv") >= 0) return "twitch";
+    if (url.indexOf("kick.com") >= 0) return "kick";
+    if (url.indexOf("facebook.com") >= 0) return "facebook";
+    return "youtube";
+  }
+
+  /* ---------- nav highlight ---------- */
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll("#topnav a"));
+  navLinks.forEach(function (a) {
+    a.addEventListener("click", function () {
+      navLinks.forEach(function (x) { x.classList.remove("on"); });
+      a.classList.add("on");
+    });
+  });
+
+  /* ---------- 1. live streams ---------- */
+  var allStreams = [];
+  var picked = null; // {url, title, channel, platform}
+
+  function streamCard(s) {
+    var thumb = s.thumbnail
+      ? '<img class="thumb" src="' + esc(s.thumbnail) + '" alt="" loading="lazy">'
+      : '<img class="thumb" src="sample_bg.jpg" alt="" loading="lazy">';
+    var viewers = s.viewers ? '<span class="chip">' + esc(fmtViewers(s.viewers)) + '</span>' : "";
+    return '<div class="card stream">' + thumb +
+      '<div class="meta"><div class="t">' + esc(s.title || "Live stream") + '</div>' +
+      '<div class="c">' + esc(s.channel || "") + '</div>' +
+      '<div style="margin-top:6px"><span class="chip live">● LIVE</span>' +
+      '<span class="chip">' + esc(s.platform || "youtube") + '</span>' + viewers + '</div>' +
+      '<div class="actions">' +
+      '<button class="btn small" data-pick="' + esc(s.url) + '" data-title="' + esc(s.title || "") + '" data-channel="' + esc(s.channel || "") + '" data-platform="' + esc(s.platform || "youtube") + '">Clip karo</button>' +
+      '<a class="btn small ghost" href="' + esc(s.url) + '" target="_blank" rel="noopener">Stream kholo</a>' +
+      '</div></div></div>';
+  }
+
+  function renderStreams() {
+    var q = ($("q").value || "").toLowerCase().trim();
+    var list = allStreams.filter(function (s) {
+      if (!q) return true;
+      return ((s.title || "") + " " + (s.channel || "")).toLowerCase().indexOf(q) >= 0;
+    });
+    var box = $("stream-list");
+    if (!list.length) {
+      box.innerHTML = '<div class="empty"><div class="big">📺</div>' +
+        (allStreams.length ? "Search se kuch nahi mila — koi aur lafz likho ya link paste karo."
+                           : "Abhi koi live stream list me nahi hai — link paste karo ya thodi der baad dobara dekho.") +
+        '</div>';
+      return;
+    }
+    box.innerHTML = list.map(streamCard).join("");
+    box.querySelectorAll("[data-pick]").forEach(function (b) {
+      b.addEventListener("click", function () {
+        pickStream({
+          url: b.getAttribute("data-pick"),
+          title: b.getAttribute("data-title"),
+          channel: b.getAttribute("data-channel"),
+          platform: b.getAttribute("data-platform"),
+        });
+      });
+    });
+  }
+
+  function loadStreams() {
+    return bridge("/streams").then(function (r) {
+      allStreams = (r.json && r.json.streams) || [];
+      renderStreams();
+      $("streams-updated").textContent = r.json && r.json.updated_at
+        ? "List taza hui: " + timeAgo(r.json.updated_at) + " · " + allStreams.length + " live streams"
+        : allStreams.length + " live streams";
+    }).catch(function () {
+      $("stream-list").innerHTML = '<div class="empty"><div class="big">📡</div>Streams load nahi hue — internet check karo ya page refresh karo.</div>';
+    });
+  }
+
+  function pickStream(s) {
+    picked = s;
+    $("submit-title").textContent = "Clip request — " + (s.title ? s.title.slice(0, 60) : "stream");
+    $("submit-stream").textContent = (s.channel ? s.channel + " · " : "") + s.platform + " · " + s.url;
+    $("submit-card").hidden = false;
+    $("submit-result").hidden = true;
+    syncFormFromSettings();
+    $("submit-card").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  $("q").addEventListener("input", renderStreams);
+  $("paste-go").addEventListener("click", function () {
+    var url = ($("paste-link").value || "").trim();
+    if (!url) { toast("Pehle link paste karo"); return; }
+    if (!/^https?:\/\//i.test(url)) { toast("Sahi link paste karo — https:// se shuru ho"); return; }
+    pickStream({ url: url, title: "", channel: "", platform: detectPlatform(url) });
+  });
+  $("submit-cancel").addEventListener("click", function () {
+    $("submit-card").hidden = true;
+    picked = null;
+  });
+
+  function syncFormFromSettings() {
+    $("f-style").value = settings.style || "auto";
+    $("f-mode").value = settings.mode;
+    $("f-language").value = settings.language;
+    $("f-caption").value = settings.captionMode;
+    $("f-ratio").value = settings.ratio;
+    $("f-res").value = settings.res;
+  }
+  ["f-style", "f-mode", "f-language", "f-caption", "f-ratio", "f-res"].forEach(function (id) {
+    $(id).addEventListener("change", function () {
+      settings.style = $("f-style").value;
+      settings.mode = $("f-mode").value;
+      settings.language = $("f-language").value;
+      settings.captionMode = $("f-caption").value;
+      settings.ratio = $("f-ratio").value;
+      settings.res = $("f-res").value;
+      saveSettings();
+      syncSettingsPanel();
+    });
+  });
+
+  $("submit-btn").addEventListener("click", function () {
+    if (!picked) { toast("Pehle stream chuno"); return; }
+    var btn = $("submit-btn");
+    btn.disabled = true;
+    btn.textContent = "Bhej rahe hain…";
+    var payload = {
+      stream_url: picked.url,
+      platform: picked.platform,
+      title: picked.title || "",
+      channel: picked.channel || "",
+      style: $("f-style").value === "auto" ? (settings.favorites[0] || "neon") : $("f-style").value,
+      favorites: settings.favorites,
+      facecam_pos: settings.facecamPos,
+      caption_pos: settings.captionPos,
+      ratio: $("f-ratio").value,
+      resolution: $("f-res").value,
+      mode: $("f-mode").value,
+      language: $("f-language").value,
+      caption_mode: settings.romanCaption ? "auto" : $("f-caption").value,
+      autopost: settings.autopost,
+    };
+    bridge("/submit", { method: "POST", body: payload }).then(function (r) {
+      btn.disabled = false;
+      btn.textContent = "Request bhejo — clip banao";
+      var res = $("submit-result");
+      res.hidden = false;
+      if (r.status === 200 && r.json && r.json.ok) {
+        res.innerHTML = "✅ <b>Request mil gayi!</b> ID: <code>" + esc(r.json.id) + "</code> — engine stream ko dekh raha hai, clip tayyar hote hi Gallery me aayega.";
+        toast("Request bhej di — clip Gallery me aayega");
+      } else {
+        res.innerHTML = "❌ Request nahi gayi — " + esc((r.json && r.json.error) || ("HTTP " + r.status)) + ". Link dobara check karo.";
+        toast("Request fail — dobara try karo");
+      }
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = "Request bhejo — clip banao";
+      var res = $("submit-result");
+      res.hidden = false;
+      res.innerHTML = "❌ Internet ya bridge ka masla — thodi der baad dobara try karo.";
+      toast("Request fail — dobara try karo");
+    });
+  });
+
+  /* ---------- 2. styles ---------- */
+  var stylesData = [];
+  function favLabel(id) {
+    var i = settings.favorites.indexOf(id);
+    return i >= 0 ? (i + 1) : null;
+  }
+  function toggleFav(id) {
+    var i = settings.favorites.indexOf(id);
+    if (i >= 0) settings.favorites.splice(i, 1);
+    else settings.favorites.push(id);
+    saveSettings();
+    renderFavbar();
+    renderStyles();
+  }
+  function moveFav(id, dir) {
+    var i = settings.favorites.indexOf(id);
+    var j = i + dir;
+    if (i < 0 || j < 0 || j >= settings.favorites.length) return;
+    var t = settings.favorites[i];
+    settings.favorites[i] = settings.favorites[j];
+    settings.favorites[j] = t;
+    saveSettings();
+    renderFavbar();
+    renderStyles();
+  }
+  function renderFavbar() {
+    var bar = $("favbar");
+    if (!settings.favorites.length) {
+      bar.innerHTML = '<span class="chip">Koi favorite nahi — ★ dabao to rotation banao</span>';
+      return;
+    }
+    bar.innerHTML = settings.favorites.map(function (id, i) {
+      var s = stylesData.find(function (x) { return x.id === id; });
+      var name = s ? s.name : id;
+      return '<span class="fav-chip">★' + (i + 1) + ' ' + esc(name) +
+        ' <button data-up="' + esc(id) + '" aria-label="up">↑</button>' +
+        ' <button data-down="' + esc(id) + '" aria-label="down">↓</button>' +
+        ' <button data-unfav="' + esc(id) + '" aria-label="remove">✕</button></span>';
+    }).join("");
+    bar.querySelectorAll("[data-up]").forEach(function (b) { b.addEventListener("click", function () { moveFav(b.getAttribute("data-up"), -1); }); });
+    bar.querySelectorAll("[data-down]").forEach(function (b) { b.addEventListener("click", function () { moveFav(b.getAttribute("data-down"), 1); }); });
+    bar.querySelectorAll("[data-unfav]").forEach(function (b) { b.addEventListener("click", function () { toggleFav(b.getAttribute("data-unfav")); }); });
+  }
+  function renderStyles() {
+    var grid = $("styles-grid");
+    grid.innerHTML = stylesData.map(function (s) {
+      var fav = favLabel(s.id);
+      return '<div class="style-card' + (fav ? " fav" : "") + '">' +
+        '<video src="' + esc(s.preview) + '" preload="none" loop muted playsinline></video>' +
+        '<div class="tap-hint">▶ Tap karo — preview chalegi</div>' +
+        '<div class="body"><div class="name"><span>' + esc(s.name) + '</span>' +
+        '<button class="star' + (fav ? " on" : "") + '" data-fav="' + esc(s.id) + '" aria-label="favorite">' + (fav ? "★" + fav : "☆") + '</button></div>' +
+        '<div class="desc">' + esc(s.desc) + '</div></div></div>';
+    }).join("");
+    grid.querySelectorAll("video").forEach(function (v) {
+      v.addEventListener("click", function () {
+        grid.querySelectorAll("video").forEach(function (o) { if (o !== v) o.pause(); });
+        if (v.paused) v.play(); else v.pause();
+      });
+    });
+    grid.querySelectorAll("[data-fav]").forEach(function (b) {
+      b.addEventListener("click", function () { toggleFav(b.getAttribute("data-fav")); });
+    });
+  }
+  function loadStyles() {
+    return fetch("styles.json").then(function (r) { return r.json(); }).then(function (d) {
+      stylesData = d;
+      // style select in the submit form
+      $("f-style").innerHTML = '<option value="auto">★ Favorites rotation (auto)</option>' +
+        stylesData.map(function (s) { return '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>'; }).join("");
+      renderFavbar();
+      renderStyles();
+    }).catch(function () {
+      $("styles-grid").innerHTML = '<div class="empty">Styles load nahi hue.</div>';
+    });
+  }
+
+  /* ---------- 3. layout ---------- */
+  var layoutData = null;
+  function renderLayout() {
+    if (!layoutData) return;
+    $("facecam-grid").innerHTML = layoutData.facecam.map(function (p) {
+      return '<div class="pos-card' + (settings.facecamPos === p.id ? " sel" : "") + '" data-fc="' + esc(p.id) + '">' +
+        '<img src="' + esc(p.still) + '" alt="' + esc(p.name) + '" loading="lazy">' +
+        '<div class="body"><div class="name">' + esc(p.name) + '</div><div class="desc">' + esc(p.desc) + '</div></div></div>';
+    }).join("");
+    $("caption-grid").innerHTML = layoutData.caption.map(function (p) {
+      return '<div class="pos-card' + (settings.captionPos === p.id ? " sel" : "") + '" data-cc="' + esc(p.id) + '">' +
+        '<img src="' + esc(p.still) + '" alt="' + esc(p.name) + '" loading="lazy">' +
+        '<div class="body"><div class="name">' + esc(p.name) + '</div><div class="desc">' + esc(p.desc) + '</div></div></div>';
+    }).join("");
+    $("ratio-grid").innerHTML = layoutData.ratios.map(function (r) {
+      var w = r.id === "9:16" ? 34 : r.id === "1:1" ? 54 : r.id === "4:5" ? 46 : 64;
+      var h = r.id === "9:16" ? 60 : r.id === "1:1" ? 54 : r.id === "4:5" ? 57 : 36;
+      return '<div class="ratio-card' + (settings.ratio === r.id ? " sel" : "") + '" data-ratio="' + esc(r.id) + '">' +
+        '<div class="ratio-frame" style="width:' + w + 'px;height:' + h + 'px"></div>' +
+        '<div class="name">' + esc(r.name) + '</div><div class="desc">' + esc(r.desc.split("—")[0]) + '</div></div>';
+    }).join("");
+    document.querySelectorAll("[data-fc]").forEach(function (el) {
+      el.addEventListener("click", function () { settings.facecamPos = el.getAttribute("data-fc"); saveSettings(); renderLayout(); toast("Facecam: " + el.getAttribute("data-fc")); });
+    });
+    document.querySelectorAll("[data-cc]").forEach(function (el) {
+      el.addEventListener("click", function () { settings.captionPos = el.getAttribute("data-cc"); saveSettings(); renderLayout(); toast("Captions: " + el.getAttribute("data-cc")); });
+    });
+    document.querySelectorAll("[data-ratio]").forEach(function (el) {
+      el.addEventListener("click", function () {
+        settings.ratio = el.getAttribute("data-ratio"); saveSettings(); renderLayout();
+        var fr = $("f-ratio"); if (fr) fr.value = settings.ratio;
+        var sr = $("set-ratio"); if (sr) sr.value = settings.ratio;
+        toast("Ratio: " + settings.ratio);
+      });
+    });
+  }
+  function loadLayout() {
+    return fetch("layout.json").then(function (r) { return r.json(); }).then(function (d) {
+      layoutData = d;
+      renderLayout();
+    }).catch(function () { /* layout optional */ });
+  }
+
+  /* ---------- 4. gallery ---------- */
+  function clipCard(c) {
+    var st = (c.status || "ready").toLowerCase();
+    var label = st === "ready" ? "Ready" : st === "rendering" ? "Ban raha hai" : "Dekh raha hai";
+    var linkBtn = c.link
+      ? '<a class="btn small" href="' + esc(c.link) + '" target="_blank" rel="noopener">▶ YouTube par dekho</a>'
+      : '<button class="btn small ghost" disabled>Link jald aayega</button>';
+    var dur = c.duration ? Math.round(c.duration) + "s" : "";
+    return '<div class="card clip"><div class="ic">🎬</div>' +
+      '<div class="meta"><div class="t">' + esc(c.title || "Clip") + '</div>' +
+      '<div class="c">' + esc(c.stream || "") + (c.style ? " · " + esc(c.style) : "") + (dur ? " · " + dur : "") + '</div>' +
+      '<div style="margin-top:6px"><span class="status ' + esc(st) + '">' + esc(label) + '</span> ' +
+      '<span class="chip">' + esc(timeAgo(c.created_at)) + '</span></div>' +
+      '<div style="margin-top:9px">' + linkBtn + '</div></div></div>';
+  }
+  function loadGallery() {
+    return bridge("/clips").then(function (r) {
+      var clips = (r.json && r.json.clips) || [];
+      var box = $("clip-list");
+      if (!clips.length) {
+        box.innerHTML = '<div class="empty"><div class="big">🎬</div>Abhi koi clip nahi hai — pehla clip tayyar hote hi yahan aayega.</div>';
+        return;
+      }
+      box.innerHTML = clips.map(clipCard).join("");
+    }).catch(function () {
+      $("clip-list").innerHTML = '<div class="empty"><div class="big">📡</div>Gallery load nahi hui — thodi der baad dobara dekho.</div>';
+    });
+  }
+
+  /* ---------- 5. settings panel ---------- */
+  function syncSettingsPanel() {
+    $("set-yt").checked = !!settings.autopost.youtube;
+    $("set-ig").checked = !!settings.autopost.instagram;
+    $("set-tt").checked = !!settings.autopost.tiktok;
+    $("set-roman").checked = !!settings.romanCaption;
+    $("set-language").value = settings.language;
+    $("set-ratio").value = settings.ratio;
+  }
+  $("set-yt").addEventListener("change", function () { settings.autopost.youtube = $("set-yt").checked; saveSettings(); });
+  $("set-ig").addEventListener("change", function () { settings.autopost.instagram = $("set-ig").checked; saveSettings(); });
+  $("set-tt").addEventListener("change", function () { settings.autopost.tiktok = $("set-tt").checked; saveSettings(); });
+  $("set-roman").addEventListener("change", function () {
+    settings.romanCaption = $("set-roman").checked;
+    if (settings.romanCaption) { settings.captionMode = "auto"; var fc = $("f-caption"); if (fc) fc.value = "auto"; }
+    saveSettings();
+    toast(settings.romanCaption ? "Roman captions ON" : "Roman captions OFF — Captions select se chuno");
+  });
+  $("set-language").addEventListener("change", function () { settings.language = $("set-language").value; saveSettings(); var fl = $("f-language"); if (fl) fl.value = settings.language; });
+  $("set-ratio").addEventListener("change", function () { settings.ratio = $("set-ratio").value; saveSettings(); var fr = $("f-ratio"); if (fr) fr.value = settings.ratio; renderLayout(); });
+
+  /* ---------- boot + refresh ---------- */
+  function checkBridge() {
+    bridge("/health", { tries: 2 }).then(function (r) {
+      $("bridge-status").textContent = r.json && r.json.ok ? "● Live — engine se jura hua" : "● Bridge jawab nahi de raha";
+    }).catch(function () {
+      $("bridge-status").textContent = "● Bridge se nahi jur saka — refresh karo";
+    });
+  }
+  syncSettingsPanel();
+  loadStyles();
+  loadLayout();
+  loadStreams();
+  loadGallery();
+  checkBridge();
+  setInterval(function () { loadStreams(); loadGallery(); }, 60000);
+})();

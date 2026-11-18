@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GTA 6 Live Clipper — Phone se Shorts banao</title>
+<meta name="description" content="GTA 6 live streams se vertical Shorts — phone se stream choose karo, style chuno, clip Gallery me pao.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">GTA 6 <b>LIVE CLIPPER</b></div>
+    <p class="tagline">Live stream se Shorts — phone se control karo, PC ki zaroorat nahi</p>
+    <div><span class="live-pill"><span class="live-dot"></span><span id="bridge-status">Bridge se jor rahe hain…</span></span></div>
+  </header>
+
+  <nav id="topnav">
+    <a href="#streams" class="on">Live Streams</a>
+    <a href="#styles">Styles</a>
+    <a href="#layout">Layout</a>
+    <a href="#gallery">Gallery</a>
+    <a href="#settings">Settings</a>
+  </nav>
+
+  <!-- ============ 1. LIVE STREAMS ============ -->
+  <section id="streams">
+    <div class="sec-kicker">Step 1 · Stream chuno</div>
+    <h2 class="sec-title">Live Streams</h2>
+    <p class="sec-sub">Neeche live GTA 6 streams hain — kisi par <b>“Clip karo”</b> dabao, ya apna link paste karo. List har minute taza hoti hai.</p>
+
+    <div class="card">
+      <label for="q">Search — list me dhoondo</label>
+      <input id="q" type="search" placeholder="Misal: GTA 6 live, IShowSpeed, Kai Cenat…" autocomplete="off">
+      <label for="paste-link" style="margin-top:14px">Ya link paste karo (YouTube / Twitch / Kick)</label>
+      <input id="paste-link" type="url" placeholder="https://www.youtube.com/watch?v=…" inputmode="url" autocomplete="off">
+      <button class="btn" id="paste-go">Is link ko clip karo</button>
+      <p class="note" style="margin-top:12px">Live check engine par hoti hai — stream live na hua to request reject ho jayegi, aur Gallery me status nazar aayega.</p>
+    </div>
+
+    <div id="stream-list"><div class="empty"><div class="big">⏳</div>Live streams load ho rahe hain…</div></div>
+    <p class="note" id="streams-updated"></p>
+
+    <!-- submit form (stream pick karne par khulta hai) -->
+    <div class="card" id="submit-card" hidden>
+      <h3 id="submit-title" style="font-size:19px">Clip request</h3>
+      <p class="sec-sub" id="submit-stream" style="margin:6px 0 0"></p>
+      <div class="row">
+        <div>
+          <label for="f-style">Style</label>
+          <select id="f-style"></select>
+        </div>
+        <div>
+          <label for="f-mode">Mode</label>
+          <select id="f-mode">
+            <option value="gameplay">Gameplay (game + facecam corner)</option>
+            <option value="game">Game (centre crop)</option>
+            <option value="facecam">Facecam (follow speaker)</option>
+            <option value="doc">Documentary (static per shot)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="f-language">Language</label>
+          <select id="f-language">
+            <option value="auto">Auto-detect</option>
+            <option value="en">English</option>
+            <option value="hi">Hindi</option>
+            <option value="ur">Urdu</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-caption">Captions</label>
+          <select id="f-caption">
+            <option value="auto">Auto (Roman for Urdu/Hindi)</option>
+            <option value="hi">Hindi (Devanagari)</option>
+            <option value="hi-roman">Hindi (Roman)</option>
+            <option value="ur">Urdu (Nastaliq)</option>
+            <option value="ur-roman">Urdu (Roman)</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="f-ratio">Ratio</label>
+          <select id="f-ratio">
+            <option value="9:16">9:16 vertical (Shorts)</option>
+            <option value="1:1">1:1 square</option>
+            <option value="4:5">4:5 portrait</option>
+            <option value="16:9">16:9 landscape</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-res">Quality</label>
+          <select id="f-res">
+            <option value="720">720×1280 (fast)</option>
+            <option value="1080">1080×1920 (quality)</option>
+          </select>
+        </div>
+      </div>
+      <p class="note" style="margin-top:12px">★ <b>Roman captions ON hain by default</b> Hindi/Urdu bolne par — captions Latin letters me aayenge, kabhi Devanagari ya Nastaliq me nahi.</p>
+      <button class="btn" id="submit-btn">Request bhejo — clip banao</button>
+      <button class="btn ghost" id="submit-cancel" style="margin-top:8px">Cancel</button>
+      <p class="note" id="submit-result" hidden></p>
+    </div>
+  </section>
+
+  <!-- ============ 2. STYLES ============ -->
+  <section id="styles">
+    <div class="sec-kicker">Step 2 · Style chuno</div>
+    <h2 class="sec-title">Caption Styles — 25</h2>
+    <p class="sec-sub">Har style ki <b>asli animated preview</b> hai — video par tap karo to chalegi. <b>★ dabao</b> to favorite banao; favorites ki tartib se har clip agle style me banta hai (rotation).</p>
+    <div class="favbar" id="favbar"></div>
+    <div class="styles-grid" id="styles-grid"><div class="empty"><div class="big">⏳</div>Styles load ho rahe hain…</div></div>
+  </section>
+
+  <!-- ============ 3. LAYOUT ============ -->
+  <section id="layout">
+    <div class="sec-kicker">Step 3 · Layout chuno</div>
+    <h2 class="sec-title">Facecam &amp; Captions — kahan hon</h2>
+    <p class="sec-sub">Sab previews <b>asli GTA frame</b> par bane hain — koi mockup nahi. Kisi card par tap karo to select ho jayega.</p>
+    <h3 style="font-size:16px;margin:14px 0 8px">Facecam position</h3>
+    <div class="pos-grid" id="facecam-grid"></div>
+    <h3 style="font-size:16px;margin:18px 0 8px">Caption position</h3>
+    <div class="pos-grid" id="caption-grid"></div>
+    <h3 style="font-size:16px;margin:18px 0 8px">Ratio</h3>
+    <div class="ratio-grid" id="ratio-grid"></div>
+    <p class="note warn" style="margin-top:14px">⚠️ <b>Caption safe zone:</b> captions y~950–1000 par hote hain — neeche ~300px social apps ki apni UI cover karti hai, is liye captions kabhi bilkul neeche nahi hote.</p>
+  </section>
+
+  <!-- ============ 4. GALLERY ============ -->
+  <section id="gallery">
+    <div class="sec-kicker">Step 4 · Clips pao</div>
+    <h2 class="sec-title">Gallery</h2>
+    <p class="sec-sub">Bane hue clips yahan aate hain — <b>fast link</b> se, phone par foran chalenge. Gallery har minute taza hoti hai.</p>
+    <div id="clip-list"><div class="empty"><div class="big">⏳</div>Gallery load ho rahi hai…</div></div>
+  </section>
+
+  <!-- ============ 5. SETTINGS ============ -->
+  <section id="settings">
+    <div class="sec-kicker">Settings</div>
+    <h2 class="sec-title">Settings</h2>
+    <p class="sec-sub">Ye settings <b>is phone par save</b> hoti hain — har request ke sath jati hain.</p>
+    <div class="card">
+      <div class="toggle-row">
+        <div><div class="lbl">YouTube auto-post</div><div class="sub">Clip tayyar hote hi YouTube par post karo</div></div>
+        <label class="switch"><input type="checkbox" id="set-yt"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="lbl">Instagram auto-post</div><div class="sub">Reels par post karo (jald aayega)</div></div>
+        <label class="switch"><input type="checkbox" id="set-ig"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="lbl">TikTok auto-post</div><div class="sub">TikTok par post karo (jald aayega)</div></div>
+        <label class="switch"><input type="checkbox" id="set-tt"><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div><div class="lbl">Roman captions</div><div class="sub">Hindi/Urdu captions hamesha Latin letters me</div></div>
+        <label class="switch"><input type="checkbox" id="set-roman" checked><span class="slider"></span></label>
+      </div>
+    </div>
+    <div class="card">
+      <label for="set-language">Default language</label>
+      <select id="set-language">
+        <option value="auto">Auto-detect</option>
+        <option value="en">English</option>
+        <option value="hi">Hindi</option>
+        <option value="ur">Urdu</option>
+      </select>
+      <label for="set-ratio">Default ratio</label>
+      <select id="set-ratio">
+        <option value="9:16">9:16 vertical (Shorts)</option>
+        <option value="1:1">1:1 square</option>
+        <option value="4:5">4:5 portrait</option>
+        <option value="16:9">16:9 landscape</option>
+      </select>
+      <p class="note" style="margin-top:12px">Engine PC/VM par chalta hai — ye site sirf front-end hai. Request Worker + KV bridge se engine tak jati hai.</p>
+    </div>
+  </section>
+
+  <footer>GTA 6 Live Clipper · v1.0.1 · Engine: PC / VM · Front-end: ye website</footer>
+</div>
+
+<div id="toast"></div>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
