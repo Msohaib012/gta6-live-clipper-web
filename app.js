@@ -222,6 +222,7 @@
       if (r.status === 200 && r.json && r.json.ok) {
         res.innerHTML = "✅ <b>Request mil gayi!</b> ID: <code>" + esc(r.json.id) + "</code> — engine stream ko dekh raha hai, clip tayyar hote hi Gallery me aayega.";
         toast("Request bhej di — clip Gallery me aayega");
+        loadHistory(); // nayi request foran History me dikhe
       } else {
         res.innerHTML = "❌ Request nahi gayi — " + esc((r.json && r.json.error) || ("HTTP " + r.status)) + ". Link dobara check karo.";
         toast("Request fail — dobara try karo");
@@ -374,20 +375,27 @@
     }).catch(function () { /* layout optional */ });
   }
 
-  /* ---------- 4. gallery ---------- */
+  /* ---------- 4. gallery — DIRECT VIDEO, no autoplay ---------- */
   function clipCard(c) {
     var st = (c.status || "ready").toLowerCase();
     var label = st === "ready" ? "Ready" : st === "rendering" ? "Ban raha hai" : "Dekh raha hai";
-    var linkBtn = c.link
-      ? '<a class="btn small" href="' + esc(c.link) + '" target="_blank" rel="noopener">▶ YouTube par dekho</a>'
-      : '<button class="btn small ghost" disabled>Link jald aayega</button>';
     var dur = c.duration ? Math.round(c.duration) + "s" : "";
-    return '<div class="card clip"><div class="ic">🎬</div>' +
+    var media = "";
+    if (c.link && /\.mp4(\?|$)/i.test(c.link)) {
+      // direct video: inline player (controls only, NO autoplay) + Download
+      media = '<video class="gal-video" src="' + esc(c.link) + '" controls preload="metadata" playsinline></video>' +
+        '<div style="margin-top:9px"><a class="btn small" href="' + esc(c.link) + '" download>⬇ Download</a></div>';
+    } else if (c.link) {
+      media = '<div style="margin-top:9px"><a class="btn small" href="' + esc(c.link) + '" target="_blank" rel="noopener">▶ YouTube par dekho</a></div>';
+    } else {
+      media = '<div style="margin-top:9px"><button class="btn small ghost" disabled>Link jald aayega</button></div>';
+    }
+    return '<div class="card clip">' +
       '<div class="meta"><div class="t">' + esc(c.title || "Clip") + '</div>' +
       '<div class="c">' + esc(c.stream || "") + (c.style ? " · " + esc(c.style) : "") + (dur ? " · " + dur : "") + '</div>' +
       '<div style="margin-top:6px"><span class="status ' + esc(st) + '">' + esc(label) + '</span> ' +
       '<span class="chip">' + esc(timeAgo(c.created_at)) + '</span></div>' +
-      '<div style="margin-top:9px">' + linkBtn + '</div></div></div>';
+      '<div style="margin-top:10px">' + media + '</div></div></div>';
   }
   function loadGallery() {
     return bridge("/clips").then(function (r) {
@@ -398,8 +406,55 @@
         return;
       }
       box.innerHTML = clips.map(clipCard).join("");
+      // ek waqt me ek hi gallery video chale
+      box.querySelectorAll("video.gal-video").forEach(function (v) {
+        v.addEventListener("play", function () {
+          box.querySelectorAll("video.gal-video").forEach(function (o) { if (o !== v) o.pause(); });
+        });
+      });
     }).catch(function () {
       $("clip-list").innerHTML = '<div class="empty"><div class="big">📡</div>Gallery load nahi hui — thodi der baad dobara dekho.</div>';
+    });
+  }
+
+  /* ---------- 4b. history — Meri Requests ---------- */
+  function stageLabel(r) {
+    var map = { queued: "Queue me", capturing: "Capture ho raha hai",
+      transcribing: "Bol sun rahe hain", rendering: "Ban raha hai",
+      ready: "Tayyar", failed: "Fail" };
+    return map[r.stage] || r.stage || r.status || "pending";
+  }
+  function historyCard(r) {
+    var st = (r.status || "pending").toLowerCase();
+    var s = stylesData.find(function (x) { return x.id === r.style; });
+    var styleName = s ? s.name : (r.style || "");
+    var pct = typeof r.progress === "number" ? r.progress : 0;
+    var queue = r.queue_position ? "Queue #" + r.queue_position : "";
+    var clipBtn = r.clip_link
+      ? '<a class="btn small" href="#gallery">▶ Gallery me dekho</a>' : "";
+    return '<div class="card hist">' +
+      '<div class="meta"><div class="t">' + esc(r.title || r.channel || "Clip request") + '</div>' +
+      '<div class="c">' + esc(r.channel || "") + (styleName ? " · " + esc(styleName) : "") +
+      ' · ' + esc(timeAgo(r.created_at)) + ' bheji</div>' +
+      '<div style="margin-top:6px"><span class="status ' + esc(st) + '">' + esc(stageLabel(r)) + '</span> ' +
+      (queue ? '<span class="chip">' + esc(queue) + '</span> ' : "") +
+      '<span class="chip">' + pct + '%</span></div>' +
+      '<div class="progress"><div class="bar" style="width:' + pct + '%"></div></div>' +
+      (r.error ? '<div class="c" style="color:var(--danger);margin-top:6px">' + esc(r.error) + '</div>' : "") +
+      (clipBtn ? '<div style="margin-top:9px">' + clipBtn + '</div>' : "") +
+      '</div></div>';
+  }
+  function loadHistory() {
+    return bridge("/history").then(function (r) {
+      var reqs = (r.json && r.json.requests) || [];
+      var box = $("history-list");
+      if (!reqs.length) {
+        box.innerHTML = '<div class="empty"><div class="big">📋</div>Abhi koi request nahi — pehli request bhejo, yahan us ka progress dikhega.</div>';
+        return;
+      }
+      box.innerHTML = reqs.slice().reverse().map(historyCard).join("");
+    }).catch(function () {
+      $("history-list").innerHTML = '<div class="empty"><div class="big">📡</div>History load nahi hui — thodi der baad dobara dekho.</div>';
     });
   }
 
@@ -437,6 +492,7 @@
   loadLayout();
   loadStreams();
   loadGallery();
+  loadHistory();
   checkBridge();
-  setInterval(function () { loadStreams(); loadGallery(); }, 60000);
+  setInterval(function () { loadStreams(); loadGallery(); loadHistory(); }, 60000);
 })();
