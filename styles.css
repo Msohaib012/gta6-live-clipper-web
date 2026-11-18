@@ -207,3 +207,13 @@ footer { text-align: center; color: var(--faint); font-size: 12px; padding: 30px
 .gal-dur { position: absolute; right: 6px; bottom: 6px; background: rgba(0,0,0,.7); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 99px; }
 .progress { height: 8px; border-radius: 99px; background: var(--panel-3); margin-top: 10px; overflow: hidden; }
 .progress .bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width .5s var(--ease); }
+
+/* ---------- page tabs: ek waqt me ek section ---------- */
+#streams, #gallery, #history, #styles, #layout, #settings { display: none; }
+#streams.show, #gallery.show, #history.show, #styles.show, #layout.show, #settings.show { display: block; }
+
+/* ---------- gallery quality toggle ---------- */
+.qrow { display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+.q-label { font-size: 12px; color: var(--muted); }
+.qbtn { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 12px; cursor: pointer; }
+.qbtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }

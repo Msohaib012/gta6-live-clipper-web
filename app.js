@@ -82,13 +82,38 @@
     return "youtube";
   }
 
-  /* ---------- nav highlight ---------- */
+  /* ---------- page tabs: ek waqt me ek page ---------- */
   var navLinks = Array.prototype.slice.call(document.querySelectorAll("#topnav a"));
-  navLinks.forEach(function (a) {
-    a.addEventListener("click", function () {
-      navLinks.forEach(function (x) { x.classList.remove("on"); });
-      a.classList.add("on");
+  var pages = ["streams", "gallery", "history", "styles", "layout", "settings"];
+  function showPage(id) {
+    if (pages.indexOf(id) < 0) id = "streams";
+    pages.forEach(function (p) {
+      var s = document.getElementById(p);
+      if (s) s.classList.toggle("show", p === id);
     });
+    navLinks.forEach(function (a) { a.classList.toggle("on", a.getAttribute("href") === "#" + id); });
+    closeOpenClip();
+    window.scrollTo(0, 0);
+  }
+  navLinks.forEach(function (a) {
+    a.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      var id = a.getAttribute("href").slice(1);
+      if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+      showPage(id);
+    });
+  });
+  window.addEventListener("hashchange", function () { showPage((location.hash || "#streams").slice(1)); });
+  // kisi bhi #link (jaise History ka "Gallery me dekho") par tab switch ho
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest ? e.target.closest('a[href^="#"]') : null;
+    if (!a || a.closest("#topnav")) return;
+    var id = a.getAttribute("href").slice(1);
+    if (pages.indexOf(id) >= 0) {
+      e.preventDefault();
+      if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+      showPage(id);
+    }
   });
 
   /* ---------- 1. live streams ---------- */
@@ -232,6 +257,7 @@
         res.innerHTML = "✅ <b>Request mil gayi!</b> ID: <code>" + esc(r.json.id) + "</code> — engine stream ko dekh raha hai, clip tayyar hote hi Gallery me aayega.";
         toast("Request bhej di — clip Gallery me aayega");
         loadHistory(); // nayi request foran History me dikhe
+        showPage("history"); // request bhejte hi us ka progress dikhe
       } else {
         res.innerHTML = "❌ Request nahi gayi — " + esc((r.json && r.json.error) || ("HTTP " + r.status)) + ". Link dobara check karo.";
         toast("Request fail — dobara try karo");
@@ -399,8 +425,19 @@
   }
   function clipPlayerHtml(c) {
     if (c.link && /drive\.google\.com\/file\/d\//.test(c.link)) {
-      // Google Drive preview: adaptive player, full quality (no degraded file)
-      return '<iframe class="gal-video" src="' + esc(c.link) + '" allowfullscreen></iframe>';
+      // In-page player: Drive file seedha <video> me (uc URL) — Drive app
+      // nahi khulta, adaptive down-switch bhi nahi; quality toggle 720p/360p.
+      var fid = c.link.match(/\/file\/d\/([^\/]+)/)[1];
+      var uc720 = "https://drive.google.com/uc?export=download&id=" + fid;
+      var q = "";
+      if (c.link360 && /drive\.google\.com\/file\/d\//.test(c.link360)) {
+        var fid360 = c.link360.match(/\/file\/d\/([^\/]+)/)[1];
+        var uc360 = "https://drive.google.com/uc?export=download&id=" + fid360;
+        q = '<div class="qrow"><span class="q-label">Quality:</span>' +
+          '<button class="qbtn on" data-src="' + esc(uc720) + '">720p HD</button>' +
+          '<button class="qbtn" data-src="' + esc(uc360) + '">360p (slow net)</button></div>';
+      }
+      return '<video class="gal-video" src="' + esc(uc720) + '" controls preload="metadata" playsinline></video>' + q;
     }
     if (c.link && /(?:youtube\.com\/watch\?v=|youtu\.be\/)/.test(c.link)) {
       var vid = c.link.replace(/^.*(?:watch\?v=|youtu\.be\/)([\w-]{6,}).*$/, "$1");
@@ -549,6 +586,23 @@
   $("refresh-history").addEventListener("click", function () { loadHistory(); toast("History taza ho rahi hai…"); });
   // gallery: preview par tap karo to video khule (ek waqt me ek hi)
   $("clip-list").addEventListener("click", function (e) {
+    var qb = e.target.closest ? e.target.closest(".qbtn") : null;
+    if (qb) {
+      var card = qb.closest(".card.clip");
+      var v = card && card.querySelector(".gal-player video");
+      if (!v) return;
+      var wasPaused = v.paused, t = v.currentTime || 0;
+      card.querySelectorAll(".qbtn").forEach(function (x) { x.classList.remove("on"); });
+      qb.classList.add("on");
+      v.src = qb.getAttribute("data-src");
+      v.load();
+      v.addEventListener("loadedmetadata", function h() {
+        v.removeEventListener("loadedmetadata", h);
+        try { v.currentTime = Math.min(t, (v.duration || t) - 0.1); } catch (err) {}
+        if (!wasPaused) v.play().catch(function () {});
+      });
+      return;
+    }
     var th = e.target.closest ? e.target.closest(".gal-thumb") : null;
     if (!th) return;
     var card = th.parentNode;
@@ -570,5 +624,6 @@
   loadGallery();
   loadHistory();
   checkBridge();
+  showPage((location.hash || "#streams").slice(1));
   setInterval(function () { loadStreams(); loadGallery(); loadHistory(); }, 60000);
 })();
