@@ -15,7 +15,7 @@
   var DEFAULTS = {
     language: "auto", captionMode: "auto", ratio: "9:16", res: "720",
     mode: "gameplay", facecamPos: "top-left", captionPos: "bottom",
-    facecamSize: "medium", facecamBand: 50,
+    facecamSize: "medium", facecamBand: 50, bandWidth: 100,
     style: "auto", favorites: ["hype", "hormozi", "comic", "pill", "bold"],
     autopost: { youtube: true, instagram: false, tiktok: false },
     romanCaption: true,
@@ -207,6 +207,13 @@
     picked = null;
   });
 
+  function syncBandWidthRow() {
+    // band width sirf band layouts (top-band / bottom-band) par dikhao
+    var row = $("f-bandwidth-row");
+    if (!row) return;
+    var isBand = settings.facecamPos === "top-band" || settings.facecamPos === "bottom-band";
+    row.hidden = !isBand;
+  }
   function syncFormFromSettings() {
     $("f-style").value = settings.style || "auto";
     $("f-mode").value = settings.mode;
@@ -216,8 +223,10 @@
     $("f-res").value = settings.res;
     $("f-facesize").value = settings.facecamSize || "medium";
     $("f-faceband").value = String(settings.facecamBand || 50);
+    $("f-bandwidth").value = String(settings.bandWidth || 100);
+    syncBandWidthRow();
   }
-  ["f-style", "f-mode", "f-language", "f-caption", "f-ratio", "f-res", "f-facesize", "f-faceband"].forEach(function (id) {
+  ["f-style", "f-mode", "f-language", "f-caption", "f-ratio", "f-res", "f-facesize", "f-faceband", "f-bandwidth"].forEach(function (id) {
     $(id).addEventListener("change", function () {
       settings.style = $("f-style").value;
       settings.mode = $("f-mode").value;
@@ -227,6 +236,7 @@
       settings.res = $("f-res").value;
       settings.facecamSize = $("f-facesize").value;
       settings.facecamBand = parseInt($("f-faceband").value, 10) || 50;
+      settings.bandWidth = parseInt($("f-bandwidth").value, 10) || 100;
       saveSettings();
       syncSettingsPanel();
     });
@@ -247,6 +257,7 @@
       facecam_pos: settings.facecamPos,
       facecam_size: $("f-facesize").value,
       facecam_band: parseInt($("f-faceband").value, 10) || 50,
+      band_width: parseInt($("f-bandwidth").value, 10) || 100,
       caption_pos: settings.captionPos,
       ratio: $("f-ratio").value,
       resolution: $("f-res").value,
@@ -396,7 +407,7 @@
         '<div class="name">' + esc(r.name) + '</div><div class="desc">' + esc(r.desc.split("—")[0]) + '</div></div>';
     }).join("");
     document.querySelectorAll("[data-fc]").forEach(function (el) {
-      el.addEventListener("click", function () { settings.facecamPos = el.getAttribute("data-fc"); saveSettings(); renderLayout(); toast("Facecam: " + el.getAttribute("data-fc")); });
+      el.addEventListener("click", function () { settings.facecamPos = el.getAttribute("data-fc"); saveSettings(); renderLayout(); syncBandWidthRow(); toast("Facecam: " + el.getAttribute("data-fc")); });
     });
     document.querySelectorAll("[data-cc]").forEach(function (el) {
       el.addEventListener("click", function () { settings.captionPos = el.getAttribute("data-cc"); saveSettings(); renderLayout(); toast("Captions: " + el.getAttribute("data-cc")); });
@@ -582,6 +593,7 @@
     $("set-ratio").value = settings.ratio;
     $("set-facesize").value = settings.facecamSize || "medium";
     $("set-faceband").value = String(settings.facecamBand || 50);
+    $("set-bandwidth").value = String(settings.bandWidth || 100);
   }
   $("set-yt").addEventListener("change", function () { settings.autopost.youtube = $("set-yt").checked; saveSettings(); });
   $("set-ig").addEventListener("change", function () { settings.autopost.instagram = $("set-ig").checked; saveSettings(); });
@@ -596,6 +608,7 @@
   $("set-ratio").addEventListener("change", function () { settings.ratio = $("set-ratio").value; saveSettings(); var fr = $("f-ratio"); if (fr) fr.value = settings.ratio; renderLayout(); });
   $("set-facesize").addEventListener("change", function () { settings.facecamSize = $("set-facesize").value; saveSettings(); var ff = $("f-facesize"); if (ff) ff.value = settings.facecamSize; });
   $("set-faceband").addEventListener("change", function () { settings.facecamBand = parseInt($("set-faceband").value, 10) || 50; saveSettings(); var fb = $("f-faceband"); if (fb) fb.value = String(settings.facecamBand); });
+  $("set-bandwidth").addEventListener("change", function () { settings.bandWidth = parseInt($("set-bandwidth").value, 10) || 100; saveSettings(); var bw = $("f-bandwidth"); if (bw) bw.value = String(settings.bandWidth); });
 
   /* ---------- boot + refresh ---------- */
   function checkBridge() {

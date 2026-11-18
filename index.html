@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20261119a">
+<link rel="stylesheet" href="styles.css?v=20261119b">
 </head>
 <body>
 <div class="wrap">
@@ -116,11 +116,24 @@
           </select>
         </div>
         <div>
-          <label for="f-faceband">Top-band size</label>
+          <label for="f-faceband">Band size</label>
           <select id="f-faceband">
             <option value="50" selected>50% (default)</option>
             <option value="30">30%</option>
           </select>
+        </div>
+      </div>
+      <div class="row" id="f-bandwidth-row" hidden>
+        <div>
+          <label for="f-bandwidth">Band width</label>
+          <select id="f-bandwidth">
+            <option value="100" selected>Full width (default)</option>
+            <option value="75">75%</option>
+            <option value="50">50%</option>
+          </select>
+        </div>
+        <div>
+          <p class="note" style="margin:0">Band width sirf top-band / bottom-band par lagti hai — corner facecam par nahi.</p>
         </div>
       </div>
       <p class="note" style="margin-top:12px">★ <b>Roman captions ON hain by default</b> Hindi/Urdu bolne par — captions Latin letters me aayenge, kabhi Devanagari ya Nastaliq me nahi.</p>
@@ -210,10 +223,16 @@
         <option value="medium">Darmiyana</option>
         <option value="large">Bara</option>
       </select>
-      <label for="set-faceband">Default top-band size</label>
+      <label for="set-faceband">Default band size</label>
       <select id="set-faceband">
         <option value="50">50% (default)</option>
         <option value="30">30%</option>
+      </select>
+      <label for="set-bandwidth">Default band width</label>
+      <select id="set-bandwidth">
+        <option value="100">Full width (default)</option>
+        <option value="75">75%</option>
+        <option value="50">50%</option>
       </select>
       <p class="note" style="margin-top:12px">Engine PC/VM par chalta hai — ye site sirf front-end hai. Request Worker + KV bridge se engine tak jati hai.</p>
     </div>
@@ -225,7 +244,7 @@
 
 <div id="toast"></div>
 <script src="config.js"></script>
-<script src="app.js?v=20261119a"></script>
+<script src="app.js?v=20261119b"></script>
 <script>if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }</script>
 </body>
 </html>

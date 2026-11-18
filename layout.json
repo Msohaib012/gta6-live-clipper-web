@@ -45,8 +45,14 @@
   {
    "id": "top-band",
    "name": "Top band (full width)",
-   "desc": "Clipie-style: the facecam stretches across the whole top ~33% as a band, gameplay fills below it.",
+   "desc": "Clipie-style: the facecam stretches across the whole top as a band (50% by default, 30% option), gameplay fills below it.",
    "still": "positions/facecam-top-band.jpg"
+  },
+  {
+   "id": "bottom-band",
+   "name": "Bottom band (full width)",
+   "desc": "Facecam as a band across the whole bottom (50% by default, 30% option) — captions move up to the seam above it.",
+   "still": "positions/facecam-bottom-band.jpg"
   },
   {
    "id": "off",
