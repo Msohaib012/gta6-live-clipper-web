@@ -447,8 +447,15 @@
       return '<iframe class="gal-video" src="https://www.youtube.com/embed/' + esc(vid) + '" allowfullscreen></iframe>';
     }
     if (c.link && /\.mp4(\?|$)/i.test(c.link)) {
-      // direct video: inline player (controls only, NO autoplay) + Download
-      return '<video class="gal-video" src="' + esc(c.link) + '" controls preload="metadata" playsinline></video>';
+      // direct video (GitHub Pages): inline player (controls only,
+      // NO autoplay) + quality toggle 720p/360p
+      var q = "";
+      if (c.link360 && /\.mp4(\?|$)/i.test(c.link360)) {
+        q = '<div class="qrow"><span class="q-label">Quality:</span>' +
+          '<button class="qbtn on" data-src="' + esc(c.link) + '">720p HD</button>' +
+          '<button class="qbtn" data-src="' + esc(c.link360) + '">360p (slow net)</button></div>';
+      }
+      return '<video class="gal-video" src="' + esc(c.link) + '" controls preload="metadata" playsinline></video>' + q;
     }
     if (c.link) {
       return '<div style="margin-top:9px"><a class="btn small" href="' + esc(c.link) + '" target="_blank" rel="noopener">▶ YouTube par dekho</a></div>';
