@@ -381,7 +381,15 @@
     var label = st === "ready" ? "Ready" : st === "rendering" ? "Ban raha hai" : "Dekh raha hai";
     var dur = c.duration ? Math.round(c.duration) + "s" : "";
     var media = "";
-    if (c.link && /\.mp4(\?|$)/i.test(c.link)) {
+    if (c.link && /drive\.google\.com\/file\/d\//.test(c.link)) {
+      // Google Drive preview: adaptive player, full quality (no degraded file)
+      var dl = c.link.replace(/\/file\/d\/([^\/]+)\/.*/, "https://drive.google.com/uc?export=download&id=$1");
+      media = '<iframe class="gal-video" src="' + esc(c.link) + '" allowfullscreen></iframe>' +
+        '<div style="margin-top:9px"><a class="btn small" href="' + esc(dl) + '">⬇ Download</a></div>';
+    } else if (c.link && /(?:youtube\.com\/watch\?v=|youtu\.be\/)/.test(c.link)) {
+      var vid = c.link.replace(/^.*(?:watch\?v=|youtu\.be\/)([\w-]{6,}).*$/, "$1");
+      media = '<iframe class="gal-video" src="https://www.youtube.com/embed/' + esc(vid) + '" allowfullscreen></iframe>';
+    } else if (c.link && /\.mp4(\?|$)/i.test(c.link)) {
       // direct video: inline player (controls only, NO autoplay) + Download
       media = '<video class="gal-video" src="' + esc(c.link) + '" controls preload="metadata" playsinline></video>' +
         '<div style="margin-top:9px"><a class="btn small" href="' + esc(c.link) + '" download>⬇ Download</a></div>';

@@ -194,6 +194,6 @@ footer { text-align: center; color: var(--faint); font-size: 12px; padding: 30px
 #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
 /* ---------- gallery direct video + history progress ---------- */
-.gal-video { width: 100%; aspect-ratio: 9/16; object-fit: cover; background: #000; border-radius: var(--r-md); }
+.gal-video { width: 100%; aspect-ratio: 9/16; object-fit: cover; background: #000; border: 0; border-radius: var(--r-md); }
 .progress { height: 8px; border-radius: 99px; background: var(--panel-3); margin-top: 10px; overflow: hidden; }
 .progress .bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width .5s var(--ease); }
