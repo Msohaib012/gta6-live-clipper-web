@@ -22,7 +22,23 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET") return;
   var url = new URL(e.request.url);
-  if (url.origin !== self.location.origin) return; // bridge waghera — haath mat lagao
+  if (url.origin !== self.location.origin) {
+    // YouTube thumbnails bhi cache karo — dobara load na hon
+    if ((url.hostname === "i.ytimg.com" || url.hostname === "yt3.ggpht.com") && e.request.destination === "image") {
+      e.respondWith(
+        caches.open(CACHE).then(function (c) {
+          return c.match(e.request).then(function (hit) {
+            if (hit) return hit;
+            return fetch(e.request).then(function (res) {
+              if (res && res.ok) c.put(e.request, res.clone());
+              return res;
+            });
+          });
+        })
+      );
+    }
+    return;
+  }
   var path = url.pathname;
   if (MEDIA_RE.test(path)) {
     // cache-first: ek baar load hua to dobara download nahi
