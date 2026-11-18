@@ -487,6 +487,9 @@
       $("bridge-status").textContent = "● Bridge se nahi jur saka — refresh karo";
     });
   }
+  $("refresh-streams").addEventListener("click", function () { loadStreams(); toast("Streams taza ho rahe hain…"); });
+  $("refresh-gallery").addEventListener("click", function () { loadGallery(); toast("Gallery taza ho rahi hai…"); });
+  $("refresh-history").addEventListener("click", function () { loadHistory(); toast("History taza ho rahi hai…"); });
   syncSettingsPanel();
   loadStyles();
   loadLayout();
