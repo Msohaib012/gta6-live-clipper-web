@@ -284,7 +284,7 @@
     grid.innerHTML = stylesData.map(function (s) {
       var fav = favLabel(s.id);
       return '<div class="style-card' + (fav ? " fav" : "") + '">' +
-        '<video src="' + esc(s.preview) + '" poster="' + esc(s.preview.replace(/\.mp4$/, ".jpg")) + '" preload="metadata" loop muted playsinline></video>' +
+        '<video data-src="' + esc(s.preview) + '" data-poster="' + esc(s.preview.replace(/\.mp4$/, ".jpg")) + '" preload="none" loop muted playsinline></video>' +
         '<div class="tap-hint">▶ Tap karo — preview chalegi</div>' +
         '<div class="body"><div class="name"><span>' + esc(s.name) + '</span>' +
         '<button class="star' + (fav ? " on" : "") + '" data-fav="' + esc(s.id) + '" aria-label="favorite">' + (fav ? "★" + fav : "☆") + '</button></div>' +
@@ -292,10 +292,27 @@
     }).join("");
     grid.querySelectorAll("video").forEach(function (v) {
       v.addEventListener("click", function () {
+        if (!v.getAttribute("src")) { v.poster = v.getAttribute("data-poster"); v.src = v.getAttribute("data-src"); }
         grid.querySelectorAll("video").forEach(function (o) { if (o !== v) o.pause(); });
         if (v.paused) v.play(); else v.pause();
       });
     });
+    // lazy load: sirf nazar aane wale cards ka poster/video load karo — slow net par page foran khule
+    var lazyVideos = grid.querySelectorAll("video[data-src]");
+    var loadOne = function (v) {
+      if (v.getAttribute("src")) return;
+      v.poster = v.getAttribute("data-poster");
+      v.preload = "metadata";
+      v.src = v.getAttribute("data-src");
+    };
+    if ("IntersectionObserver" in window) {
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) { if (en.isIntersecting) { io.unobserve(en.target); loadOne(en.target); } });
+      }, { rootMargin: "300px" });
+      lazyVideos.forEach(function (v) { io.observe(v); });
+    } else {
+      lazyVideos.forEach(loadOne);
+    }
     grid.querySelectorAll("[data-fav]").forEach(function (b) {
       b.addEventListener("click", function () { toggleFav(b.getAttribute("data-fav")); });
     });
