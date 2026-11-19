@@ -217,3 +217,29 @@ footer { text-align: center; color: var(--faint); font-size: 12px; padding: 30px
 .q-label { font-size: 12px; color: var(--muted); }
 .qbtn { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--panel-2); color: var(--text); font-size: 12px; cursor: pointer; }
 .qbtn.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* ============ OPTIMIZE (2026-11-20): PC + mobile, minimal — UI same, layout tighter ============ */
+/* Mobile: kam padding, chhota header, compact nav — sab kuch ek screen me zyada aaye */
+section { padding: 20px 0 4px; }
+header { padding: 16px 0 6px; }
+.logo { font-size: 30px; }
+.tagline { font-size: 13px; }
+.wrap { padding-bottom: 70px; }
+.card { padding: 14px; }
+.sec-title { font-size: 22px; }
+nav a { padding: 8px 11px; font-size: 12.5px; }
+/* PC (1024px+): chaura container, grids zyada columns — khali jagah khatam */
+@media (min-width: 1024px) {
+  .wrap { max-width: 1120px; padding: 0 20px 70px; }
+  #stream-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #stream-list .card { margin-bottom: 0; }
+  #history-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #history-list .card { margin-bottom: 0; }
+  #clip-list { grid-template-columns: repeat(4, 1fr); }
+  .styles-grid { grid-template-columns: repeat(4, 1fr); }
+  .pos-grid { grid-template-columns: repeat(4, 1fr); }
+}
+/* PC wide (1400px+): styles 5 columns */
+@media (min-width: 1400px) {
+  .styles-grid { grid-template-columns: repeat(5, 1fr); }
+}
