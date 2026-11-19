@@ -5,7 +5,7 @@
    Gallery ke clip videos (clips/*.mp4) cache NAHI hote — wo bade hain,
    stream se chalte hain. App shell (app.js/index.html) hamesha taza
    version check karta hai, purana cache kabhi chipka nahi rehta. */
-var CACHE = "gta6-clipper-v5"; // v5: cache-busting ?v= stamps — purana cache khud delete hoga
+var CACHE = "gta6-clipper-v6"; // v6 (2026-11-19): layout.json me bottom-left/bottom-right/bottom-band + band widths — purana v5 cache delete hoga, nayi positions taza aayengi
 var MEDIA_RE = /\/previews\/|\/positions\/|styles\.json$|layout\.json$|sample_bg\.jpg$|\/clips\/.*-poster\.jpg$/;
 var SHELL_RE = /app\.js$|config\.js$|styles\.css$|index\.html$|\/$/;
 
