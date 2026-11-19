@@ -453,6 +453,15 @@ const origFetch = window.fetch.bind(window);
 function jsonResp(obj, status){ return new Response(JSON.stringify(obj), {status: status||200, headers:{'Content-Type':'application/json'}}); }
 function nowTime(){ const d = new Date(); const p = n => String(n).padStart(2,'0'); return p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds()); }
 function bodyOf(opts){ try { return JSON.parse(opts.body||'{}'); } catch(e){ return {}; } }
+function recalcStats(){
+  const cs = MOCK.status.clips || [];
+  MOCK.status.stats.clips = cs.length;
+  MOCK.status.stats.today = cs.length;
+  MOCK.status.stats.approved = cs.filter(c => c.review === 'approved').length;
+  MOCK.status.stats.rejected = cs.filter(c => c.review === 'rejected').length;
+  MOCK.status.stats.pending = cs.filter(c => !c.review).length;
+  MOCK.status.stats.size_mb = Math.round(cs.reduce((a, c) => a + (c.size_mb || 0), 0) * 10) / 10;
+}
 function pushEvent(msg){ (MOCK.status.events = MOCK.status.events || []).unshift({t: nowTime(), msg: msg}); }
 window.fetch = async function(url, opts){
   const u = String(url);
@@ -560,11 +569,13 @@ window.fetch = async function(url, opts){
   if (method === 'POST' && rev) {
     const c = (MOCK.status.clips||[]).find(x=>x.name===decodeURIComponent(rev[1]));
     if (c) { try { const b = JSON.parse(opts.body||'{}'); c.review = (b.status==='none') ? null : b.status; } catch(e){} }
+    recalcStats();
     return jsonResp({ok:true});
   }
   const del = path.match(/^clips\/([^/]+)$/);
   if (method === 'DELETE' && del) {
     MOCK.status.clips = (MOCK.status.clips||[]).filter(x=>x.name!==decodeURIComponent(del[1]));
+    recalcStats();
     return jsonResp({ok:true});
   }
   if (method === 'POST' && path === 'queue/add') {
