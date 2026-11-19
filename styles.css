@@ -243,3 +243,12 @@ nav a { padding: 8px 11px; font-size: 12.5px; }
 @media (min-width: 1400px) {
   .styles-grid { grid-template-columns: repeat(5, 1fr); }
 }
+
+/* ============ MOBILE OVERFLOW FIX (2026-11-20): lamba link page ko chaura kar deta tha ============ */
+/* Grid items ko content se chhota hone do (warna lamba URL column ko phula deta hai) */
+#clip-list .clip, .styles-grid .style-card, .pos-grid .pos-card,
+#stream-list .card, #history-list .card { min-width: 0; }
+/* Lambi link/title kahin bhi ho, toot kar agle line me aaye — page kabhi side se na kate */
+.clip .c, .stream .c, .hist .c, .clip .t, .stream .t { overflow-wrap: anywhere; }
+/* Safety net: koi bhi element page ko side scroll na de (sticky nav safe rehta hai) */
+html, body { overflow-x: clip; }
