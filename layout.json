@@ -3,43 +3,55 @@
   {
    "id": "auto",
    "name": "Auto (per stream)",
-   "desc": "The tool checks this stream's own frames and picks the freest corner — avoids the HUD and the streamer's own facecam. Default.",
+   "desc": "The tool checks this stream's own frames and picks the freest corner \u2014 avoids the HUD and the streamer's own facecam. Default.",
    "still": "positions/combined-auto.jpg"
+  },
+  {
+   "id": "stage",
+   "name": "Stage (new)",
+   "desc": "The new layout \u2014 small facecam top-centre with a golden frame, big gameplay filling the frame, captions over blurred gameplay at the bottom. The finalized look.",
+   "still": "positions/facecam-stage.jpg"
+  },
+  {
+   "id": "stage-nofacecam",
+   "name": "Stage \u2014 no facecam",
+   "desc": "Same stage look but no facecam \u2014 gameplay fills the full frame, captions over blurred gameplay at the bottom. For streamers without a webcam.",
+   "still": "positions/facecam-off.jpg"
   },
   {
    "id": "top-right",
    "name": "Top-right corner",
-   "desc": "PeakCut-like corner — the streamer's face, bigger than PeakCut (40% of width).",
+   "desc": "PeakCut-like corner \u2014 the streamer's face, bigger than PeakCut (40% of width).",
    "still": "positions/facecam-top-right.jpg"
   },
   {
    "id": "top-left",
    "name": "Top-left corner",
-   "desc": "Mirror of top-right — for streams whose top-right has a HUD or logo.",
+   "desc": "Mirror of top-right \u2014 for streams whose top-right has a HUD or logo.",
    "still": "positions/facecam-top-left.jpg"
   },
   {
    "id": "mid-right",
    "name": "Mid-right",
-   "desc": "Right side, vertically centred — below the top HUD, above the caption band.",
+   "desc": "Right side, vertically centred \u2014 below the top HUD, above the caption band.",
    "still": "positions/facecam-mid-right.jpg"
   },
   {
    "id": "mid-left",
    "name": "Mid-left",
-   "desc": "Left side, vertically centred — same as mid-right, other side.",
+   "desc": "Left side, vertically centred \u2014 same as mid-right, other side.",
    "still": "positions/facecam-mid-left.jpg"
   },
   {
    "id": "bottom-left",
    "name": "Bottom-left",
-   "desc": "Bottom-left corner, above the platform UI strip — captions move up to clear it.",
+   "desc": "Bottom-left corner, above the platform UI strip \u2014 captions move up to clear it.",
    "still": "positions/facecam-bottom-left.jpg"
   },
   {
    "id": "bottom-right",
    "name": "Bottom-right",
-   "desc": "Bottom-right corner, above the platform UI strip — captions move up to clear it.",
+   "desc": "Bottom-right corner, above the platform UI strip \u2014 captions move up to clear it.",
    "still": "positions/facecam-bottom-right.jpg"
   },
   {
@@ -51,13 +63,13 @@
   {
    "id": "bottom-band",
    "name": "Bottom band (full width)",
-   "desc": "Facecam as a band across the whole bottom (50% by default, 30% option) — captions move up to the seam above it.",
+   "desc": "Facecam as a band across the whole bottom (50% by default, 30% option) \u2014 captions move up to the seam above it.",
    "still": "positions/facecam-bottom-band.jpg"
   },
   {
    "id": "off",
    "name": "Off (no facecam)",
-   "desc": "No facecam overlay at all — just the game, full frame.",
+   "desc": "No facecam overlay at all \u2014 just the game, full frame.",
    "still": "positions/facecam-off.jpg"
   }
  ],
@@ -71,7 +83,7 @@
   {
    "id": "bottom",
    "name": "Bottom band (y~950-1000)",
-   "desc": "Text at y~950-1000 — below the action centre, above the platforms' own UI. sohaib's verdict, the default.",
+   "desc": "Text at y~950-1000 \u2014 below the action centre, above the platforms' own UI. sohaib's verdict, the default.",
    "still": "positions/caption-bottom.jpg"
   },
   {
@@ -83,36 +95,74 @@
   {
    "id": "top",
    "name": "Top",
-   "desc": "Text at the very top of the frame — for when the bottom is busy (HUD, subtitles in the game).",
+   "desc": "Text at the very top of the frame \u2014 for when the bottom is busy (HUD, subtitles in the game).",
    "still": "positions/caption-top.jpg"
+  }
+ ],
+ "frame": [
+  {
+   "id": "gold",
+   "name": "Golden Comet",
+   "desc": "Golden light travelling around the frame \u2014 the original, calm 4s lap. Default.",
+   "still": "positions/frame-gold.jpg"
+  },
+  {
+   "id": "red",
+   "name": "Red Comet",
+   "desc": "PeakCut-style hype red comet travelling around the frame, 4s lap.",
+   "still": "positions/frame-red.jpg"
+  },
+  {
+   "id": "line",
+   "name": "Cyan Line",
+   "desc": "A bright cyan line sweeping around the frame \u2014 no comet blob, just the line, 4s lap.",
+   "still": "positions/frame-line.jpg"
+  },
+  {
+   "id": "fire",
+   "name": "Fire Ember",
+   "desc": "Orange fire ember with a strong flicker and a long tail travelling around the frame, 4s lap.",
+   "still": "positions/frame-fire.jpg"
+  },
+  {
+   "id": "static",
+   "name": "Clean Static",
+   "desc": "No motion at all \u2014 a clean thin white/silver border, the minimal look.",
+   "still": "positions/frame-static.jpg"
+  },
+  {
+   "id": "pulse",
+   "name": "Violet Pulse",
+   "desc": "A violet neon ring that breathes in and out \u2014 no travelling light, 2s cycle.",
+   "still": "positions/frame-pulse.jpg"
   }
  ],
  "ratios": [
   {
    "id": "9:16",
    "name": "9:16 vertical",
-   "desc": "720x1280 / 1080x1920 — Shorts / Reels / TikTok. Default.",
+   "desc": "720x1280 / 1080x1920 \u2014 Shorts / Reels / TikTok. Default.",
    "w": 720,
    "h": 1280
   },
   {
    "id": "1:1",
    "name": "1:1 square",
-   "desc": "720x720 / 1080x1080 — square feeds.",
+   "desc": "720x720 / 1080x1080 \u2014 square feeds.",
    "w": 720,
    "h": 720
   },
   {
    "id": "4:5",
    "name": "4:5 portrait",
-   "desc": "720x900 / 1080x1350 — portrait feeds.",
+   "desc": "720x900 / 1080x1350 \u2014 portrait feeds.",
    "w": 720,
    "h": 900
   },
   {
    "id": "16:9",
    "name": "16:9 landscape",
-   "desc": "1280x720 / 1920x1080 — YouTube, X.",
+   "desc": "1280x720 / 1920x1080 \u2014 YouTube, X.",
    "w": 1280,
    "h": 720
   }

@@ -209,8 +209,8 @@ footer { text-align: center; color: var(--faint); font-size: 12px; padding: 30px
 .progress .bar { height: 100%; background: var(--accent); border-radius: 99px; transition: width .5s var(--ease); }
 
 /* ---------- page tabs: ek waqt me ek section ---------- */
-#streams, #gallery, #history, #styles, #layout, #settings { display: none; }
-#streams.show, #gallery.show, #history.show, #styles.show, #layout.show, #settings.show { display: block; }
+#streams, #vod, #gallery, #history, #styles, #layout, #settings { display: none; }
+#streams.show, #vod.show, #gallery.show, #history.show, #styles.show, #layout.show, #settings.show { display: block; }
 
 /* ---------- gallery quality toggle ---------- */
 .qrow { display: flex; gap: 6px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
