@@ -238,7 +238,7 @@
 
   /* ---------- responsive ---------- */
   @media(max-width:1100px){.shell{grid-template-columns:72px minmax(0,1fr)}.brand div,.nav span.l,.runcard small,.runcard .runstate span,.nav .badge{display:none}.nav{justify-content:center;padding:0}.brand{justify-content:center;padding-bottom:14px}.runcard{padding:10px;display:grid;place-items:center}.runcard .btn{padding:0;width:38px}.runcard .btn span{display:none}main.main{padding:0 22px 90px}}
-  @media(max-width:760px){.shell{grid-template-columns:1fr}aside.side{display:none}main.main{padding:0 14px 90px}.topbar h1{font-size:19px}.topbar .hide-m{display:none}.hero h2{font-size:21px}.actionbar{bottom:14px}.savebar{bottom:14px}#toasts{bottom:14px}}
+  @media(max-width:760px){.shell{grid-template-columns:1fr}aside.side{position:fixed;top:auto;bottom:0;left:0;right:0;height:auto;z-index:40;flex-direction:row;padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-right:0;border-top:1px solid var(--line);background:color-mix(in srgb,var(--bg) 92%,transparent)}.brand,.runcard{display:none}nav.menu{flex-direction:row;overflow-x:auto;gap:2px}.nav{flex:1;min-width:52px;height:44px}main.main{padding:0 14px 96px}.topbar h1{font-size:19px}.topbar .hide-m{display:none}.hero h2{font-size:21px}.actionbar{bottom:70px}.savebar{bottom:70px}#toasts{bottom:84px}}
   @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
