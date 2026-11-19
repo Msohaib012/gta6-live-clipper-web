@@ -133,7 +133,7 @@
     var thumb = s.thumbnail
       ? '<img class="thumb" src="' + esc(s.thumbnail) + '" alt="" loading="lazy">'
       : '<img class="thumb" src="sample_bg.jpg" alt="" loading="lazy">';
-    var viewers = s.viewers ? '<span class="chip">' + esc(fmtViewers(s.viewers)) + ' dekh rahe</span>' : "";
+    var viewers = s.viewers ? '<span class="chip">' + esc(fmtViewers(s.viewers)) + '</span>' : "";
     var likes = s.likeCount ? '<span class="chip">♥ ' + esc(fmtViewers(s.likeCount)) + ' likes</span>' : "";
     var since = s.startedAt ? '<span class="chip">' + esc(streamAge(s.startedAt)) + '</span>' : "";
     var liveChip = s.is_live === false
