@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20261119b">
+<link rel="stylesheet" href="styles.css?v=20261119d">
 </head>
 <body>
 <div class="wrap">
@@ -20,6 +20,7 @@
 
   <nav id="topnav">
     <a href="#streams" class="on">Live Streams</a>
+    <a href="#vod">Published Video</a>
     <a href="#gallery">Gallery</a>
     <a href="#history">Meri Requests</a>
     <a href="#styles">Styles</a>
@@ -41,6 +42,16 @@
       <input id="paste-link" type="url" placeholder="https://www.youtube.com/watch?v=…" inputmode="url" autocomplete="off">
       <button class="btn" id="paste-go">Is link ko clip karo</button>
       <p class="note" style="margin-top:12px">Live check engine par hoti hai — stream live na hua to request reject ho jayegi, aur Gallery me status nazar aayega.</p>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:17px">List me stream add karo</h3>
+      <p class="sec-sub" style="margin:4px 0 0">Koi live stream jo list me nahi hai — us ka link yahan add karo, wo <b>tracking list</b> me shamil ho jayega aur engine usay bhi dekhne lagega.</p>
+      <label for="add-link" style="margin-top:10px">Live link (YouTube / Twitch / Kick)</label>
+      <input id="add-link" type="url" placeholder="https://www.youtube.com/watch?v=… ya https://www.twitch.tv/… ya https://kick.com/…" inputmode="url" autocomplete="off">
+      <button class="btn" id="add-go">List me add karo</button>
+      <p class="note" id="add-result" hidden></p>
+      <p class="note" style="margin-top:10px">YouTube par channel ka live link bhi chalega (jaise youtube.com/@CarryisLive/live) — jab wo live hoga, engine clip bana lega.</p>
     </div>
 
     <div id="stream-list"><div class="empty"><div class="big">⏳</div>Live streams load ho rahe hain…</div></div>
@@ -142,6 +153,49 @@
       <p class="note" id="submit-result" hidden></p>
     </div>
   </section>
+<!-- ============ 1b. PUBLISHED VIDEO (VOD) ============ -->
+<section id="vod">
+    <div class="sec-kicker">Published video se Shorts</div>
+    <h2 class="sec-title">Published Video</h2>
+    <p class="sec-sub">Koi <b>published (pehle se upload hui) video</b> ka link do — engine us ka transcript parh kar <b>best moments</b> dhoondhega aur un ke vertical Shorts bana kar Gallery me daal dega. Live stream ki zaroorat nahi.</p>
+
+    <div class="card">
+      <label for="vod-link">Published video ka link (YouTube)</label>
+      <input id="vod-link" type="url" placeholder="https://www.youtube.com/watch?v=…" inputmode="url" autocomplete="off">
+      <div class="row">
+        <div>
+          <label for="vod-count">Kitne Shorts banane hain</label>
+          <select id="vod-count">
+            <option value="1">1 Short</option>
+            <option value="2">2 Shorts</option>
+            <option value="3" selected>3 Shorts</option>
+            <option value="4">4 Shorts</option>
+            <option value="5">5 Shorts</option>
+          </select>
+        </div>
+        <div>
+          <label for="vod-mode">Mode</label>
+          <select id="vod-mode">
+            <option value="gameplay" selected>Gameplay (game + facecam corner)</option>
+            <option value="game">Game (centre crop)</option>
+            <option value="facecam">Facecam (follow speaker)</option>
+            <option value="doc">Documentary (static per shot)</option>
+          </select>
+        </div>
+      </div>
+      <p class="note" style="margin-top:12px">Style, facecam position, captions aur quality wahi honge jo tum ne <b>Styles / Layout / Settings</b> me chune hain. Video sirf Shorts banane ke liye download hoti hai — banne ke baad <b>delete</b> ho jati hai, ye download tool nahi hai.</p>
+      <button class="btn" id="vod-go">Shorts banao</button>
+      <p class="note" id="vod-result" hidden></p>
+    </div>
+
+    <div class="card" id="vod-status-card" hidden>
+      <h3 style="font-size:17px">VOD job ki halat</h3>
+      <p class="sec-sub" id="vod-status-text" style="margin:6px 0 0"></p>
+      <div class="progress"><div class="bar" id="vod-bar" style="width:0%"></div></div>
+      <p class="note" id="vod-status-note" style="margin-top:8px"></p>
+      <div id="vod-status-link" style="margin-top:9px"></div>
+    </div>
+  </section>
 <!-- ============ 2. GALLERY ============ -->
 <section id="gallery">
     <div class="sec-kicker">Tayyar clips</div>
@@ -173,6 +227,9 @@
     <p class="sec-sub">Sab previews <b>asli GTA frame</b> par bane hain — koi mockup nahi. Kisi card par tap karo to select ho jayega.</p>
     <h3 style="font-size:16px;margin:14px 0 8px">Facecam position</h3>
     <div class="pos-grid" id="facecam-grid"></div>
+    <h3 style="font-size:16px;margin:18px 0 8px">Facecam frame</h3>
+    <p class="sec-sub" style="margin:4px 0 8px">Stage layout ka frame — ye design sirf stage facecam par lagta hai (top-centre chhota facecam).</p>
+    <div class="pos-grid" id="frame-grid"></div>
     <h3 style="font-size:16px;margin:18px 0 8px">Caption position</h3>
     <div class="pos-grid" id="caption-grid"></div>
     <h3 style="font-size:16px;margin:18px 0 8px">Ratio</h3>
@@ -244,7 +301,7 @@
 
 <div id="toast"></div>
 <script src="config.js"></script>
-<script src="app.js?v=20261119b"></script>
+<script src="app.js?v=20261119d"></script>
 <script>if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }</script>
 </body>
 </html>

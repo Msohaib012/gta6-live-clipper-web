@@ -16,6 +16,7 @@
     language: "auto", captionMode: "auto", ratio: "9:16", res: "720",
     mode: "gameplay", facecamPos: "top-left", captionPos: "bottom",
     facecamSize: "medium", facecamBand: 50, bandWidth: 100,
+    frameStyle: "gold",
     style: "auto", favorites: ["hype", "hormozi", "comic", "pill", "bold"],
     autopost: { youtube: true, instagram: false, tiktok: false },
     romanCaption: true,
@@ -85,7 +86,7 @@
 
   /* ---------- page tabs: ek waqt me ek page ---------- */
   var navLinks = Array.prototype.slice.call(document.querySelectorAll("#topnav a"));
-  var pages = ["streams", "gallery", "history", "styles", "layout", "settings"];
+  var pages = ["streams", "vod", "gallery", "history", "styles", "layout", "settings"];
   function showPage(id) {
     if (pages.indexOf(id) < 0) id = "streams";
     pages.forEach(function (p) {
@@ -135,10 +136,13 @@
     var viewers = s.viewers ? '<span class="chip">' + esc(fmtViewers(s.viewers)) + ' dekh rahe</span>' : "";
     var likes = s.likeCount ? '<span class="chip">♥ ' + esc(fmtViewers(s.likeCount)) + ' likes</span>' : "";
     var since = s.startedAt ? '<span class="chip">' + esc(streamAge(s.startedAt)) + '</span>' : "";
+    var liveChip = s.is_live === false
+      ? '<span class="chip">○ Offline — jald live hoga</span>'
+      : '<span class="chip live">● LIVE</span>';
     return '<div class="card stream">' + thumb +
       '<div class="meta"><div class="t">' + esc(s.title || "Live stream") + '</div>' +
       '<div class="c">' + esc(s.channel || "") + '</div>' +
-      '<div style="margin-top:6px"><span class="chip live">● LIVE</span>' +
+      '<div style="margin-top:6px">' + liveChip +
       '<span class="chip">' + esc(s.platform || "youtube") + '</span>' + viewers + likes + since + '</div>' +
       '<div class="actions">' +
       '<button class="btn small" data-pick="' + esc(s.url) + '" data-title="' + esc(s.title || "") + '" data-channel="' + esc(s.channel || "") + '" data-platform="' + esc(s.platform || "youtube") + '">Clip karo</button>' +
@@ -258,6 +262,7 @@
       facecam_size: $("f-facesize").value,
       facecam_band: parseInt($("f-faceband").value, 10) || 50,
       band_width: parseInt($("f-bandwidth").value, 10) || 100,
+      frame_style: settings.frameStyle || "gold",
       caption_pos: settings.captionPos,
       ratio: $("f-ratio").value,
       resolution: $("f-res").value,
@@ -287,6 +292,144 @@
       res.hidden = false;
       res.innerHTML = "❌ Internet ya bridge ka masla — thodi der baad dobara try karo.";
       toast("Request fail — dobara try karo");
+    });
+  });
+
+  /* ---------- 1b. published video (VOD) ---------- */
+  var vodJobId = null;
+  var vodPollTimer = null;
+  var vodPolls = 0;
+  function vodStageLabel(r) {
+    var map = { queued: "Queue me", capturing: "Video download ho rahi hai",
+      transcribing: "Bol sun rahe hain — best moments dhoondh rahe hain",
+      rendering: "Shorts ban rahe hain", ready: "Tayyar", failed: "Fail" };
+    return map[r.stage] || r.stage || r.status || "pending";
+  }
+  function stopVodPolling() {
+    if (vodPollTimer) { clearInterval(vodPollTimer); vodPollTimer = null; }
+  }
+  function pollVodStatus() {
+    if (!vodJobId) return;
+    vodPolls++;
+    if (vodPolls > 180) { stopVodPolling(); return; } // ~45 min, phir Meri Requests me dekho
+    bridge("/history").then(function (r) {
+      var reqs = (r.json && r.json.requests) || [];
+      var job = null;
+      for (var i = 0; i < reqs.length; i++) {
+        if (reqs[i].id === vodJobId) { job = reqs[i]; break; }
+      }
+      if (!job) return;
+      var pct = typeof job.progress === "number" ? job.progress : 0;
+      $("vod-status-text").textContent = vodStageLabel(job) + " · " + pct + "%";
+      $("vod-bar").style.width = pct + "%";
+      var note = $("vod-status-note");
+      var linkBox = $("vod-status-link");
+      if (job.status === "ready" || job.clip_link) {
+        stopVodPolling();
+        note.textContent = "Shorts tayyar hain — Gallery me dekho.";
+        linkBox.innerHTML = '<a class="btn small" href="#gallery">▶ Gallery me dekho</a>';
+        toast("VOD Shorts tayyar — Gallery me dekho");
+        loadGallery();
+      } else if (job.status === "failed") {
+        stopVodPolling();
+        note.textContent = "❌ " + (job.error || "Video se moments nahi mile — koi aur video try karo.");
+      } else {
+        note.textContent = "Job chal rahi hai — ye page khula rakho ya Meri Requests me dekho.";
+        linkBox.innerHTML = "";
+      }
+    }).catch(function () { /* agli poll par dobara */ });
+  }
+  $("vod-go").addEventListener("click", function () {
+    var url = ($("vod-link").value || "").trim();
+    if (!url) { toast("Pehle video ka link paste karo"); return; }
+    if (!/^https?:\/\//i.test(url)) { toast("Sahi link paste karo — https:// se shuru ho"); return; }
+    var host = "";
+    try { host = new URL(url).hostname.toLowerCase(); } catch (e) { host = ""; }
+    if (host !== "youtube.com" && host !== "www.youtube.com" && host !== "m.youtube.com" && host !== "youtu.be") {
+      toast("Sirf YouTube video ka link do"); return;
+    }
+    var btn = $("vod-go");
+    btn.disabled = true;
+    btn.textContent = "Bhej rahe hain…";
+    var payload = {
+      video_url: url,
+      count: parseInt($("vod-count").value, 10) || 3,
+      style: settings.favorites[0] || "neon",
+      favorites: settings.favorites,
+      facecam_pos: settings.facecamPos,
+      caption_pos: settings.captionPos,
+      ratio: settings.ratio,
+      resolution: settings.res,
+      mode: $("vod-mode").value || "gameplay",
+      language: settings.language,
+      caption_mode: settings.romanCaption ? "auto" : settings.captionMode,
+    };
+    bridge("/vod", { method: "POST", body: payload }).then(function (r) {
+      btn.disabled = false;
+      btn.textContent = "Shorts banao";
+      var res = $("vod-result");
+      res.hidden = false;
+      if (r.status === 200 && r.json && r.json.ok) {
+        vodJobId = r.json.id;
+        vodPolls = 0;
+        res.innerHTML = "✅ <b>VOD job mil gayi!</b> ID: <code>" + esc(r.json.id) + "</code> — engine video ka transcript parh kar best moments dhoondh raha hai.";
+        $("vod-status-card").hidden = false;
+        $("vod-status-text").textContent = "Queue me · 0%";
+        $("vod-bar").style.width = "0%";
+        $("vod-status-note").textContent = "Job chal rahi hai — ye page khula rakho ya Meri Requests me dekho.";
+        $("vod-status-link").innerHTML = "";
+        toast("VOD job bhej di — Shorts Gallery me aayenge");
+        loadHistory();
+        stopVodPolling();
+        vodPollTimer = setInterval(pollVodStatus, 15000);
+      } else {
+        res.innerHTML = "❌ Job nahi gayi — " + esc((r.json && r.json.error) || ("HTTP " + r.status)) + ". Link dobara check karo.";
+        toast("VOD job fail — dobara try karo");
+      }
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = "Shorts banao";
+      var res = $("vod-result");
+      res.hidden = false;
+      res.innerHTML = "❌ Internet ya bridge ka masla — thodi der baad dobara try karo.";
+      toast("VOD job fail — dobara try karo");
+    });
+  });
+
+  /* ---------- 1c. live stream list me add karo ---------- */
+  $("add-go").addEventListener("click", function () {
+    var url = ($("add-link").value || "").trim();
+    if (!url) { toast("Pehle link paste karo"); return; }
+    if (!/^https?:\/\//i.test(url)) { toast("Sahi link paste karo — https:// se shuru ho"); return; }
+    var btn = $("add-go");
+    btn.disabled = true;
+    btn.textContent = "Add kar rahe hain…";
+    bridge("/add-stream", { method: "POST", body: { url: url } }).then(function (r) {
+      btn.disabled = false;
+      btn.textContent = "List me add karo";
+      var res = $("add-result");
+      res.hidden = false;
+      if (r.status === 200 && r.json && r.json.ok) {
+        if (r.json.duplicate) {
+          res.innerHTML = "ℹ️ Ye link pehle se list me hai.";
+          toast("Ye link pehle se list me hai");
+        } else {
+          res.innerHTML = "✅ <b>List me add ho gaya!</b> Engine agle restart se is stream ko bhi track karega; list me foran nazar aayega.";
+          toast("Stream list me add ho gaya");
+          $("add-link").value = "";
+          loadStreams();
+        }
+      } else {
+        res.innerHTML = "❌ Add nahi hua — " + esc((r.json && r.json.error) || ("HTTP " + r.status)) + ". Sirf YouTube / Twitch / Kick ka live link do.";
+        toast("Add fail — link dobara check karo");
+      }
+    }).catch(function () {
+      btn.disabled = false;
+      btn.textContent = "List me add karo";
+      var res = $("add-result");
+      res.hidden = false;
+      res.innerHTML = "❌ Internet ya bridge ka masla — thodi der baad dobara try karo.";
+      toast("Add fail — dobara try karo");
     });
   });
 
@@ -394,6 +537,13 @@
         '<img src="' + esc(p.still) + '" alt="' + esc(p.name) + '" loading="lazy">' +
         '<div class="body"><div class="name">' + esc(p.name) + '</div><div class="desc">' + esc(p.desc) + '</div></div></div>';
     }).join("");
+    if (layoutData.frame) {
+      $("frame-grid").innerHTML = layoutData.frame.map(function (p) {
+        return '<div class="pos-card' + (settings.frameStyle === p.id ? " sel" : "") + '" data-fr="' + esc(p.id) + '">' +
+          '<img src="' + esc(p.still) + '" alt="' + esc(p.name) + '" loading="lazy">' +
+          '<div class="body"><div class="name">' + esc(p.name) + '</div><div class="desc">' + esc(p.desc) + '</div></div></div>';
+      }).join("");
+    }
     $("caption-grid").innerHTML = layoutData.caption.map(function (p) {
       return '<div class="pos-card' + (settings.captionPos === p.id ? " sel" : "") + '" data-cc="' + esc(p.id) + '">' +
         '<img src="' + esc(p.still) + '" alt="' + esc(p.name) + '" loading="lazy">' +
@@ -408,6 +558,9 @@
     }).join("");
     document.querySelectorAll("[data-fc]").forEach(function (el) {
       el.addEventListener("click", function () { settings.facecamPos = el.getAttribute("data-fc"); saveSettings(); renderLayout(); syncBandWidthRow(); toast("Facecam: " + el.getAttribute("data-fc")); });
+    });
+    document.querySelectorAll("[data-fr]").forEach(function (el) {
+      el.addEventListener("click", function () { settings.frameStyle = el.getAttribute("data-fr"); saveSettings(); renderLayout(); toast("Frame: " + el.getAttribute("data-fr")); });
     });
     document.querySelectorAll("[data-cc]").forEach(function (el) {
       el.addEventListener("click", function () { settings.captionPos = el.getAttribute("data-cc"); saveSettings(); renderLayout(); toast("Captions: " + el.getAttribute("data-cc")); });
@@ -555,13 +708,14 @@
     var styleName = s ? s.name : (r.style || "");
     var pct = typeof r.progress === "number" ? r.progress : 0;
     var queue = r.queue_position ? "Queue #" + r.queue_position : "";
+    var kindChip = r.kind === "vod" ? '<span class="chip">📹 Published Video</span> ' : "";
     var clipBtn = r.clip_link
       ? '<a class="btn small" href="#gallery">▶ Gallery me dekho</a>' : "";
     return '<div class="card hist">' +
       '<div class="meta"><div class="t">' + esc(r.title || r.channel || "Clip request") + '</div>' +
       '<div class="c">' + esc(r.channel || "") + (styleName ? " · " + esc(styleName) : "") +
       ' · ' + esc(timeAgo(r.created_at)) + ' bheji</div>' +
-      '<div style="margin-top:6px"><span class="status ' + esc(st) + '">' + esc(stageLabel(r)) + '</span> ' +
+      '<div style="margin-top:6px">' + kindChip + '<span class="status ' + esc(st) + '">' + esc(stageLabel(r)) + '</span> ' +
       (queue ? '<span class="chip">' + esc(queue) + '</span> ' : "") +
       '<span class="chip">' + pct + '%</span></div>' +
       '<div class="progress"><div class="bar" style="width:' + pct + '%"></div></div>' +
