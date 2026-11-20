@@ -152,14 +152,16 @@
 
   function renderStreams() {
     var q = ($("q").value || "").toLowerCase().trim();
-    var list = allStreams.filter(function (s) {
+    // sirf live dikhao — offline (is_live === false) list mein aaye hi nahi
+    var liveStreams = allStreams.filter(function (s) { return s.is_live !== false; });
+    var list = liveStreams.filter(function (s) {
       if (!q) return true;
       return ((s.title || "") + " " + (s.channel || "")).toLowerCase().indexOf(q) >= 0;
     });
     var box = $("stream-list");
     if (!list.length) {
       box.innerHTML = '<div class="empty"><div class="big">📺</div>' +
-        (allStreams.length ? "Search se kuch nahi mila — koi aur lafz likho ya link paste karo."
+        (liveStreams.length ? "Search se kuch nahi mila — koi aur lafz likho ya link paste karo."
                            : "Abhi koi live stream list me nahi hai — link paste karo ya thodi der baad dobara dekho.") +
         '</div>';
       return;
@@ -181,9 +183,10 @@
     return bridge("/streams").then(function (r) {
       allStreams = (r.json && r.json.streams) || [];
       renderStreams();
+      var liveCount = allStreams.filter(function (s) { return s.is_live !== false; }).length;
       $("streams-updated").textContent = r.json && r.json.updated_at
-        ? "List taza hui: " + timeAgo(r.json.updated_at) + " · " + allStreams.length + " live streams"
-        : allStreams.length + " live streams";
+        ? "List taza hui: " + timeAgo(r.json.updated_at) + " · " + liveCount + " live streams"
+        : liveCount + " live streams";
     }).catch(function () {
       $("stream-list").innerHTML = '<div class="empty"><div class="big">📡</div>Streams load nahi hue — internet check karo ya page refresh karo.</div>';
     });
