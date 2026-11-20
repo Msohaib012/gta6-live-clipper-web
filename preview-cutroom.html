@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<!-- PREVIEW ONLY — Cutroom design on the GTA 6 Live Clipper site.
+     NOT applied to the live site. Tokens copied from Batuktech/Cutroom
+     (MIT), opendesign/design-systems/cutroom/colors_and_type.css +
+     SKILL.md. Live site today is red/black (#07070a, red #ff2d2d,
+     Inter/Anton, 20px radii, capsule pills). This preview swaps only
+     the look: warm charcoal + lime, Manrope, 6px controls / 10px panels,
+     no capsules, factual button labels. No JS, no live data. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preview — Cutroom design on GTA 6 Live Clipper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: dark;
+  --canvas: #151714; --panel: #20231e; --panel-raised: #292d26;
+  --ink: #f5f5ef; --muted: #b3b8ac; --line: #383e32;
+  --accent: #d6f58a; --accent-ink: #20271a; --error: #ffb4a5;
+  --font-interface: "Manrope", sans-serif;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-6: 24px; --space-8: 32px;
+  --radius-control: 6px; --radius-panel: 10px; --motion-feedback: 140ms;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font-interface); font-size: 14px; line-height: 1.55; }
+a { color: inherit; }
+button, input, select { font: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+::selection { background: var(--accent); color: var(--accent-ink); }
+.wrap { max-width: 860px; margin: 0 auto; padding: 0 14px 60px; }
+.banner { background: var(--panel-raised); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: 10px 12px; margin-top: 14px; font-size: 12.5px; color: var(--muted); }
+.banner b { color: var(--accent); }
+header { padding: 22px 0 8px; }
+.logo { font-size: 30px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.1; }
+.logo span { color: var(--accent); }
+.tagline { color: var(--muted); margin: 6px 0 0; font-size: 13.5px; }
+nav { display: flex; gap: 4px; overflow-x: auto; margin-top: 16px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 8px 0; }
+nav a { flex: 0 0 auto; color: var(--muted); font-weight: 700; font-size: 13px; padding: 8px 12px; border-radius: var(--radius-control); text-decoration: none; }
+nav a.on { color: var(--accent-ink); background: var(--accent); }
+section { padding: 24px 0 4px; }
+.kicker { color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+h2 { font-size: 22px; margin: 2px 0 4px; font-weight: 800; }
+.sub { color: var(--muted); margin: 0 0 16px; font-size: 13.5px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); padding: 16px; margin-bottom: 12px; }
+label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin: 12px 0 5px; }
+label:first-child { margin-top: 0; }
+input, select { width: 100%; background: var(--panel-raised); border: 1px solid var(--line); color: var(--ink); border-radius: var(--radius-control); padding: 12px; font-size: 15px; }
+input:focus, select:focus { outline: none; border-color: var(--accent); }
+.btn { display: inline-block; width: 100%; border: none; cursor: pointer; text-align: center; background: var(--accent); color: var(--accent-ink); font-weight: 700; font-size: 15px; padding: 13px 18px; border-radius: var(--radius-control); margin-top: 14px; }
+.btn.ghost { background: var(--panel-raised); color: var(--ink); border: 1px solid var(--line); }
+.btn.small { width: auto; padding: 9px 14px; font-size: 13px; margin-top: 0; }
+.stream { display: flex; gap: 12px; align-items: flex-start; }
+.thumb { width: 112px; height: 63px; object-fit: cover; border-radius: var(--radius-control); background: var(--panel-raised); flex: 0 0 auto; }
+.stream .t { font-weight: 700; font-size: 14px; line-height: 1.35; }
+.stream .c { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.chip { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radius-control); background: var(--panel-raised); border: 1px solid var(--line); color: var(--muted); margin-right: 5px; }
+.chip.live { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.timeline { height: 34px; border: 1px solid var(--line); border-radius: var(--radius-control); margin-top: 14px; position: relative; background:
+  repeating-linear-gradient(90deg, transparent 0 39px, var(--line) 39px 40px); }
+.timeline .playhead { position: absolute; left: 32%; top: 0; bottom: 0; width: 2px; background: var(--accent); }
+.timeline .sel { position: absolute; left: 32%; top: 0; bottom: 0; width: 26%; background: rgba(214,245,138,.18); border-left: 1px solid var(--accent); border-right: 1px solid var(--accent); }
+.timeline .tc { position: absolute; top: 4px; left: 8px; font-size: 11px; color: var(--muted); font-weight: 700; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.style-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-panel); overflow: hidden; }
+.style-card.fav { border-color: var(--accent); }
+.style-card .swatch { aspect-ratio: 9/16; background: linear-gradient(160deg, #20231e, #151714 60%); display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: var(--accent); }
+.style-card .body { padding: 10px; }
+.style-card .name { font-weight: 700; font-size: 13.5px; }
+.style-card .desc { color: var(--muted); font-size: 12px; margin-top: 3px; }
+.row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: none; }
+.row .lbl { font-weight: 600; }
+.row .sub2 { color: var(--muted); font-size: 12px; }
+footer { text-align: center; color: var(--muted); font-size: 12px; padding: 30px 0 10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="banner"><b>PREVIEW</b> — Cutroom design (dark canvas + lime) on the clipper site. Abhi live site par apply <b>nahi</b> hua — sirf dekhne ke liye.</div>
+  <header>
+    <div class="logo">GTA 6 <span>LIVE CLIPPER</span></div>
+    <p class="tagline">Live stream se Shorts — phone se control karo, PC ki zaroorat nahi</p>
+  </header>
+  <nav>
+    <a href="#" class="on">Live Streams</a><a href="#">Gallery</a><a href="#">Styles</a><a href="#">Layout</a><a href="#">Settings</a>
+  </nav>
+
+  <section>
+    <div class="kicker">Step 1 · Stream chuno</div>
+    <h2>Live Streams</h2>
+    <p class="sub">Neeche live GTA 6 streams hain — <b>Create clip</b> dabao, ya apna link paste karo.</p>
+    <div class="card">
+      <label>Search — list me dhoondo</label>
+      <input type="search" placeholder="Misal: GTA 6 live, IShowSpeed, Kai Cenat…">
+      <label style="margin-top:14px">Ya link paste karo (YouTube / Twitch / Kick)</label>
+      <input type="url" placeholder="https://www.youtube.com/watch?v=…">
+      <button class="btn">Create clip</button>
+    </div>
+    <div class="card">
+      <div class="stream">
+        <img class="thumb" src="sample_bg.jpg" alt="IShowSpeed live">
+        <div>
+          <div class="t">IShowSpeed — GTA 6 Marathon</div>
+          <div class="c">148K watching · YouTube · Urdu/Hindi captions</div>
+          <div style="margin-top:6px"><span class="chip live">LIVE</span><span class="chip">Stage</span><span class="chip">40s clip</span></div>
+          <div style="margin-top:8px; display:flex; gap:8px;">
+            <button class="btn small">Create clip</button>
+            <button class="btn small ghost">Preview</button>
+          </div>
+        </div>
+      </div>
+      <div class="timeline"><span class="tc">00:41:12</span><span class="sel"></span><span class="playhead"></span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Step 2 · Style chuno</div>
+    <h2>Styles</h2>
+    <p class="sub">Lime sirf active cheez par — baaki sab charcoal.</p>
+    <div class="grid">
+      <div class="style-card fav"><div class="swatch">HORMOZI<br>POP</div><div class="body"><div class="name">Hormozi Pop ★</div><div class="desc">Favorite — bold word pop, bottom band.</div></div></div>
+      <div class="style-card"><div class="swatch">GLOW<br>NEON</div><div class="body"><div class="name">Glow Neon</div><div class="desc">Neon glow captions, stage layout.</div></div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Step 3 · Settings</div>
+    <h2>Settings</h2>
+    <div class="card">
+      <div class="row"><div><div class="lbl">Facecam — top-left</div><div class="sub2">Stage layout, captions bottom band</div></div><div style="color:var(--accent); font-weight:700;">On</div></div>
+      <div class="row"><div><div class="lbl">Autoplay</div><div class="sub2">Gallery videos tap par chalengi</div></div><div style="color:var(--muted); font-weight:700;">Off</div></div>
+    </div>
+  </section>
+
+  <footer>Design tokens: Batuktech/Cutroom (MIT) — opendesign/design-systems/cutroom. Manrope font, lime #d6f58a sirf active/main action ke liye.</footer>
+</div>
+</body>
+</html>
