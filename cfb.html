@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CFB Clips — GTA 6 Live Clipper</title>
+<meta name="description" content="Published YouTube video se CFB Shorts — stage layout, gold frame, Roman captions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=20261120c">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">GTA 6 <b>LIVE CLIPPER</b></div>
+    <p class="tagline">CFB Shorts — stage layout, gold frame, Roman captions</p>
+    <div><span class="live-pill"><span class="live-dot"></span><span id="bridge-status">Bridge se jor rahe hain…</span></span></div>
+  </header>
+
+  <nav id="topnav">
+    <a href="index.html#streams">Live Streams</a>
+    <a href="index.html#vod">Published Video</a>
+    <a href="cfb.html" class="on">CFB Clips</a>
+    <a href="index.html#gallery">Gallery</a>
+    <a href="index.html#history">Meri Requests</a>
+  </nav>
+
+<section id="cfb">
+    <div class="sec-kicker">CFB engine se Shorts</div>
+    <h2 class="sec-title">CFB Clips</h2>
+    <p class="sec-sub">Published YouTube video ka link do — CFB engine <b>best moments</b> dhoondh kar stage layout + gold frame me vertical Shorts bana dega.</p>
+
+    <div class="card">
+      <label for="cfb-link">Video ka link (YouTube)</label>
+      <input id="cfb-link" type="url" placeholder="https://www.youtube.com/watch?v=…" inputmode="url" autocomplete="off">
+      <div class="row">
+        <div>
+          <label for="cfb-count">Kitne Shorts banane hain</label>
+          <select id="cfb-count">
+            <option value="1" selected>1 Short</option>
+            <option value="2">2 Shorts</option>
+            <option value="3">3 Shorts</option>
+          </select>
+        </div>
+        <div>
+          <p class="note" style="margin:0">Style fixed hai: <b>stage layout</b> (facecam upar, game neeche) + <b>gold frame</b> + Roman captions. 1080×1920 vertical.</p>
+        </div>
+      </div>
+      <p class="note" style="margin-top:12px">Video sirf Shorts banane ke liye download hoti hai — banne ke baad <b>delete</b> ho jati hai, ye download tool nahi hai. Ek waqt me ek job chalti hai, lambi video par ~10–20 min lag sakte hain.</p>
+      <button class="btn" id="cfb-go">CFB Shorts banao</button>
+      <p class="note" id="cfb-result" hidden></p>
+    </div>
+
+    <div class="card" id="cfb-status-card" hidden>
+      <h3 style="font-size:17px">CFB job ki halat</h3>
+      <p class="sec-sub" id="cfb-status-text" style="margin:6px 0 0"></p>
+      <div class="progress"><div class="bar" id="cfb-bar" style="width:0%"></div></div>
+      <p class="note" id="cfb-status-note" style="margin-top:8px"></p>
+      <div id="cfb-status-link" style="margin-top:9px"></div>
+    </div>
+  </section>
+
+  <footer>GTA 6 Live Clipper · CFB engine · Front-end: ye website</footer>
+</div>
+
+<div id="toast"></div>
+<script src="config.js"></script>
+<script src="cfb.js?v=20261121a"></script>
+<script>if ("serviceWorker" in navigator) { window.addEventListener("load", function () { navigator.serviceWorker.register("sw.js").catch(function () {}); }); }</script>
+</body>
+</html>
