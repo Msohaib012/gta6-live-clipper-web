@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nova-style Player — Test Preview</title>
+<title>Nova-style Player — Test Preview v3</title>
 <style>
 :root{
   --bg:#000; --panel:#0a0a0a; --panel2:#0e0e0e; --row:#262626; --row2:#2e2e2e;
@@ -18,7 +18,7 @@ input[type=range]{cursor:pointer}
 .hidden{display:none !important}
 svg{display:block}
 
-/* ============ LAUNCHER (faithful to the observed Vidstuck first screen) ============ */
+/* ============ LAUNCHER (v2 look, kept) ============ */
 #launcher{position:fixed;inset:0;overflow:hidden;background:#000}
 #lauBg{position:absolute;inset:0;background-size:cover;background-position:center;filter:blur(28px) saturate(1.05);transform:scale(1.12)}
 #lauShade{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.45) 0%,rgba(0,0,0,.72) 55%,rgba(0,0,0,.94) 100%)}
@@ -46,14 +46,17 @@ svg{display:block}
 #vw video{object-fit:contain}
 #bigSpin{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;width:52px;height:52px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:translate(-50%,-50%) rotate(360deg)}}
-/* top bar: solid black, full width — only back + cloud, no title */
 #topbar{position:absolute;top:0;left:0;right:0;height:88px;z-index:7;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 28px;transition:opacity .25s}
 #topbar.hide,#botblock.hide{opacity:0;pointer-events:none}
 .tbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 .tbtn svg{width:28px;height:28px;fill:#fff}
 #btnCloudTop{border:1px solid #4b4b4b;border-radius:9px}
 #btnCloudTop svg{width:24px;height:24px}
-/* bottom block: solid black */
+/* embed lanes: ONLY the cloud button is ours — everything else hidden */
+#btnCloudFloat{position:absolute;z-index:8;top:calc(20px + env(safe-area-inset-top));right:22px;width:46px;height:46px;display:none;align-items:center;justify-content:center;border:1px solid #4b4b4b;border-radius:10px;background:rgba(0,0,0,.55)}
+#btnCloudFloat svg{width:26px;height:26px;fill:#fff}
+#stage.embed #topbar,#stage.embed #botblock,#stage.embed #pausedOv{display:none !important}
+#stage.embed #btnCloudFloat{display:flex}
 #botblock{position:absolute;left:0;right:0;bottom:0;z-index:7;background:#000;padding:16px 28px calc(18px + env(safe-area-inset-bottom));transition:opacity .25s}
 #titleBlock{text-align:left;margin-bottom:12px}
 #titleBlock .watch{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:17px;font-weight:500}
@@ -67,7 +70,6 @@ svg{display:block}
 #seek{flex:1;appearance:none;-webkit-appearance:none;height:5px;border-radius:99px;background:#333;outline:none}
 #seek::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:0}
 #seek::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:0}
-#seekFillNote{display:none}
 #ctlRow{display:flex;align-items:center;justify-content:space-between;min-height:64px}
 .ctlGroup{display:flex;align-items:center;gap:26px}
 .cbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
@@ -89,11 +91,20 @@ svg{display:block}
 #pausedOv .pPills span{border:1px solid #6b6b6b;border-radius:99px;padding:5px 14px;font-size:13px;color:var(--mut2)}
 #pausedOv .pOv{margin-top:12px;font-size:15px;line-height:1.5;color:#c9c9c9;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
-/* ============ RIGHT CARDS: servers / audio / subtitles ============ */
-.rcard{position:fixed;z-index:30;top:90px;right:25px;width:372px;max-width:calc(100vw - 40px);max-height:calc(100vh - 210px);overflow-y:auto;background:var(--panel);border:1px solid #1c1c1c;border-radius:14px;padding:14px 12px 12px;box-shadow:0 18px 50px rgba(0,0,0,.65)}
-.rcard h4{display:flex;align-items:center;gap:9px;font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#e5e5e5;padding:2px 8px 12px;border-bottom:1px solid var(--border)}
-.rcard h4 svg{width:20px;height:20px;fill:#e5e5e5}
-.rcard .foot{margin-top:10px;padding:12px 8px 2px;border-top:1px solid var(--border);text-align:center;color:var(--mut);font-size:14px}
+/* ============ BOTTOM SHEETS (servers / settings / audio / subtitles) ============ */
+.sheet{position:fixed;z-index:32;left:50%;transform:translateX(-50%);bottom:0;width:min(640px,100vw);max-height:76vh;background:var(--panel2);border:1px solid #1c1c1c;border-bottom:0;border-radius:18px 18px 0 0;display:flex;flex-direction:column;box-shadow:0 -14px 44px rgba(0,0,0,.6)}
+.sheet .grab{width:100px;height:5px;border-radius:99px;background:#737373;margin:10px auto 6px;flex:none}
+.sheet .shead{display:flex;align-items:center;padding:8px 20px 12px;flex:none}
+.sheet .shead h3{font-size:22px;font-weight:800}
+.sheet .shead .x{margin-left:auto;width:44px;height:44px;font-size:20px;display:flex;align-items:center;justify-content:center}
+.sheet .sbody{overflow-y:auto;padding:0 16px calc(16px + env(safe-area-inset-bottom));flex:1;-webkit-overflow-scrolling:touch}
+.sheet .sfoot{flex:none;padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet .sfoot button{width:100%;min-height:52px;border-radius:9px;background:var(--row);font-size:17px;font-weight:600}
+.bkrow{display:flex;align-items:center;gap:10px;width:100%;min-height:var(--tap);padding:8px 10px;border-radius:10px;font-size:16px;font-weight:700;text-align:left}
+.bkrow:active{background:var(--row)}
+.bkrow svg{width:22px;height:22px;fill:#fff;flex:none}
+.srvsec{color:var(--mut);font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:16px 8px 4px}
+.srvsec .sub{display:block;text-transform:none;letter-spacing:0;font-weight:500;font-size:13.5px;color:var(--mut);margin-top:3px}
 .srv{display:flex;flex-direction:column;gap:2px;padding:10px 10px;border-radius:9px;text-align:left;width:100%}
 .srv:active{background:var(--row)}
 .srv.sel{background:var(--row2)}
@@ -117,19 +128,16 @@ svg{display:block}
 .opt:active{background:var(--row)}
 .opt.sel{background:var(--row2);font-weight:700}
 .opt .ck{margin-left:auto;font-weight:700}
-.rcard .cardnote{font-size:13.5px;line-height:1.55;color:var(--mut);padding:10px}
-.rcard .cardbtns{display:flex;border-top:1px solid var(--border);margin-top:10px}
-.rcard .cardbtns button{flex:1;min-height:var(--tap);color:var(--mut);font-size:15px;font-weight:600}
-.rcard .cardbtns button+button{border-left:1px solid var(--border)}
-
-/* ============ SETTINGS SHEET ============ */
-#settings{position:fixed;z-index:32;left:50%;transform:translateX(-50%);top:88px;bottom:0;width:min(570px,100vw);background:var(--panel2);border:1px solid #1c1c1c;border-bottom:0;border-radius:18px 18px 0 0;display:flex;flex-direction:column;box-shadow:0 -14px 44px rgba(0,0,0,.6)}
-#settings .grab{width:100px;height:5px;border-radius:99px;background:#737373;margin:10px auto 6px;flex:none}
-#settings .shead{display:flex;align-items:center;padding:8px 20px 12px;flex:none}
-#settings .shead h3{font-size:24px;font-weight:800}
-#settings .shead .x{margin-left:auto;width:44px;height:44px;font-size:20px;display:flex;align-items:center;justify-content:center}
-#settings .sbody{overflow-y:auto;padding:0 16px 12px;flex:1}
-#settings .sec{color:var(--mut);font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:14px 8px 6px}
+.cardnote{font-size:13.5px;line-height:1.55;color:var(--mut);padding:10px}
+.sheet .foot{margin-top:10px;padding:12px 8px 2px;border-top:1px solid var(--border);text-align:center;color:var(--mut);font-size:14px}
+/* accordion */
+.acc{border-top:1px solid var(--border);margin-top:6px}
+.acc-head{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 10px;text-align:left;font-size:17px;font-weight:700}
+.acc-head .chev{margin-left:auto;color:var(--mut);font-size:18px;transition:transform .15s}
+.acc.open .acc-head .chev{transform:rotate(90deg)}
+.acc-body{display:none;padding:2px 0 8px}
+.acc.open .acc-body{display:block}
+/* settings rows */
 .srow{display:flex;align-items:center;gap:14px;min-height:64px;padding:8px 10px;border-radius:10px;text-align:left;width:100%}
 .srow:active{background:var(--row)}
 .srow .ic{flex:none;width:44px;height:44px;border-radius:9px;background:var(--row);display:flex;align-items:center;justify-content:center}
@@ -139,18 +147,11 @@ svg{display:block}
 .srow .chev{color:var(--mut);font-size:18px;margin-left:8px}
 .srow .tgl{margin-left:auto;font-size:16px;font-weight:600;color:var(--mut2)}
 .srow .tgl.on{color:#fff}
-#settings .sfoot{flex:none;padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
-#btnCloseSet{width:100%;min-height:52px;border-radius:9px;background:var(--row);font-size:17px;font-weight:600}
 .subhead{display:flex;align-items:center;gap:10px;padding:8px 6px 12px}
 .subhead .bk{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 .subhead .bk svg{width:24px;height:24px;fill:#fff}
 .subhead h3{font-size:22px;font-weight:800}
-
-/* ============ EPISODE SHEET ============ */
-#epsheet{position:fixed;z-index:32;left:50%;transform:translateX(-50%);bottom:0;width:min(640px,100vw);max-height:78vh;overflow-y:auto;background:var(--panel2);border:1px solid #1c1c1c;border-bottom:0;border-radius:18px 18px 0 0;padding:10px 14px calc(18px + env(safe-area-inset-bottom));box-shadow:0 -14px 44px rgba(0,0,0,.6)}
-#epsheet .grab{width:100px;height:5px;border-radius:99px;background:#737373;margin:2px auto 10px}
-#epsheet h3{font-size:19px;font-weight:800;display:flex;align-items:center;padding:0 4px 12px}
-#epsheet h3 .x{margin-left:auto;width:44px;height:44px;font-size:19px;display:flex;align-items:center;justify-content:center}
+/* episodes */
 .epnav2{display:flex;gap:8px;margin:0 2px 12px}
 .epnav2 button{flex:1;min-height:var(--tap);border-radius:12px;border:1px solid var(--border);font-weight:700;font-size:15px;background:#141414}
 .epnav2 button:disabled{opacity:.4}
@@ -162,14 +163,12 @@ svg{display:block}
 .epcard:active{background:#222}
 .epcard.sel{border-color:var(--red)}
 .epcard .n{font-size:12px;color:var(--red);font-weight:800;letter-spacing:.06em}
-.epcard.sel .n{color:var(--red)}
 .epcard .t{font-size:14px;font-weight:600;line-height:1.3;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
 /* toast: bottom-right dark card */
 #toast{position:fixed;z-index:40;right:22px;bottom:26px;max-width:min(360px,86vw);background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:13px 16px;font-size:15px;font-weight:600;display:flex;gap:12px;align-items:center;box-shadow:0 10px 30px rgba(0,0,0,.6)}
 #toast .x{margin-left:4px;font-size:16px;color:var(--mut)}
 @media(max-width:640px){
-  .rcard{top:auto;bottom:0;left:0;right:0;width:100%;max-width:none;max-height:64vh;border-radius:16px 16px 0 0}
   #topbar{height:64px;padding:0 14px}
   #botblock{padding:12px 14px calc(14px + env(safe-area-inset-bottom))}
   #titleBlock h2{font-size:27px}
@@ -179,7 +178,9 @@ svg{display:block}
   #pausedOv .pT{font-size:44px}
   #btnBackL{left:12px}
   #btnCloudL{right:10px}
+  #btnCloudFloat{right:12px}
   #lauStatus{font-size:15px}
+  #toast{left:14px;right:14px;bottom:20px;max-width:none}
 }
 </style>
 </head>
@@ -219,6 +220,7 @@ svg{display:block}
       <button class="tbtn" id="btnBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
       <button class="tbtn" id="btnCloudTop" aria-label="Servers"><svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg></button>
     </div>
+    <button id="btnCloudFloat" aria-label="Change server"><svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg></button>
     <div id="botblock">
       <div id="titleBlock">
         <div class="watch">You're Watching</div>
@@ -254,42 +256,33 @@ svg{display:block}
   </div>
 </section>
 
-<!-- ================= RIGHT CARDS ================= -->
-<div class="rcard hidden" id="srvCard">
-  <h4><svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg> Servers</h4>
-  <div id="srvCardBody"></div>
-  <div class="foot">Choose a server or playback quality</div>
+<!-- ================= SERVER PANEL (bottom sheet) ================= -->
+<div class="sheet hidden" id="srvPanel">
+  <div class="grab"></div>
+  <div class="shead"><h3>Servers</h3><button class="x" data-close="srvPanel" aria-label="Close">✕</button></div>
+  <div class="sbody" id="srvPanelBody"></div>
 </div>
 
-<div class="rcard hidden" id="audioCard">
-  <h4><svg viewBox="0 0 24 24"><path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zM16 4l4 3-4 3v-2h-2v-2h2z"/></svg> Audio</h4>
-  <div id="audioCardBody"></div>
-</div>
-
-<div class="rcard hidden" id="subsCard">
-  <h4><svg viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 7H9.5v-.5h-2v3h2v-.5H11v1H6V9h5v2zm7 0h-1.5v-.5h-2v3h2v-.5H18v1h-5V9h5v2z"/></svg> Subtitles</h4>
-  <div id="subsCardBody"></div>
-  <div class="cardbtns"><button id="btnSubStyle">Style</button><button id="btnSubDelay">Delay</button></div>
-</div>
-
-<!-- ================= SETTINGS SHEET ================= -->
-<div id="settings" class="hidden">
+<!-- ================= SETTINGS SHEET (bottom sheet, accordion) ================= -->
+<div class="sheet hidden" id="settings">
   <div class="grab"></div>
   <div class="shead"><h3>Settings</h3><button class="x" data-close="settings" aria-label="Close">✕</button></div>
   <div class="sbody" id="setBody"></div>
   <div class="sfoot"><button id="btnCloseSet">Close</button></div>
 </div>
 
-<!-- ================= EPISODE SHEET ================= -->
-<div id="epsheet" class="hidden">
+<!-- ================= AUDIO SHEET (native lanes, real tracks only) ================= -->
+<div class="sheet hidden" id="audioSheet">
   <div class="grab"></div>
-  <h3><span id="epSheetTitle">Episodes</span><button class="x" data-close="epsheet" aria-label="Close">✕</button></h3>
-  <div class="epnav2">
-    <button id="btnPrevEp2">‹ Previous episode</button>
-    <button id="btnNextEp2">Next episode ›</button>
-  </div>
-  <div class="seasrow" id="seasRow"></div>
-  <div class="epgrid" id="epGrid"></div>
+  <div class="shead"><h3>Audio</h3><button class="x" data-close="audioSheet" aria-label="Close">✕</button></div>
+  <div class="sbody" id="audioSheetBody"></div>
+</div>
+
+<!-- ================= SUBTITLES SHEET (native lanes, real tracks only) ================= -->
+<div class="sheet hidden" id="subsSheet">
+  <div class="grab"></div>
+  <div class="shead"><h3>Subtitles</h3><button class="x" data-close="subsSheet" aria-label="Close">✕</button></div>
+  <div class="sbody" id="subsSheetBody"></div>
 </div>
 
 <div id="toast" class="hidden"><span id="toastTxt"></span><button class="x" id="toastX" aria-label="Dismiss">✕</button></div>
@@ -319,21 +312,23 @@ var DEMO = {
 };
 var META = DEMO[MEDIA_TMDB] || { title: (qp.get("title") || ("Title " + MEDIA_TMDB)), year: "", rate: "", kind: MEDIA_TYPE === "tv" ? "TV Series" : "Movie", genres: [], genreLine: "", tagline: "", runtime: "", ov: "", bg: "", logo: "" };
 
-/* ============ servers — same 8 as the live player, same embed URLs ============ */
+/* ============ servers — same 8 as the live player, same embed URLs, two lists ============ */
 var SERVERS = [
-  { id: "arenahls", name: "Arenaflix", rw: "thugtv", ds: "Native stream" },
-  { id: "bolt",     name: "Bolt",     rw: "vidbolt", ds: "Native stream" },
-  { id: "velvet",   name: "Velvet",   rw: "moviebox", ds: "Native stream" },
-  { id: "castle",   name: "Prime",    rw: "castletv", ds: "Native stream" },
-  { id: "hindi",    name: "Vega", ds: "Embed player" },
-  { id: "vidstuck", name: "Nova", ds: "Multi Audio Support" },
-  { id: "cinesrc",  name: "Apex", ds: "Alternative" },
-  { id: "vidcore",  name: "Onyx", ds: "Alternative" }
+  { id: "arenahls", name: "Arenaflix", lane: "native", rw: "thugtv", ds: "Native stream" },
+  { id: "bolt",     name: "Bolt",     lane: "native", rw: "vidbolt", ds: "Native stream" },
+  { id: "velvet",   name: "Velvet",   lane: "native", rw: "moviebox", ds: "Native stream" },
+  { id: "castle",   name: "Prime",    lane: "native", rw: "castletv", ds: "Native stream" },
+  { id: "hindi",    name: "Vega", lane: "embed", ds: "Embed player" },
+  { id: "vidstuck", name: "Nova", lane: "embed", ds: "Multi Audio Support" },
+  { id: "cinesrc",  name: "Apex", lane: "embed", ds: "Alternative" },
+  { id: "vidcore",  name: "Onyx", lane: "embed", ds: "Alternative" }
 ];
 var CASTLE_API = "https://castle-api.virtualsipra01.workers.dev";
 var VELVET_API = "https://moviebox-api.mkdrivedata.workers.dev";
 var WORKER = "https://thugtv-proxy.virtualsipra01.workers.dev/?url=";
-function serverName(id){ var s = SERVERS.filter(function(x){ return x.id === id; })[0]; return s ? s.name : id; }
+function serverById(id){ var s = SERVERS.filter(function(x){ return x.id === id; })[0]; return s || null; }
+function serverName(id){ var s = serverById(id); return s ? s.name : id; }
+function laneOf(id){ var s = serverById(id); return s ? s.lane : "embed"; }
 function embedUrl(srv){
   if (srv === "hindi") {
     var u = "https://screenscape.me/embed?tmdb=" + MEDIA_TMDB + "&type=" + MEDIA_TYPE + "&lan=hindi";
@@ -406,13 +401,13 @@ function toast(msg, ms){
   toast._to = setTimeout(function(){ $("toast").classList.add("hidden"); }, ms || 3000);
 }
 $("toastX").addEventListener("click", function(){ $("toast").classList.add("hidden"); });
-function closeAllPanels(){
-  ["srvCard", "audioCard", "subsCard", "settings", "epsheet"].forEach(function(id){ $(id).classList.add("hidden"); });
+function closeAllSheets(){
+  ["srvPanel", "settings", "audioSheet", "subsSheet"].forEach(function(id){ $(id).classList.add("hidden"); });
 }
 Array.prototype.forEach.call(document.querySelectorAll("[data-close]"), function(b){
   b.addEventListener("click", function(){ $(b.getAttribute("data-close")).classList.add("hidden"); });
 });
-document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeAllPanels(); });
+document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeAllSheets(); });
 
 /* ============ launcher ============ */
 $("lauBg").style.backgroundImage = META.bg ? ("url('" + META.bg + "')") : "none";
@@ -427,18 +422,12 @@ if (META.logo) {
 }
 $("lauGenre").textContent = META.genreLine || "";
 $("btnBackL").addEventListener("click", function(){ history.back(); });
-$("btnCloudL").addEventListener("click", function(){ toggleCard("srvCard"); });
-$("btnCloudTop").addEventListener("click", function(){ toggleCard("srvCard"); });
-function toggleCard(id){
-  var el = $(id), wasHidden = el.classList.contains("hidden");
-  closeAllPanels();
-  if (wasHidden) el.classList.remove("hidden");
-}
+$("btnCloudL").addEventListener("click", function(){ openSrvPanel(); });
 function setStatus(txt){ $("lauStatusTxt").textContent = txt; }
 function setProg(pct){ $("lauProgFill").style.width = Math.max(4, Math.min(100, pct)) + "%"; }
 function setSrc(name){ $("lauSrcName").textContent = name; }
 
-/* probe + status cycle */
+/* probe + status cycle (native lanes only; embeds have no probe) */
 var probeDone = 0, probeTotal = 0;
 (function probeAll(){
   var rwServers = SERVERS.filter(function(s){ return s.rw; });
@@ -456,7 +445,7 @@ var probeDone = 0, probeTotal = 0;
     probeRW(srv).then(function(r){
       PROBE[srv.id] = r; probeDone++;
       setProg(10 + 80 * probeDone / Math.max(1, probeTotal));
-      renderSrvCard();
+      renderSrvPanel();
       if (probeDone >= probeTotal) finishProbe();
     });
   });
@@ -467,18 +456,19 @@ var probeDone = 0, probeTotal = 0;
     SERVERS.forEach(function(srv){ if (PROBE[srv.id] === undefined) PROBE[srv.id] = { ok: false, streams: [] }; });
     bestIdx = -1;
     for (var i = 0; i < SERVERS.length; i++) {
-      if (SERVERS[i].rw && PROBE[SERVERS[i].id].ok) { bestIdx = i; break; }
+      if (SERVERS[i].lane === "native" && PROBE[SERVERS[i].id].ok) { bestIdx = i; break; }
     }
-    if (bestIdx < 0) bestIdx = 5; /* Nova */
+    if (bestIdx < 0) bestIdx = 5; /* Nova, first embed server */
     setStatus("READY"); setSrc(SERVERS[bestIdx].name); setProg(100);
-    renderSrvCard();
+    renderSrvPanel();
     setTimeout(function(){
-      if (!$("launcher").classList.contains("hidden")) openPlayer(SERVERS[bestIdx].id);
+      if (!$("launcher").classList.contains("hidden")) openPlayer(SERVERS[bestIdx].id, false);
     }, 650);
   }
 })();
 
-/* ============ servers card (right-side sheet, like the observed panel) ============ */
+/* ============ server panel: two lists + back + episodes (TV) ============ */
+var epAccOpen = false;
 function streamQuals(streams){
   var seen = {}, out = [];
   (streams || []).forEach(function(s){
@@ -487,55 +477,147 @@ function streamQuals(streams){
   });
   return out;
 }
-function renderSrvCard(){
-  var body = $("srvCardBody"), sc = body.scrollTop;
+function srvRowHtml(srv){
+  var p = PROBE[srv.id];
+  var sel = srv.id === curServer;
   var h = "";
-  SERVERS.forEach(function(srv){
-    var p = PROBE[srv.id];
-    var sel = srv.id === curServer;
-    if (srv.rw) {
-      if (p === undefined) {
-        h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span><span class="st dim">…</span></span><span class="ds">Checking…</span></button>';
-      } else if (p.unreachable) {
-        h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span>' + (sel ? '<span class="st ck">✓</span>' : '<span class="st dim">—</span>') + '</span><span class="ds">Check nahi hua</span></button>';
-      } else if (!p.ok) {
-        h += '<button class="srv fail' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span><span class="st bad">×</span></span><span class="ds">No usable sources found</span></button>' +
-             '<div class="kids"><button class="kid" data-srv="' + srv.id + '"><span style="text-decoration:line-through;color:#8a8a8a">Source 1</span><span class="st bad">Failed</span></button></div>';
-      } else {
-        var qs = streamQuals(p.streams);
-        h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span>' + (sel ? '<span class="st ck">✓</span>' : '<span class="st ok">' + p.streams.length + ' streams</span>') + '</span><span class="ds">' + srv.ds + '</span></button>';
-        if (qs.length) {
-          h += '<div class="kids">' + qs.map(function(q, qi){
-            return '<button class="kid' + (qi === 0 ? " sel" : "") + '" data-srv="' + srv.id + '"><span>' + q + '</span><span class="st ' + (qi === 0 ? "ok" : "dim") + '">' + (qi === 0 ? "Ready" : "Ready") + '</span></button>';
-          }).join("") + '</div>';
-        }
-      }
-    } else if (srv.id === "vidstuck") {
-      h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">Orion</span>' + (sel ? '<span class="st ck">✓</span>' : "") + '</span><span class="ds">Multi Audio Support</span></button>' +
-           '<div class="kids">' +
-           '<button class="kid sel" data-srv="vidstuck"><span>360p</span><span class="st ok">Ready</span></button>' +
-           '<button class="kid" data-srv="vidstuck"><span>480p</span><span class="st dim">Queue</span></button>' +
-           '<button class="kid" data-srv="vidstuck"><span>720p</span><span class="st dim">Queue</span></button></div>';
+  if (srv.lane === "native") {
+    if (p === undefined) {
+      h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span><span class="st dim">…</span></span><span class="ds">Checking…</span></button>';
+    } else if (p.unreachable) {
+      h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span>' + (sel ? '<span class="st ck">✓</span>' : '<span class="st dim">—</span>') + '</span><span class="ds">Check nahi hua</span></button>';
+    } else if (!p.ok) {
+      h += '<button class="srv fail' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span><span class="st bad">×</span></span><span class="ds">No usable sources found</span></button>';
     } else {
-      h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span>' + (sel ? '<span class="st ck">✓</span>' : '<span class="st dim">—</span>') + '</span><span class="ds">' + srv.ds + '</span></button>';
+      var qs = streamQuals(p.streams);
+      h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span>' + (sel ? '<span class="st ck">✓</span>' : '<span class="st ok">' + p.streams.length + ' streams</span>') + '</span><span class="ds">' + srv.ds + '</span></button>';
+      if (qs.length) {
+        h += '<div class="kids">' + qs.map(function(q, qi){
+          return '<button class="kid' + (qi === 0 ? " sel" : "") + '" data-srv="' + srv.id + '"><span>' + q + '</span><span class="st ' + (qi === 0 ? "ok" : "dim") + '">Ready</span></button>';
+        }).join("") + '</div>';
+      }
     }
-  });
+  } else if (srv.id === "vidstuck") {
+    h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">Orion</span>' + (sel ? '<span class="st ck">✓</span>' : "") + '</span><span class="ds">Multi Audio Support</span></button>' +
+         '<div class="kids">' +
+         '<button class="kid sel" data-srv="vidstuck"><span>360p</span><span class="st ok">Ready</span></button>' +
+         '<button class="kid" data-srv="vidstuck"><span>480p</span><span class="st dim">Queue</span></button>' +
+         '<button class="kid" data-srv="vidstuck"><span>720p</span><span class="st dim">Queue</span></button></div>';
+  } else {
+    h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span>' + (sel ? '<span class="st ck">✓</span>' : '<span class="st dim">—</span>') + '</span><span class="ds">' + srv.ds + '</span></button>';
+  }
+  return h;
+}
+function renderSrvPanel(){
+  var body = $("srvPanelBody"), sc = body ? body.scrollTop : 0;
+  var h = '<button class="bkrow" id="srvBackRow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span>Back to launcher</span></button>';
+  h += '<div class="srvsec">Our servers<span class="sub">Apna player — seek, subtitles, audio hamare controls se</span></div>';
+  SERVERS.forEach(function(srv){ if (srv.lane === "native") h += srvRowHtml(srv); });
+  h += '<div class="srvsec">Embed servers<span class="sub">Inke apne controls — seek/subtitles embed ke andar</span></div>';
+  SERVERS.forEach(function(srv){ if (srv.lane === "embed") h += srvRowHtml(srv); });
+  if (MEDIA_TYPE === "tv") {
+    h += '<div class="acc' + (epAccOpen ? " open" : "") + '" id="epAcc"><button class="acc-head" id="epAccHead"><span>Episodes</span><span class="chev">›</span></button><div class="acc-body" id="epAccBody"></div></div>';
+  }
+  h += '<div class="foot">Embed servers par sirf cloud button dikhta hai — wapas yahin se aao</div>';
   body.innerHTML = h;
   body.scrollTop = sc;
+  $("srvBackRow").addEventListener("click", function(){
+    if (!$("stage").classList.contains("hidden")) backToLauncher();
+    else closeAllSheets();
+  });
   Array.prototype.forEach.call(body.querySelectorAll("[data-srv]"), function(b){
     b.addEventListener("click", function(){
-      closeAllPanels();
-      openPlayer(b.getAttribute("data-srv"));
+      closeAllSheets();
+      openPlayer(b.getAttribute("data-srv"), true);
     });
   });
+  if (MEDIA_TYPE === "tv") renderEpAcc();
 }
-renderSrvCard();
+function openSrvPanel(opts){
+  opts = opts || {};
+  if (opts.episodes) epAccOpen = true;
+  renderSrvPanel();
+  closeAllSheets();
+  $("srvPanel").classList.remove("hidden");
+  if (opts.episodes) {
+    var acc = $("epAcc");
+    if (acc) acc.scrollIntoView({ block: "start" });
+  }
+}
+$("btnCloudTop").addEventListener("click", function(){ openSrvPanel(); });
+$("btnCloudFloat").addEventListener("click", function(){ openSrvPanel(); });
+
+/* ============ episodes (inside the server panel) ============ */
+var curSeason = MEDIA_SEASON;
+function epCount(season){ return META.seasons ? (META.seasons[season] || 0) : 0; }
+function epName(season, ep){
+  if (META.epNames && META.epNames[season] && META.epNames[season][ep - 1]) return META.epNames[season][ep - 1];
+  return "Episode " + ep;
+}
+function renderEpAcc(){
+  var head = $("epAccHead"), box = $("epAccBody");
+  if (!head || !box) return;
+  head.addEventListener("click", function(){
+    epAccOpen = !epAccOpen;
+    $("epAcc").classList.toggle("open", epAccOpen);
+    if (epAccOpen) renderEpAcc();
+  });
+  if (!epAccOpen) return;
+  var sh = "";
+  var seasons = META.seasons ? Object.keys(META.seasons).map(Number).sort(function(a, b){ return a - b; }) : [1];
+  seasons.forEach(function(sn){
+    sh += '<button class="' + (sn === curSeason ? "sel" : "") + '" data-season="' + sn + '">Season ' + sn + "</button>";
+  });
+  var gh = "", n = epCount(curSeason);
+  for (var ep = 1; ep <= n; ep++) {
+    var sel = (curSeason === MEDIA_SEASON && ep === MEDIA_EPISODE);
+    gh += '<button class="epcard' + (sel ? " sel" : "") + '" data-ep="' + ep + '"><span class="n">EPISODE ' + ep + "</span><span class=\"t\">" + epName(curSeason, ep) + "</span></button>";
+  }
+  if (!n) gh = '<p class="cardnote">Is show ke episodes ki list demo data me nahi hai.</p>';
+  box.innerHTML = '<div class="epnav2"><button id="btnPrevEp2">‹ Previous episode</button><button id="btnNextEp2">Next episode ›</button></div>' +
+    '<div class="seasrow">' + sh + '</div><div class="epgrid">' + gh + "</div>";
+  Array.prototype.forEach.call(box.querySelectorAll("[data-season]"), function(b){
+    b.addEventListener("click", function(){ curSeason = parseInt(b.getAttribute("data-season"), 10); renderEpAcc(); });
+  });
+  Array.prototype.forEach.call(box.querySelectorAll("[data-ep]"), function(b){
+    b.addEventListener("click", function(){ switchEpisode(curSeason, parseInt(b.getAttribute("data-ep"), 10)); });
+  });
+  updateEpButtons();
+}
+function updateEpButtons(){
+  var n = epCount(MEDIA_SEASON), hasPrev = !(MEDIA_SEASON === 1 && MEDIA_EPISODE === 1);
+  var seasons = META.seasons ? Object.keys(META.seasons).map(Number) : [1];
+  var maxS = Math.max.apply(null, seasons);
+  var hasNext = (MEDIA_EPISODE < n) || (MEDIA_SEASON < maxS);
+  if ($("btnPrevEp")) { $("btnPrevEp").disabled = !hasPrev; $("btnNextEp").disabled = !hasNext; }
+  if ($("btnPrevEp2")) { $("btnPrevEp2").disabled = !hasPrev; $("btnNextEp2").disabled = !hasNext; }
+}
+function switchEpisode(s, e){
+  MEDIA_SEASON = s; MEDIA_EPISODE = e; curSeason = s;
+  var q = new URLSearchParams(location.search);
+  q.set("type", "tv"); q.set("tmdb", MEDIA_TMDB); q.set("s", String(s)); q.set("e", String(e));
+  history.replaceState(null, "", location.pathname + "?" + q.toString());
+  closeAllSheets();
+  openPlayer(curServer || "vidstuck", true);
+}
+function stepEpisode(dir){
+  var n = epCount(MEDIA_SEASON);
+  var s = MEDIA_SEASON, e = MEDIA_EPISODE + dir;
+  if (e < 1) { s = s - 1; e = epCount(s); }
+  if (e > n) { s = s + 1; e = 1; }
+  if (s < 1 || !epCount(s)) return;
+  switchEpisode(s, e);
+}
 
 /* ============ playback ============ */
 var curServer = null, hls = null, curStreams = [];
 var video = $("vid"), frame = $("frm");
 var setDoubleTap = false, setAutoNext = false;
+var failChain = [], hlsFailed = false;
+var embedTimer1 = null, embedTimer2 = null, watchdogArmed = false;
+var EMBED_STUCK_MS = 45000, EMBED_COUNTDOWN_MS = 10000;
 function stopAll(){
+  cancelWatchdog();
   try { if (hls) { hls.destroy(); hls = null; } } catch (e) {}
   try { video.pause(); video.removeAttribute("src"); video.load(); } catch (e) {}
   try { frame.src = "about:blank"; } catch (e) {}
@@ -553,25 +635,36 @@ function parseStream(s){
   return { url: url, lang: lang, qual: qual, name: name };
 }
 function showSpin(on){ $("bigSpin").classList.toggle("hidden", !on); }
+function isNativeLane(){ return curServer && laneOf(curServer) === "native" && !video.classList.contains("hidden"); }
+function isEmbedLane(){ return curServer && laneOf(curServer) === "embed" && !frame.classList.contains("hidden"); }
+function applyLaneChrome(){
+  /* Embed lanes: ONLY the cloud button (CSS hides topbar/botblock/paused overlay).
+     Native lanes: full real chrome. */
+  $("stage").classList.toggle("embed", !!isEmbedLane());
+  pokeBars();
+}
 function playNative(streams){
   curStreams = streams.map(parseStream).filter(function(x){ return x.url; });
-  if (!curStreams.length) { toast("Is server par koi stream nahi mili"); return; }
+  if (!curStreams.length) { failoverFrom(curServer, "Is server par koi stream nahi mili"); return; }
   var pick = curStreams[0], hi = -1;
   for (var i = 0; i < curStreams.length; i++) if (/hindi/i.test(curStreams[i].lang)) { hi = i; break; }
   if (hi >= 0) pick = curStreams[hi];
   showSpin(true);
+  hlsFailed = false;
   video.classList.remove("hidden"); frame.classList.add("hidden");
   if (window.Hls && Hls.isSupported() && /\.m3u8/i.test(pick.url)) {
     hls = new Hls({ maxBufferLength: 30 });
     hls.loadSource(pick.url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, function(){ video.play().catch(function(){}); });
-    hls.on(Hls.Events.ERROR, function(ev, data){ if (data && data.fatal) showSpin(false); });
+    hls.on(Hls.Events.ERROR, function(ev, data){
+      if (data && data.fatal && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " ka stream toot gaya"); }
+    });
   } else {
     video.src = pick.url;
     video.play().catch(function(){});
   }
-  updateNativeVisibility();
+  applyLaneChrome();
 }
 function playEmbed(srv){
   var url = embedUrl(srv);
@@ -582,25 +675,63 @@ function playEmbed(srv){
   else frame.removeAttribute("sandbox");
   showSpin(true);
   frame.src = url;
-  setTimeout(function(){ showSpin(false); }, 2500);
-  updateNativeVisibility();
   $("pausedOv").classList.add("hidden");
+  applyLaneChrome();
+  armWatchdog(srv);
 }
-function isNativeLane(){ return curServer && (SERVERS.filter(function(x){ return x.id === curServer; })[0] || {}).rw && !video.classList.contains("hidden"); }
-function updateNativeVisibility(){
-  var nat = isNativeLane();
-  /* Embed lanes: the iframe owns play/seek/volume — those controls would be
-     dead buttons, so the bottom block keeps only title + right-side group. */
-  $("seekRow").style.display = nat ? "" : "none";
-  ["btnPlay", "btnBack15", "btnFwd15", "btnPrevEp", "btnNextEp"].forEach(function(id){
-    $(id).style.display = (id === "btnPrevEp" || id === "btnNextEp") ? ((MEDIA_TYPE === "tv" && nat) ? "" : "none") : (nat ? "" : "none");
-  });
-  $("volwrap").style.display = nat ? "" : "none";
+frame.addEventListener("load", function(){
+  var src = frame.getAttribute("src") || "";
+  if (src && src !== "about:blank" && !$("stage").classList.contains("hidden")) showSpin(false);
+});
+/* ---- embed watchdog: cross-origin iframes cannot report failure, so a
+   bounded wait + visible countdown is the honest failover. Tapping the
+   cloud button (opening any panel) cancels the pending advance — the
+   user is managing it. One auto-advance per server-open, max. ---- */
+function cancelWatchdog(){
+  clearTimeout(embedTimer1); clearTimeout(embedTimer2);
+  embedTimer1 = embedTimer2 = null;
 }
-function openPlayer(srvId){
+function armWatchdog(srv){
+  cancelWatchdog();
+  watchdogArmed = true;
+  embedTimer1 = setTimeout(function(){
+    if (!watchdogArmed) return;
+    var next = nextFailoverCandidate(srv);
+    var nextName = next ? serverName(next) : null;
+    toast(serverName(srv) + " abhi tak nahi chala — 10 second me " + (nextName ? nextName + " try hoga" : "server panel khulega") + ". Rokne ke liye cloud button dabao.", EMBED_COUNTDOWN_MS + 1500);
+    embedTimer2 = setTimeout(function(){
+      if (!watchdogArmed) return;
+      watchdogArmed = false;
+      failoverFrom(srv, serverName(srv) + " ne jawab nahi diya");
+    }, EMBED_COUNTDOWN_MS);
+  }, EMBED_STUCK_MS);
+}
+function disarmWatchdog(){ watchdogArmed = false; cancelWatchdog(); }
+function nextFailoverCandidate(failedId){
+  var lane = laneOf(failedId);
+  var ordered = SERVERS.filter(function(s){ return s.lane === lane && s.id !== failedId; })
+    .concat(SERVERS.filter(function(s){ return s.lane !== lane; }));
+  for (var i = 0; i < ordered.length; i++) {
+    if (failChain.indexOf(ordered[i].id) < 0) return ordered[i].id;
+  }
+  return null;
+}
+function failoverFrom(failedId, why){
+  var next = nextFailoverCandidate(failedId);
+  if (!next) {
+    toast((why ? why + " — " : "") + "koi server jawab nahi de raha, server chuno");
+    openSrvPanel();
+    return;
+  }
+  toast((why ? why + " — " : "") + serverName(next) + " try ho raha hai");
+  openPlayer(next, false);
+}
+function openPlayer(srvId, manual){
   stopAll();
   curServer = srvId;
-  closeAllPanels();
+  if (manual) failChain = [srvId];
+  else if (failChain.indexOf(srvId) < 0) failChain.push(srvId);
+  closeAllSheets();
   $("launcher").classList.add("hidden");
   $("stage").classList.remove("hidden");
   $("watchTitle").textContent = META.title + (MEDIA_TYPE === "tv" ? "  S" + MEDIA_SEASON + " E" + MEDIA_EPISODE : "");
@@ -610,16 +741,16 @@ function openPlayer(srvId){
   if (MEDIA_TYPE === "tv") pills += '<button id="epHint" class="pillTag" style="cursor:pointer">Episodes ›</button>';
   $("watchPills").innerHTML = pills;
   var eh = $("epHint");
-  if (eh) eh.addEventListener("click", function(){ renderEpSheet(); $("epsheet").classList.remove("hidden"); });
+  if (eh) eh.addEventListener("click", function(){ openSrvPanel({ episodes: true }); });
   $("pTitle").textContent = META.title;
   $("pTag").textContent = META.tagline || "";
   $("pMeta").textContent = [META.year, META.runtime, META.rate ? "★ " + META.rate : ""].filter(Boolean).join(" • ");
   $("pPills").innerHTML = (META.genres || []).map(function(g){ return "<span>" + g + "</span>"; }).join("");
   $("pOv").textContent = META.ov || "";
   updateEpButtons();
-  renderSrvCard();
-  var srv = SERVERS.filter(function(x){ return x.id === srvId; })[0];
-  if (srv && srv.rw) {
+  renderSrvPanel();
+  var srv = serverById(srvId);
+  if (srv && srv.lane === "native") {
     var p = PROBE[srvId];
     if (p && p.streams && p.streams.length) playNative(p.streams);
     else {
@@ -627,8 +758,8 @@ function openPlayer(srvId){
       probeRW(srv).then(function(r){
         PROBE[srvId] = r; showSpin(false);
         if (r.ok) playNative(r.streams);
-        else toast("Is server par stream nahi mili — doosra server try karo");
-        renderSrvCard();
+        else failoverFrom(srvId, serverName(srvId) + " par stream nahi mili");
+        renderSrvPanel();
       });
     }
   } else {
@@ -638,26 +769,24 @@ function openPlayer(srvId){
 }
 function backToLauncher(){
   stopAll();
-  closeAllPanels();
+  closeAllSheets();
   $("stage").classList.add("hidden");
   $("launcher").classList.remove("hidden");
 }
+renderSrvPanel();
 
-/* ============ bars: auto-hide on native lanes only ============ */
+/* ============ bars: auto-hide on native lanes only (embed lanes hide them in CSS) ============ */
 var barTimer = null;
-function isEmbedLane(){ return !frame.classList.contains("hidden"); }
 function pokeBars(){
   ["topbar", "botblock"].forEach(function(id){ $(id).classList.remove("hide"); });
   clearTimeout(barTimer);
-  /* Embed lanes: taps land inside the iframe, so the bars must NEVER
-     auto-hide there — otherwise switching servers/episodes is unreachable. */
   if (isEmbedLane()) return;
   barTimer = setTimeout(function(){
     if (!video.paused) ["topbar", "botblock"].forEach(function(id){ $(id).classList.add("hide"); });
   }, 3500);
 }
 $("vw").addEventListener("click", function(e){
-  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".rcard") || e.target.closest("#settings") || e.target.closest("#epsheet")) return;
+  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".sheet") || e.target.closest("#btnCloudFloat")) return;
   pokeBars();
 });
 ["topbar", "botblock"].forEach(function(id){ $(id).addEventListener("pointermove", pokeBars); });
@@ -665,6 +794,9 @@ video.addEventListener("play", function(){ $("pausedOv").classList.add("hidden")
 video.addEventListener("pause", function(){ if (isNativeLane()) $("pausedOv").classList.remove("hidden"); updatePlayIco(); pokeBars(); });
 video.addEventListener("playing", function(){ showSpin(false); });
 video.addEventListener("waiting", function(){ showSpin(true); });
+video.addEventListener("error", function(){
+  if (isNativeLane() && !hlsFailed) { hlsFailed = true; failoverFrom(curServer, serverName(curServer) + " ka stream nahi chala"); }
+});
 video.addEventListener("ended", function(){ if (setAutoNext && MEDIA_TYPE === "tv") stepEpisode(1); });
 video.addEventListener("timeupdate", function(){
   if (!isFinite(video.duration) || !video.duration) return;
@@ -709,35 +841,30 @@ video.addEventListener("dblclick", function(e){
   video.currentTime += (e.clientX - r.left) > r.width / 2 ? 10 : -10;
 });
 document.addEventListener("keydown", function(e){
-  if ($("stage").classList.contains("hidden")) return;
+  if ($("stage").classList.contains("hidden") || !isNativeLane()) return;
   if (e.code === "Space") { e.preventDefault(); togglePlay(); }
   if (e.key === "ArrowRight") video.currentTime += 10;
   if (e.key === "ArrowLeft") video.currentTime -= 10;
 });
+$("btnPrevEp").addEventListener("click", function(){ stepEpisode(-1); });
+$("btnNextEp").addEventListener("click", function(){ stepEpisode(1); });
 
-/* ============ audio / subtitle cards ============ */
-/* Observed Orion (Nova) lists — reference rows; the embed's own buttons apply them */
-var ORION_AUDIO = ["Original Audio", "English sub", "Arabic dub", "English dub", "French dub", "German dub", "Italian dub", "Russian dub", "Spanish dub", "Russian sub", "Spanish sub", "esla dub", "ptbr dub", "ukr dub"];
-var ORION_SUBS_MAIN = ["\u0627\u0644\u0639\u0631\u0628\u064a\u0629", "\u09ac\u09be\u0982\u09b2\u09be", "English", "Filipino", "Fran\u00e7ais", "\u0939\u093f\u0928\u094d\u0926\u0940", "Indonesia", "\u65e5\u672c\u8a9e", "\ud55c\uad6d\uc5b4", "Portugu\u00eas", "Espa\u00f1ol", "\u0ba4\u0bae\u0bbf\u0bb4\u0bcd", "\u0c24\u0c46\u0c32\u0c41\u0c17\u0c41", "\u0627\u0631\u062f\u0648", "\u4e2d\u6587"];
-var ORION_SUBS_EXTRA = ["English 1", "English 2", "English 3", "English 4", "Brazilian 1", "Brazilian 2", "Brazilian 3", "Brazilian 4", "Brazilian 5", "Bulgarian", "Croatian", "Czech 1", "Czech 2", "Czech 3", "Czech 4", "Czech 5", "Czech 6", "Czech 7", "Czech 8", "Czech 9", "Czech 10", "Czech 11", "Czech 12", "Czech 13", "Czech 14", "Czech 15", "Czech 16", "Czech 17", "Czech 18", "Czech 19", "Czech 20", "Czech 21"];
-function renderAudioCard(){
-  var body = $("audioCardBody");
+/* ============ audio / subtitle sheets: native lanes, REAL tracks only ============ */
+function renderAudioSheet(){
+  var body = $("audioSheetBody");
   if (isNativeLane() && hls && hls.audioTracks && hls.audioTracks.length) {
     body.innerHTML = hls.audioTracks.map(function(t, i){
       return '<button class="opt' + (hls.audioTrack === i ? " sel" : "") + '" data-au="' + i + '"><span>' + (t.name || ("Audio " + (i + 1))) + "</span>" + (hls.audioTrack === i ? '<span class="ck">✓</span>' : "") + "</button>";
     }).join("");
     Array.prototype.forEach.call(body.querySelectorAll("[data-au]"), function(b){
-      b.addEventListener("click", function(){ hls.audioTrack = parseInt(b.getAttribute("data-au"), 10); renderAudioCard(); });
+      b.addEventListener("click", function(){ hls.audioTrack = parseInt(b.getAttribute("data-au"), 10); closeAllSheets(); });
     });
   } else {
-    body.innerHTML = '<p class="cardnote">Ye tracks <b>Nova (Orion)</b> ke andar hain — inhen embed ke apne Audio button se badlo.</p>' +
-      ORION_AUDIO.map(function(t, i){
-        return '<button class="opt' + (i === 0 ? " sel" : "") + '"><span>' + t + "</span>" + (i === 0 ? '<span class="ck">✓</span>' : "") + "</button>";
-      }).join("");
+    body.innerHTML = '<p class="cardnote">Is stream me koi audio track nahi hai. Embed servers par audio embed ke apne button se badalti hai.</p>';
   }
 }
-function renderSubsCard(){
-  var body = $("subsCardBody");
+function renderSubsSheet(){
+  var body = $("subsSheetBody");
   if (isNativeLane() && video.textTracks && video.textTracks.length) {
     var h = '<button class="opt" data-sub="-1"><span>Off</span></button>';
     for (var i = 0; i < video.textTracks.length; i++) {
@@ -748,34 +875,27 @@ function renderSubsCard(){
       b.addEventListener("click", function(){
         var idx = parseInt(b.getAttribute("data-sub"), 10);
         for (var j = 0; j < video.textTracks.length; j++) video.textTracks[j].mode = (j === idx) ? "showing" : "disabled";
-        closeAllPanels();
+        closeAllSheets();
       });
     });
   } else {
-    body.innerHTML = '<button class="opt"><span>Upload subtitle</span></button><button class="opt"><span>Off</span></button>' +
-      ORION_SUBS_MAIN.map(function(t, i){
-        return '<button class="opt' + (t === "English" ? " sel" : "") + '"><span>' + t + "</span>" + (t === "English" ? '<span class="ck">✓</span>' : "") + "</button>";
-      }).join("") +
-      ORION_SUBS_EXTRA.map(function(t){ return '<button class="opt"><span>' + t + "</span></button>"; }).join("") +
-      '<p class="cardnote">Ye subtitles <b>Nova</b> ke andar hain — embed ke apne Subtitle button se badlo.</p>';
+    body.innerHTML = '<p class="cardnote">Is stream me koi subtitle track nahi hai. Embed servers par subtitles embed ke apne button se badalti hain.</p>';
   }
 }
-$("btnAudio").addEventListener("click", function(){ renderAudioCard(); toggleCard("audioCard"); });
-$("btnSubs").addEventListener("click", function(){ renderSubsCard(); toggleCard("subsCard"); });
-$("btnSubStyle").addEventListener("click", function(){ toast("Is test me subtitle style nahi hai"); });
-$("btnSubDelay").addEventListener("click", function(){ toast("Is test me subtitle delay nahi hai"); });
+$("btnAudio").addEventListener("click", function(){ renderAudioSheet(); closeAllSheets(); $("audioSheet").classList.remove("hidden"); });
+$("btnSubs").addEventListener("click", function(){ renderSubsSheet(); closeAllSheets(); $("subsSheet").classList.remove("hidden"); });
 
-/* ============ settings sheet (main list + sub-panels) ============ */
-var setView = "main", setSub = null;
+/* ============ settings: accordion, all closed by default, one open at a time ============ */
+/* Dummy rows are GONE: Download / Auto-Skip-Intro (toasts in v2) do not exist.
+   Every remaining row changes something real on a native lane. */
+var setView = "main", setSub = null, openSec = null;
 function ico(path){ return '<svg viewBox="0 0 24 24"><path d="' + path + '"/></svg>'; }
 var ICONS = {
   server: "M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z",
   quality: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z",
   subs: "M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 7H9.5v-.5h-2v3h2v-.5H11v1H6V9h5v2zm7 0h-1.5v-.5h-2v3h2v-.5H18v1h-5V9h5v2z",
   audio: "M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zM16 4l4 3-4 3v-2h-2v-2h2z",
-  download: "M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z",
   play: "M8 5v14l11-7z",
-  skip: "M6 6h2v12H6zm3.5 6l8.5 6V6z",
   tap: "M9 11.24V7.5A2.5 2.5 0 0 1 11.5 5c.54 0 1.05.21 1.43.59l1.7 1.7 3.54-.37a1.5 1.5 0 0 1 1.32 2.23l-1.9 4.08c-.5 1.07-1.58 1.77-2.77 1.77H11v-3.5l-2 1.74z"
 };
 function srow(iconKey, label, value, action, extra){
@@ -784,56 +904,45 @@ function srow(iconKey, label, value, action, extra){
 function trow(iconKey, label, on, action){
   return '<button class="srow" data-act="' + action + '"><span class="ic">' + ico(ICONS[iconKey]) + '</span><span class="lb">' + label + '</span><span class="tgl' + (on ? " on" : "") + '">' + (on ? "On" : "Off") + '</span></button>';
 }
+function hasQuality(){ return !!(isNativeLane() && hls && hls.levels && hls.levels.length); }
+function hasAudio(){ return !!(isNativeLane() && hls && hls.audioTracks && hls.audioTracks.length); }
+function hasSubs(){ return !!(isNativeLane() && video.textTracks && video.textTracks.length); }
+function accSection(key, title, bodyHtml){
+  var open = openSec === key;
+  return '<div class="acc' + (open ? " open" : "") + '" data-acc="' + key + '"><button class="acc-head" data-acc-head="' + key + '"><span>' + title + '</span><span class="chev">›</span></button><div class="acc-body">' + (open ? bodyHtml : "") + "</div></div>";
+}
 function renderSettings(){
   var body = $("setBody");
   if (setView === "main") {
-    var h = '<div class="sec">Source</div>';
-    h += srow("server", "Server", serverName(curServer), "servers");
-    h += '<div class="sec">Media</div>';
-    h += srow("quality", "Quality", "Auto", "quality");
-    h += srow("subs", "Subtitles", "English", "subs");
-    h += srow("audio", "Audio", "English", "audio");
-    h += '<div class="sec">Playback</div>';
-    h += srow("download", "Download", "", "download");
-    if (MEDIA_TYPE === "tv") h += trow("play", "Auto Play Next Episode", setAutoNext, "autonext");
-    h += trow("skip", "Auto Skip Intro", false, "skipintro");
-    h += trow("tap", "Double-tap to Seek", setDoubleTap, "doubletap");
-    body.innerHTML = h;
+    var srcBody = srow("server", "Server", serverName(curServer), "servers");
+    var mediaBody = "";
+    if (hasQuality()) mediaBody += srow("quality", "Quality", "Auto", "quality");
+    if (hasSubs()) mediaBody += srow("subs", "Subtitles", "", "subs");
+    if (hasAudio()) mediaBody += srow("audio", "Audio", "", "audio");
+    if (!mediaBody) mediaBody = '<p class="cardnote">Is stream me quality/subtitle/audio ki koi track nahi hai — jo kuch hai wo player ke andar se badalta hai.</p>';
+    var playBody = "";
+    if (MEDIA_TYPE === "tv") playBody += trow("play", "Auto Play Next Episode", setAutoNext, "autonext");
+    playBody += trow("tap", "Double-tap to Seek", setDoubleTap, "doubletap");
+    body.innerHTML = accSection("source", "Source", srcBody) + accSection("media", "Media", mediaBody) + accSection("playback", "Playback", playBody);
   } else {
     var title = { quality: "Quality", subs: "Subtitles", audio: "Audio" }[setSub] || "";
     var h2 = '<div class="subhead"><button class="bk" id="setBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><h3>' + title + '</h3></div>';
-    if (setSub === "quality") {
-      if (isNativeLane() && hls && hls.levels && hls.levels.length) {
-        h2 += '<button class="srow" data-q="-1"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span><span class="vl">✓</span></button>';
-        hls.levels.forEach(function(lv, i){
-          h2 += '<button class="srow" data-q="' + i + '"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">' + (lv.height ? lv.height + "p" : "Level " + (i + 1)) + '</span></button>';
-        });
-      } else {
-        h2 += '<button class="srow"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span><span class="vl">✓</span></button><p class="cardnote">Quality is server ke liye Auto hai — quality embed ke andar se badalti hai.</p>';
+    if (setSub === "quality" && hasQuality()) {
+      h2 += '<button class="srow" data-q="-1"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span><span class="vl">✓</span></button>';
+      hls.levels.forEach(function(lv, i){
+        h2 += '<button class="srow" data-q="' + i + '"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">' + (lv.height ? lv.height + "p" : "Level " + (i + 1)) + "</span></button>";
+      });
+    } else if (setSub === "audio" && hasAudio()) {
+      h2 += hls.audioTracks.map(function(t, i){
+        return '<button class="srow" data-au="' + i + '"><span class="ic">' + ico(ICONS.audio) + '</span><span class="lb">' + (t.name || ("Audio " + (i + 1))) + "</span>" + (hls.audioTrack === i ? '<span class="vl">✓</span>' : "") + "</button>";
+      }).join("");
+    } else if (setSub === "subs" && hasSubs()) {
+      h2 += '<button class="srow" data-sub="-1"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">Off</span></button>';
+      for (var i = 0; i < video.textTracks.length; i++) {
+        h2 += '<button class="srow" data-sub="' + i + '"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">' + (video.textTracks[i].label || ("Subtitle " + (i + 1))) + "</span></button>";
       }
-    } else if (setSub === "audio") {
-      if (isNativeLane() && hls && hls.audioTracks && hls.audioTracks.length) {
-        h2 += hls.audioTracks.map(function(t, i){
-          return '<button class="srow" data-au="' + i + '"><span class="ic">' + ico(ICONS.audio) + '</span><span class="lb">' + (t.name || ("Audio " + (i + 1))) + "</span>" + (hls.audioTrack === i ? '<span class="vl">✓</span>' : "") + "</button>";
-        }).join("");
-      } else {
-        h2 += '<p class="cardnote">Ye tracks <b>Nova (Orion)</b> ke andar hain — embed ke apne Audio button se badlo.</p>' +
-          ORION_AUDIO.map(function(t, i){
-            return '<button class="srow"><span class="ic">' + ico(ICONS.audio) + '</span><span class="lb">' + t + "</span>" + (i === 0 ? '<span class="vl">✓</span>' : "") + "</button>";
-          }).join("");
-      }
-    } else if (setSub === "subs") {
-      if (isNativeLane() && video.textTracks && video.textTracks.length) {
-        h2 += '<button class="srow" data-sub="-1"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">Off</span></button>';
-        for (var i = 0; i < video.textTracks.length; i++) {
-          h2 += '<button class="srow" data-sub="' + i + '"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">' + (video.textTracks[i].label || ("Subtitle " + (i + 1))) + "</span></button>";
-        }
-      } else {
-        h2 += '<p class="cardnote">Ye subtitles <b>Nova</b> ke andar hain — embed ke apne Subtitle button se badlo.</p>' +
-          ORION_SUBS_MAIN.map(function(t){
-            return '<button class="srow"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">' + t + "</span>" + (t === "English" ? '<span class="vl">✓</span>' : "") + "</button>";
-          }).join("");
-      }
+    } else {
+      h2 += '<p class="cardnote">Is stream me is ki koi track nahi hai.</p>';
     }
     body.innerHTML = h2;
     var bk = $("setBack");
@@ -852,85 +961,35 @@ function renderSettings(){
       });
     });
   }
+  Array.prototype.forEach.call(body.querySelectorAll("[data-acc-head]"), function(b){
+    b.addEventListener("click", function(){
+      var key = b.getAttribute("data-acc-head");
+      openSec = (openSec === key) ? null : key;
+      renderSettings();
+    });
+  });
   Array.prototype.forEach.call(body.querySelectorAll("[data-act]"), function(b){
     b.addEventListener("click", function(){
       var act = b.getAttribute("data-act");
-      if (act === "servers") { $("settings").classList.add("hidden"); toggleCard("srvCard"); }
+      if (act === "servers") { $("settings").classList.add("hidden"); openSrvPanel(); }
       else if (act === "quality" || act === "subs" || act === "audio") { setView = "sub"; setSub = act; renderSettings(); }
-      else if (act === "download") { toast("Is test me download nahi hai"); }
       else if (act === "autonext") { setAutoNext = !setAutoNext; renderSettings(); }
-      else if (act === "skipintro") { toast("Is test me intro skip nahi hai"); }
       else if (act === "doubletap") { setDoubleTap = !setDoubleTap; renderSettings(); }
     });
   });
 }
-$("btnSet").addEventListener("click", function(){ setView = "main"; renderSettings(); closeAllPanels(); $("settings").classList.remove("hidden"); });
+$("btnSet").addEventListener("click", function(){ setView = "main"; openSec = null; renderSettings(); closeAllSheets(); $("settings").classList.remove("hidden"); });
 $("btnCloseSet").addEventListener("click", function(){ $("settings").classList.add("hidden"); });
 
-/* ============ episodes: big touch targets, season tabs, prev/next ============ */
-var curSeason = MEDIA_SEASON;
-function epCount(season){ return META.seasons ? (META.seasons[season] || 0) : 0; }
-function epName(season, ep){
-  if (META.epNames && META.epNames[season] && META.epNames[season][ep - 1]) return META.epNames[season][ep - 1];
-  return "Episode " + ep;
-}
-function renderEpSheet(){
-  $("epSheetTitle").textContent = META.title + " — Episodes";
-  var sh = "";
-  var seasons = META.seasons ? Object.keys(META.seasons).map(Number).sort(function(a, b){ return a - b; }) : [1];
-  seasons.forEach(function(sn){
-    sh += '<button class="' + (sn === curSeason ? "sel" : "") + '" data-season="' + sn + '">Season ' + sn + "</button>";
-  });
-  $("seasRow").innerHTML = sh;
-  Array.prototype.forEach.call($("seasRow").querySelectorAll("[data-season]"), function(b){
-    b.addEventListener("click", function(){ curSeason = parseInt(b.getAttribute("data-season"), 10); renderEpSheet(); });
-  });
-  var gh = "", n = epCount(curSeason);
-  for (var ep = 1; ep <= n; ep++) {
-    var sel = (curSeason === MEDIA_SEASON && ep === MEDIA_EPISODE);
-    gh += '<button class="epcard' + (sel ? " sel" : "") + '" data-ep="' + ep + '"><span class="n">EPISODE ' + ep + "</span><span class=\"t\">" + epName(curSeason, ep) + "</span></button>";
-  }
-  if (!n) gh = '<p class="cardnote">Is show ke episodes ki list demo data me nahi hai.</p>';
-  $("epGrid").innerHTML = gh;
-  Array.prototype.forEach.call($("epGrid").querySelectorAll("[data-ep]"), function(b){
-    b.addEventListener("click", function(){ switchEpisode(curSeason, parseInt(b.getAttribute("data-ep"), 10)); });
-  });
-  updateEpButtons();
-}
-function updateEpButtons(){
-  var n = epCount(MEDIA_SEASON), hasPrev = !(MEDIA_SEASON === 1 && MEDIA_EPISODE === 1);
-  var seasons = META.seasons ? Object.keys(META.seasons).map(Number) : [1];
-  var maxS = Math.max.apply(null, seasons);
-  var hasNext = (MEDIA_EPISODE < n) || (MEDIA_SEASON < maxS);
-  $("btnPrevEp").disabled = !hasPrev; $("btnNextEp").disabled = !hasNext;
-  $("btnPrevEp2").disabled = !hasPrev; $("btnNextEp2").disabled = !hasNext;
-}
-function switchEpisode(s, e){
-  MEDIA_SEASON = s; MEDIA_EPISODE = e; curSeason = s;
-  var q = new URLSearchParams(location.search);
-  q.set("type", "tv"); q.set("tmdb", MEDIA_TMDB); q.set("s", String(s)); q.set("e", String(e));
-  history.replaceState(null, "", location.pathname + "?" + q.toString());
-  closeAllPanels();
-  openPlayer(curServer || "vidstuck");
-}
-function stepEpisode(dir){
-  var n = epCount(MEDIA_SEASON);
-  var s = MEDIA_SEASON, e = MEDIA_EPISODE + dir;
-  if (e < 1) { s = s - 1; e = epCount(s); }
-  if (e > n) { s = s + 1; e = 1; }
-  if (s < 1 || !epCount(s)) return;
-  switchEpisode(s, e);
-}
-$("btnPrevEp").addEventListener("click", function(){ stepEpisode(-1); });
-$("btnNextEp").addEventListener("click", function(){ stepEpisode(1); });
-$("btnPrevEp2").addEventListener("click", function(){ stepEpisode(-1); });
-$("btnNextEp2").addEventListener("click", function(){ stepEpisode(1); });
-$("epHint") && $("epHint").addEventListener("click", function(){});
+/* Opening any panel cancels a pending embed auto-advance (user is managing it) */
+["srvPanel", "settings", "audioSheet", "subsSheet"].forEach(function(id){
+  $(id).addEventListener("click", function(){ disarmWatchdog(); }, true);
+});
 
 /* ============ deep link: ?play=1 auto-opens best server ============ */
 if (qp.get("play") === "1") {
   var iv = setInterval(function(){
-    if (bestIdx >= 0) { clearInterval(iv); openPlayer(SERVERS[bestIdx].id); }
+    if (bestIdx >= 0) { clearInterval(iv); openPlayer(SERVERS[bestIdx].id, false); }
   }, 500);
   setTimeout(function(){ clearInterval(iv); }, 12000);
 }
