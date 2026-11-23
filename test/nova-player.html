@@ -297,6 +297,7 @@ function probeRW(srv){
     if (d) return d;
     return fetchJSONProxy(url, 8000);
   }).then(function(d){
+    if (!d) return { ok: false, streams: [], unreachable: true };
     d = stripPreviews(d);
     var list = [];
     if (d) {
@@ -323,13 +324,14 @@ function pillFor(srv, st){
   if (st === "ready") return '<span class="pill ready">Ready</span>';
   if (st === "streams") return '<span class="pill ready">' + PROBE[srv.id].streams.length + " streams</span>";
   if (st === "none") return '<span class="pill none">No streams</span>';
+  if (st === "unreach") return '<span class="pill">Check nahi hua</span>';
   return '<span class="pill">Open</span>';
 }
 function renderSrvList(){
   var h = "";
   SERVERS.forEach(function(srv, i){
     var p = PROBE[srv.id];
-    var st = p === undefined ? "checking" : (srv.rw ? (p.ok ? "streams" : "none") : "ready");
+    var st = p === undefined ? "checking" : (srv.rw ? (p.unreachable ? "unreach" : (p.ok ? "streams" : "none")) : "ready");
     var best = (i === bestIdx);
     h += '<button class="srvrow' + (best ? " best" : "") + '" data-srv="' + srv.id + '">' +
       '<span><span class="nm">' + srv.name + "</span><br>" +
@@ -473,9 +475,13 @@ function backToLauncher(){
 
 /* ============ cloud bars: auto-hide ============ */
 var barTimer = null;
+function isEmbedLane(){ return !frame.classList.contains("hidden"); }
 function pokeBars(){
   ["topbar", "botbar"].forEach(function(id){ $(id).classList.remove("hide"); });
   clearTimeout(barTimer);
+  /* Embed lanes: taps land inside the iframe, so the bars must NEVER
+     auto-hide there — otherwise server/episode switching is unreachable. */
+  if (isEmbedLane()) return;
   barTimer = setTimeout(function(){
     if (video.paused && !video.classList.contains("hidden")) return;
     ["topbar", "botbar"].forEach(function(id){ $(id).classList.add("hide"); });
@@ -532,14 +538,14 @@ Array.prototype.forEach.call(document.querySelectorAll(".acc>button"), function(
     if (!was) acc.classList.add("open");
   });
 });
-function openAcc(name){
+function openAcc(name, openIt){
   openSheet("setSheet");
-  Array.prototype.forEach.call(document.querySelectorAll(".acc"), function(a){ a.classList.toggle("open", a.getAttribute("data-acc") === name); });
+  Array.prototype.forEach.call(document.querySelectorAll(".acc"), function(a){ a.classList.toggle("open", openIt && a.getAttribute("data-acc") === name); });
 }
-$("btnSet").addEventListener("click", function(){ refreshAccordions(); openAcc("server"); });
-$("btnSrvTop").addEventListener("click", function(){ refreshAccordions(); openAcc("server"); });
-$("btnAudio").addEventListener("click", function(){ refreshAccordions(); openAcc("audio"); });
-$("btnSubs").addEventListener("click", function(){ refreshAccordions(); openAcc("subs"); });
+$("btnSet").addEventListener("click", function(){ refreshAccordions(); openAcc("server", false); });
+$("btnSrvTop").addEventListener("click", function(){ refreshAccordions(); openAcc("server", false); });
+$("btnAudio").addEventListener("click", function(){ refreshAccordions(); openAcc("audio", true); });
+$("btnSubs").addEventListener("click", function(){ refreshAccordions(); openAcc("subs", true); });
 
 /* observed Orion (Nova) audio + subtitle lists — reference rows, embed controls apply them */
 var ORION_AUDIO = ["Original Audio", "Arabic sub", "French dub", "Hindi dub", "Kurdish sub", "Portuguese sub", "Russian dub", "Russian sub", "Spanish sub", "Spanish dub", "esla dub", "ptbr dub", "ukr dub"];
@@ -550,7 +556,7 @@ function refreshAccordions(){
   var h = "";
   SERVERS.forEach(function(srv){
     var p = PROBE[srv.id];
-    var st = p === undefined ? "Checking…" : (srv.rw ? (p.ok ? p.streams.length + " streams" : "No streams") : "Embed");
+    var st = p === undefined ? "Checking…" : (srv.rw ? (p.unreachable ? "Check nahi hua" : (p.ok ? p.streams.length + " streams" : "No streams")) : "Embed");
     h += '<button class="optrow' + (srv.id === curServer ? " sel" : "") + '" data-switch="' + srv.id + '"><span>' + srv.name + '</span><span class="tag">' + st + "</span>" + (srv.id === curServer ? '<span class="ck">✓</span>' : "") + "</button>";
   });
   $("accSrvBody").innerHTML = h;
