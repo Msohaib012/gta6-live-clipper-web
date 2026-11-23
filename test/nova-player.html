@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.1</title>
+<title>Nova Player — Test Preview v6.2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&display=swap" rel="stylesheet">
@@ -30,7 +30,8 @@ svg{display:block;fill:currentColor}
 #grad{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;
   background:linear-gradient(to top,rgba(0,0,0,.8),transparent,rgba(0,0,0,.4));z-index:30}
 #vw.embed #grad{display:none}
-#vw.embed #topbar{background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent)}
+#vw.embed #topbar{background:#000}
+#vw.embed #topbar .ttblock{display:none}
 
 /* ===== control buttons (cP) ===== */
 .cbtn{position:relative;display:flex;align-items:center;justify-content:center;color:var(--fg);
@@ -40,7 +41,8 @@ svg{display:block;fill:currentColor}
 .cbtn .tip{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:8px;white-space:nowrap;
   border-radius:2px;background:rgba(0,0,0,.8);backdrop-filter:blur(20px);padding:4px 8px;font-size:14px;line-height:20px;
   opacity:0;transition:opacity .15s;pointer-events:none;z-index:50}
-.cbtn:hover .tip,.cbtn.tipshow .tip{opacity:1}
+@media (hover:hover){.cbtn:hover .tip{opacity:1}}
+.cbtn.tipshow .tip{opacity:1}
 .cbtn .tip.below{bottom:auto;top:100%;margin-bottom:0;margin-top:8px}
 @media (min-width:768px){.cbtn svg{width:32px;height:32px}}
 @media (min-width:1024px){.cbtn svg{width:40px;height:40px}}
@@ -342,6 +344,7 @@ svg{display:block;fill:currentColor}
 .acc-head:hover{background:rgba(38,38,38,.7)}
 @media (min-width:768px){.acc-head{font-size:16px;line-height:24px}}
 .acc-head .chev{transition:transform .2s;color:var(--mut)}
+.acc-head .acc-val{margin-left:auto;margin-right:10px;min-width:0;max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:16px;font-weight:400;color:var(--mut)}
 .acc-head .chev svg{width:18px;height:18px}
 .acc.open .acc-head .chev{transform:rotate(90deg)}
 .acc-body{display:none;padding:2px 0 6px}
@@ -389,9 +392,10 @@ svg{display:block;fill:currentColor}
 .epcard.sel{outline:2px solid var(--red);outline-offset:1px;background:rgba(38,38,38,.6)}
 .epcard .th{position:relative;aspect-ratio:16/9;border-radius:6px;background:var(--zinc900);
   display:flex;align-items:center;justify-content:center;overflow:hidden}
+.epcard .th img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .epcard .th b{font-size:36px;line-height:40px;font-weight:700;color:#3f3f46}
 .epcard.sel .th b{color:var(--fg)}
-.epcard .th .now{position:absolute;left:6px;bottom:6px;background:var(--red);border-radius:4px;
+.epcard .th .now{position:absolute;z-index:2;left:6px;bottom:6px;background:var(--red);border-radius:4px;
   padding:2px 6px;font-size:10px;line-height:14px;font-weight:600}
 .epcard .en{margin-top:8px;font-size:13px;line-height:18px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .epcard .em{font-size:12px;line-height:16px;color:var(--mut)}
@@ -556,8 +560,9 @@ svg{display:block;fill:currentColor}
   <div id="toast" class="hidden"><span id="toastTxt"></span><button id="toastX" aria-label="Dismiss">×</button></div>
 </div>
 <script>
-/* ============ v6: v5 + side-by-side fix round (D1 logo/backdrop URLs, D2 desktop
-   time labels, D3 demo genres, D4 hidden-bars first interaction, D5 servers footer).
+/* ============ v6.2: v6.1 + phone defects from his screenshots (embed ghost title,
+   stuck button labels, settings value previews, episode stills, watchdog re-arm).
+   D1-D5 from v6 stay as they were.
    Own implementation; style values (colors/sizes/spacing/fonts) follow the
    extracted Vidstuck rules. No Vidstuck code, logo, or brand assets copied.
    No TMDB key anywhere in this file. ============ */
@@ -582,7 +587,8 @@ var DEMO = {
     logo: "https://image.tmdb.org/t/p/original/uyVM5qGksUzCgwo6UU0UrHex8Oj.png",
     bg: "https://image.tmdb.org/t/p/w780/9P4IIMYY3HifqeruZq0ZZ9g7YUi.jpg",
     seasons: { 1: 8, 2: 9, 3: 8, 4: 9, 5: 8 },
-    epNames: { 1: ["Chapter One: The Vanishing of Will Byers", "Chapter Two: The Weirdo on Maple Street", "Chapter Three: Holly, Jolly", "Chapter Four: The Body", "Chapter Five: The Flea and the Acrobat", "Chapter Six: The Monster", "Chapter Seven: The Bathtub", "Chapter Eight: The Upside Down"] } }
+    epNames: { 1: ["Chapter One: The Vanishing of Will Byers", "Chapter Two: The Weirdo on Maple Street", "Chapter Three: Holly, Jolly", "Chapter Four: The Body", "Chapter Five: The Flea and the Acrobat", "Chapter Six: The Monster", "Chapter Seven: The Bathtub", "Chapter Eight: The Upside Down"] },
+    epStills: { 1: ["https://image.tmdb.org/t/p/w300/6jSA6JpxNDV63aDXpmsUFCjCINb.jpg", "https://image.tmdb.org/t/p/w300/8iA56ugQyHZmX81wSsNqwXjCE6F.jpg", "https://image.tmdb.org/t/p/w300/5snULpWQWp7aqFto7UbRcEkEyyS.jpg", "https://image.tmdb.org/t/p/w300/60wmC1e20HV8gu688GAhsWxqxPx.jpg", "https://image.tmdb.org/t/p/w300/exT4NW9EdXG1qLZHKJnRpq3gh1H.jpg", "https://image.tmdb.org/t/p/w300/lNS6qycyucewz3duTr1tf1LU688.jpg", "https://image.tmdb.org/t/p/w300/arjP5c4qHLznbujCrrBVz4Z8Ykl.jpg", "https://image.tmdb.org/t/p/w300/1teJ5dbuepfqOOs9uYhYTUjr2qs.jpg"] } }
 };
 var META = DEMO[MEDIA_TMDB] || {
   title: qp.get("title") || ("Title " + MEDIA_TMDB), kind: MEDIA_TYPE === "tv" ? "Series" : "Movie",
@@ -688,6 +694,8 @@ function closePops(){
   ["srvPanel", "audioSheet", "subsSheet"].forEach(function(id){ $(id).classList.add("hidden"); });
   $("popBk").classList.add("hidden");
   openPopId = null;
+  hideTips();
+  maybeRearmWatchdog();
 }
 function closeDrawers(){
   ["settings", "epDrawer"].forEach(function(id){
@@ -697,21 +705,23 @@ function closeDrawers(){
   $("drawerBk").classList.add("hidden");
   var sm = $("epSeasonMenu"); if (sm) sm.classList.add("hidden");
   openDrawerId = null;
+  hideTips();
+  maybeRearmWatchdog();
 }
 function closeAllSheets(){ closePops(); closeDrawers(); }
 function openPop(id){
-  disarmWatchdog();
   if (openPopId === id) { closePops(); return; }
   closeDrawers();
   closePops();
+  disarmWatchdog();
   $(id).classList.remove("hidden");
   $("popBk").classList.remove("hidden");
   openPopId = id;
 }
 function openDrawer(id){
-  disarmWatchdog();
   closePops();
   closeDrawers();
+  disarmWatchdog();
   $(id).classList.remove("hidden");
   $(id).style.transform = "";
   $("drawerBk").classList.remove("hidden");
@@ -971,7 +981,8 @@ function renderEpDrawer(scrollToCurrent){
     h += '<div class="epgrid">';
     for (var ep = 1; ep <= n; ep++) {
       var sel = (curSeason === MEDIA_SEASON && ep === MEDIA_EPISODE);
-      h += '<button class="epcard' + (sel ? " sel" : "") + '" data-ep="' + ep + '"><span class="th"><b>' + ep + '</b>' + (sel ? '<span class="now">Now Playing</span>' : '') + '</span>' +
+      var still = (META.epStills && META.epStills[curSeason] && META.epStills[curSeason][ep - 1]) || "";
+      h += '<button class="epcard' + (sel ? " sel" : "") + '" data-ep="' + ep + '"><span class="th">' + (still ? '<img src="' + still + '" alt="" loading="lazy" onerror="this.remove()">' : '') + '<b>' + ep + '</b>' + (sel ? '<span class="now">Now Playing</span>' : '') + '</span>' +
            '<span class="en" style="display:block">' + epName(curSeason, ep) + '</span>' +
            '<span class="em" style="display:block">Episode ' + ep + '</span></button>';
     }
@@ -1117,6 +1128,18 @@ function disarmWatchdog(){
   $("toast").classList.add("hidden");
   clearTimeout(toast._to);
 }
+/* Re-arm after a panel is dismissed: opening a panel disarms the watchdog
+   (intended — a user picking a server must not be yanked mid-choice), but
+   dismissing the panel without choosing left an embed lane with no timeout
+   at all. Re-arm only for a live embed lane behind a hidden launcher. */
+function maybeRearmWatchdog(){
+  if (watchdogArmed) return;
+  if (!isEmbedLane()) return;
+  if (!$("launcher").classList.contains("hidden")) return;
+  var src = $("frm").getAttribute("src") || "";
+  if (!src || src === "about:blank") return;
+  armWatchdog(curServer);
+}
 function armWatchdog(srv){
   cancelWatchdog();
   watchdogArmed = true;
@@ -1218,6 +1241,7 @@ function syncPausedOv(){
   $("pausedOv").classList.toggle("show", show);
 }
 function setBars(visible){
+  hideTips();
   barsHidden = !visible;
   ["topbar", "botblock", "centerCtl"].forEach(function(id){ $(id).classList.toggle("hide", !visible); });
   $("cueWrap").classList.toggle("bars", visible);
@@ -1376,12 +1400,28 @@ var VOL_ON = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5
 var VOL_OFF = '<svg viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06A7 7 0 0 1 19 12zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>';
 function syncVolIcon(){ $("btnMute").querySelector("svg").outerHTML = video.muted || video.volume === 0 ? VOL_OFF : VOL_ON; }
 function toggleMute(){ video.muted = !video.muted; if (!video.muted && video.volume === 0) video.volume = 0.5; syncVolIcon(); }
+/* ============ control-button tooltips: transient on touch, never stuck ============
+   Tips used to show on :hover only, which sticks after a tap on touch screens
+   (there is no mouseleave). Hover tips are gated to (hover:hover) devices in
+   CSS; every tap flashes the label via .tipshow + a timer that is always
+   re-armed, and any panel open/close or bars change hides all tips. */
+var tipTimer = null;
+function hideTips(){
+  clearTimeout(tipTimer); tipTimer = null;
+  var shown = document.querySelectorAll(".cbtn.tipshow");
+  for (var i = 0; i < shown.length; i++) shown[i].classList.remove("tipshow");
+}
+function flashTip(btn){
+  hideTips();
+  btn.classList.add("tipshow");
+  tipTimer = setTimeout(hideTips, 1200);
+}
+document.addEventListener("click", function(e){
+  var b = (e.target && e.target.closest) ? e.target.closest(".cbtn") : null;
+  if (b) flashTip(b); else hideTips();
+});
 $("btnMute").addEventListener("click", function(){
   toggleMute();
-  /* tap tooltip pill (touch has no hover): show briefly */
-  var b = $("btnMute");
-  b.classList.add("tipshow");
-  setTimeout(function(){ b.classList.remove("tipshow"); }, 1200);
 });
 $("volSlider").addEventListener("input", function(){ video.volume = parseFloat(this.value); video.muted = false; syncVolIcon(); });
 video.addEventListener("volumechange", syncVolIcon);
@@ -1512,10 +1552,10 @@ function trow(iconKey, label, on, action){
 function hasQuality(){ return !!(isNativeLane() && hls && hls.levels && hls.levels.length); }
 function hasAudio(){ return audioTracks().length > 0; }
 function hasSubs(){ return subTracks().length > 0; }
-function accSection(key, title, bodyHtml){
+function accSection(key, title, bodyHtml, preview){
   var open = openSec === key;
   var backRow = open ? '<button class="bkrow" data-acc-back="1"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span>Back to Settings</span></button>' : "";
-  return '<div class="acc' + (open ? " open" : "") + '"><button class="acc-head" data-acc-head="' + key + '"><span>' + title + '</span><span class="chev"><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span></button><div class="acc-body">' + (open ? backRow + bodyHtml : "") + '</div></div>';
+  return '<div class="acc' + (open ? " open" : "") + '"><button class="acc-head" data-acc-head="' + key + '"><span>' + title + '</span>' + (preview ? '<span class="acc-val">' + preview + '</span>' : '') + '<span class="chev"><svg viewBox="0 0 24 24"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></span></button><div class="acc-body">' + (open ? backRow + bodyHtml : "") + '</div></div>';
 }
 function currentSubLabel(){
   if (selectedSubIdx < 0) return "Off";
@@ -1552,9 +1592,20 @@ function renderSettings(){
     playBody += trow("loop", "Loop", setLoop, "loop");
     if (MEDIA_TYPE === "tv") playBody += trow("play", "Auto Play Next Episode", setAutoNext, "autonext");
     playBody += trow("tap", "Double-tap to Seek", setDoubleTap, "doubletap");
-    body.innerHTML = accSection("source", "Source", srcBody) +
-      '<hr class="sep">' + accSection("media", "Media", mediaBody) +
-      '<hr class="sep">' + accSection("playback", "Playback", playBody);
+    var srcPrev = serverName(curServer);
+    var mediaParts = [];
+    if (hasQuality()) mediaParts.push(qualityLabel);
+    if (hasAudio()) mediaParts.push(currentAudioLabel() || "Audio");
+    if (hasSubs()) mediaParts.push(currentSubLabel());
+    var mediaPrev;
+    if (mediaParts.length) mediaPrev = mediaParts.join(" · ");
+    else if (native) mediaPrev = (aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill") + " · " + brightnessVal + "%";
+    else mediaPrev = "Embed controls";
+    var playPrev = [(speedVal + "x").replace(".0x", "x"), "Loop " + (setLoop ? "On" : "Off")];
+    if (MEDIA_TYPE === "tv") playPrev.push("Auto Next " + (setAutoNext ? "On" : "Off"));
+    body.innerHTML = accSection("source", "Source", srcBody, srcPrev) +
+      '<hr class="sep">' + accSection("media", "Media", mediaBody, mediaPrev) +
+      '<hr class="sep">' + accSection("playback", "Playback", playBody, playPrev.join(" · "));
   } else if (setView === "servers") {
     body.innerHTML = srvListsHtml();
   } else if (setView === "quality" && hasQuality()) {
