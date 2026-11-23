@@ -266,7 +266,6 @@ svg{display:block;fill:currentColor}
    and overlapped the topbar by 14px (measured). Wider, taller, below the bar. */
 @media (max-width:767px){
   #srvPanel{width:min(340px,calc(100vw - 24px));top:92px;max-height:calc(100dvh - 170px)}
-  #srvPanel .popScroll{max-height:320px}
   .kid{padding:10px 12px}
 }
 .pop2{width:min(356px,calc(100vw - 24px));right:12px;bottom:150px;max-height:calc(100dvh - 230px)}
@@ -279,6 +278,9 @@ svg{display:block;fill:currentColor}
 #srvPanel .popScroll{max-height:200px}
 @media (min-width:768px){#srvPanel .popScroll{max-height:320px}}
 .pop2 .popScroll{max-height:320px}
+/* v6.3: this phone override must come AFTER the base 200px rule above
+   (same specificity — later wins). First placement lost to source order. */
+@media (max-width:767px){#srvPanel .popScroll{max-height:320px}}
 .srvsec{padding:10px 12px 2px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;
   letter-spacing:.08em;color:var(--mut)}
 .srv{display:flex;width:100%;flex-direction:column;align-items:stretch;text-align:left;border-radius:8px;
