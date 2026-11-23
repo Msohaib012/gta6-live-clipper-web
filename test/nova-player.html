@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nova-style Player — Test Preview v3</title>
+<title>Vidstuck Clone — Test Preview v4</title>
+<!-- VS-CLONE-V4 -->
 <style>
 :root{
   --bg:#000; --panel:#0a0a0a; --panel2:#0e0e0e; --row:#262626; --row2:#2e2e2e;
@@ -24,8 +25,10 @@ svg{display:block}
 #lauShade{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.45) 0%,rgba(0,0,0,.72) 55%,rgba(0,0,0,.94) 100%)}
 .floatIco{position:absolute;z-index:5;width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 .floatIco svg{width:30px;height:30px;fill:#fff;filter:drop-shadow(0 2px 8px rgba(0,0,0,.8))}
-#btnBackL{top:calc(22px + env(safe-area-inset-top));left:30px}
-#btnCloudL{top:calc(22px + env(safe-area-inset-top));right:26px}
+#btnBackL{top:calc(22px + env(safe-area-inset-top));left:35px}
+#btnBackL svg{width:28px;height:28px}
+#btnCloudL{top:calc(20px + env(safe-area-inset-top));right:30px}
+#btnCloudL svg{width:38px;height:38px}
 #lauCenter{position:absolute;z-index:4;left:0;right:0;top:50%;transform:translateY(-58%);display:flex;flex-direction:column;align-items:center;text-align:center;padding:0 20px}
 #logoImg{max-width:min(480px,84vw);max-height:112px;object-fit:contain;filter:drop-shadow(0 4px 24px rgba(0,0,0,.7))}
 #lauTitle{font-size:clamp(38px,6vw,64px);font-weight:800;letter-spacing:-.02em;line-height:1.05;text-shadow:0 4px 30px rgba(0,0,0,.8)}
@@ -46,7 +49,7 @@ svg{display:block}
 #vw video{object-fit:contain}
 #bigSpin{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;width:52px;height:52px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#fff;animation:sp .8s linear infinite}
 @keyframes sp{to{transform:translate(-50%,-50%) rotate(360deg)}}
-#topbar{position:absolute;top:0;left:0;right:0;height:88px;z-index:7;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 28px;transition:opacity .25s}
+#topbar{position:absolute;top:0;left:0;right:0;height:90px;z-index:7;background:#000;display:flex;align-items:center;justify-content:space-between;padding:0 28px;transition:opacity .25s}
 #topbar.hide,#botblock.hide{opacity:0;pointer-events:none}
 .tbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 .tbtn svg{width:28px;height:28px;fill:#fff}
@@ -70,8 +73,8 @@ svg{display:block}
 #seek{flex:1;appearance:none;-webkit-appearance:none;height:5px;border-radius:99px;background:#333;outline:none}
 #seek::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#fff;border:0}
 #seek::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:0}
-#ctlRow{display:flex;align-items:center;justify-content:space-between;min-height:64px}
-.ctlGroup{display:flex;align-items:center;gap:26px}
+#ctlRow{display:flex;align-items:center;justify-content:space-between;min-height:70px}
+.ctlGroup{display:flex;align-items:center;gap:28px}
 .cbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 .cbtn svg{width:31px;height:31px;fill:#fff}
 .cbtn:disabled{opacity:.35}
@@ -97,7 +100,10 @@ svg{display:block}
 .sheet .shead{display:flex;align-items:center;padding:8px 20px 12px;flex:none}
 .sheet .shead h3{font-size:22px;font-weight:800}
 .sheet .shead .x{margin-left:auto;width:44px;height:44px;font-size:20px;display:flex;align-items:center;justify-content:center}
-.sheet .sbody{overflow-y:auto;padding:0 16px calc(16px + env(safe-area-inset-bottom));flex:1;-webkit-overflow-scrolling:touch}
+.sheet .sbody{overflow-y:auto;padding:0 16px calc(16px + env(safe-area-inset-bottom));flex:1;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#2e2e2e transparent}
+.sheet .sbody::-webkit-scrollbar{width:6px}
+.sheet .sbody::-webkit-scrollbar-thumb{background:#2e2e2e;border-radius:99px}
+.sheet .sbody::-webkit-scrollbar-track{background:transparent}
 .sheet .sfoot{flex:none;padding:12px 16px calc(16px + env(safe-area-inset-bottom))}
 .sheet .sfoot button{width:100%;min-height:52px;border-radius:9px;background:var(--row);font-size:17px;font-weight:600}
 .bkrow{display:flex;align-items:center;gap:10px;width:100%;min-height:var(--tap);padding:8px 10px;border-radius:10px;font-size:16px;font-weight:700;text-align:left}
@@ -130,9 +136,18 @@ svg{display:block}
 .opt .ck{margin-left:auto;font-weight:700}
 .cardnote{font-size:13.5px;line-height:1.55;color:var(--mut);padding:10px}
 .sheet .foot{margin-top:10px;padding:12px 8px 2px;border-top:1px solid var(--border);text-align:center;color:var(--mut);font-size:14px}
+/* Vidstuck desktop geometry: Servers + Audio/Subtitles are RIGHT-SIDE cards;
+   Settings is the only centered sheet. Below 641px all cards become bottom sheets. */
+@media(min-width:641px){
+  #srvPanel{left:auto;right:25px;top:90px;bottom:auto;transform:none;width:370px;max-width:calc(100vw - 50px);height:440px;max-height:calc(100vh - 110px);border:1px solid #1c1c1c;border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.6)}
+  #audioSheet,#subsSheet{left:auto;right:25px;top:auto;bottom:250px;transform:none;width:360px;max-width:calc(100vw - 50px);max-height:min(380px,calc(100vh - 270px));border:1px solid #1c1c1c;border-radius:14px;box-shadow:0 14px 44px rgba(0,0,0,.6)}
+  #settings{top:88px;bottom:0;width:570px;max-width:calc(100vw - 32px);max-height:none;border-radius:18px 18px 0 0}
+  #srvPanel .grab,#audioSheet .grab,#subsSheet .grab{display:none}
+  #srvPanel .shead .x{display:none}
+}
 /* accordion */
 .acc{border-top:1px solid var(--border);margin-top:6px}
-.acc-head{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 10px;text-align:left;font-size:17px;font-weight:700}
+.acc-head{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:8px 10px;text-align:left;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
 .acc-head .chev{margin-left:auto;color:var(--mut);font-size:18px;transition:transform .15s}
 .acc.open .acc-head .chev{transform:rotate(90deg)}
 .acc-body{display:none;padding:2px 0 8px}
@@ -150,6 +165,8 @@ svg{display:block}
 .subhead{display:flex;align-items:center;gap:10px;padding:8px 6px 12px}
 .subhead .bk{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 .subhead .bk svg{width:24px;height:24px;fill:#fff}
+.subhead .bk{width:auto;gap:6px;padding:0 8px 0 2px}
+.subhead .bk span{font-size:16px;font-weight:700}
 .subhead h3{font-size:22px;font-weight:800}
 /* episodes */
 .epnav2{display:flex;gap:8px;margin:0 2px 12px}
@@ -234,11 +251,9 @@ svg{display:block}
       </div>
       <div id="ctlRow">
         <div class="ctlGroup" id="ctlLeft">
-          <button class="cbtn" id="btnPrevEp" aria-label="Previous episode"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>
           <button class="cbtn" id="btnPlay" aria-label="Play or pause"><svg viewBox="0 0 24 24" id="playIco"><path d="M8 5v14l11-7z"/></svg></button>
           <button class="cbtn" id="btnBack15" aria-label="Back 15 seconds"><svg viewBox="0 0 24 24"><path d="M12 5V2L7 6l5 4V7a5 5 0 1 1-5 5H4a7 7 0 1 0 8-7z"/><text x="12" y="16.5" text-anchor="middle" font-size="8" font-weight="800" fill="#fff">15</text></svg></button>
           <button class="cbtn" id="btnFwd15" aria-label="Forward 15 seconds"><svg viewBox="0 0 24 24"><path d="M12 5V2l5 4-5 4V7a5 5 0 1 0 5 5h2a7 7 0 1 1-8-7z"/><text x="12" y="16.5" text-anchor="middle" font-size="8" font-weight="800" fill="#fff">15</text></svg></button>
-          <button class="cbtn" id="btnNextEp" aria-label="Next episode"><svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 18l8.5-6L6 6z"/></svg></button>
           <span id="volwrap">
             <button class="cbtn" id="btnMute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg></button>
             <input type="range" id="volSlider" min="0" max="1" step="0.05" value="1" aria-label="Volume">
@@ -436,8 +451,9 @@ var probeDone = 0, probeTotal = 0;
   var cyc = 0, cycNames = rwServers.map(function(s){ return s.name; });
   var cycTimer = setInterval(function(){
     if (probeDone >= probeTotal) { clearInterval(cycTimer); return; }
-    var nm = cycNames[cyc % cycNames.length]; cyc++;
-    setStatus((cyc % 2 ? "CHECKING " : "CONNECTING TO ") + nm);
+    var si = Math.floor(cyc / 2) % cycNames.length, phase = cyc % 2; cyc++;
+    var nm = cycNames[si];
+    setStatus((phase ? "CONNECTING TO " : "CHECKING ") + nm);
     setSrc(nm);
   }, 900);
   var finished = false;
@@ -498,7 +514,7 @@ function srvRowHtml(srv){
       }
     }
   } else if (srv.id === "vidstuck") {
-    h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">Orion</span>' + (sel ? '<span class="st ck">✓</span>' : "") + '</span><span class="ds">Multi Audio Support</span></button>' +
+    h += '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span>' + (sel ? '<span class="st ck">✓</span>' : "") + '</span><span class="ds">' + srv.ds + '</span></button>' +
          '<div class="kids">' +
          '<button class="kid sel" data-srv="vidstuck"><span>360p</span><span class="st ok">Ready</span></button>' +
          '<button class="kid" data-srv="vidstuck"><span>480p</span><span class="st dim">Queue</span></button>' +
@@ -508,17 +524,21 @@ function srvRowHtml(srv){
   }
   return h;
 }
-function renderSrvPanel(){
-  var body = $("srvPanelBody"), sc = body ? body.scrollTop : 0;
-  var h = '<button class="bkrow" id="srvBackRow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span>Back to launcher</span></button>';
-  h += '<div class="srvsec">Our servers<span class="sub">Apna player — seek, subtitles, audio hamare controls se</span></div>';
+function srvListsHtml(){
+  var h = '<div class="srvsec">Our servers<span class="sub">Apna player — seek, subtitles, audio hamare controls se</span></div>';
   SERVERS.forEach(function(srv){ if (srv.lane === "native") h += srvRowHtml(srv); });
   h += '<div class="srvsec">Embed servers<span class="sub">Inke apne controls — seek/subtitles embed ke andar</span></div>';
   SERVERS.forEach(function(srv){ if (srv.lane === "embed") h += srvRowHtml(srv); });
+  return h;
+}
+function renderSrvPanel(){
+  var body = $("srvPanelBody"), sc = body ? body.scrollTop : 0;
+  var h = '<button class="bkrow" id="srvBackRow"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span>Back to launcher</span></button>';
+  h += srvListsHtml();
   if (MEDIA_TYPE === "tv") {
     h += '<div class="acc' + (epAccOpen ? " open" : "") + '" id="epAcc"><button class="acc-head" id="epAccHead"><span>Episodes</span><span class="chev">›</span></button><div class="acc-body" id="epAccBody"></div></div>';
   }
-  h += '<div class="foot">Embed servers par sirf cloud button dikhta hai — wapas yahin se aao</div>';
+  h += '<div class="foot">Choose a server or playback quality</div>';
   body.innerHTML = h;
   body.scrollTop = sc;
   $("srvBackRow").addEventListener("click", function(){
@@ -534,6 +554,7 @@ function renderSrvPanel(){
   if (MEDIA_TYPE === "tv") renderEpAcc();
 }
 function openSrvPanel(opts){
+  disarmWatchdog();
   opts = opts || {};
   if (opts.episodes) epAccOpen = true;
   renderSrvPanel();
@@ -589,7 +610,6 @@ function updateEpButtons(){
   var seasons = META.seasons ? Object.keys(META.seasons).map(Number) : [1];
   var maxS = Math.max.apply(null, seasons);
   var hasNext = (MEDIA_EPISODE < n) || (MEDIA_SEASON < maxS);
-  if ($("btnPrevEp")) { $("btnPrevEp").disabled = !hasPrev; $("btnNextEp").disabled = !hasNext; }
   if ($("btnPrevEp2")) { $("btnPrevEp2").disabled = !hasPrev; $("btnNextEp2").disabled = !hasNext; }
 }
 function switchEpisode(s, e){
@@ -614,7 +634,7 @@ var curServer = null, hls = null, curStreams = [];
 var video = $("vid"), frame = $("frm");
 var setDoubleTap = false, setAutoNext = false;
 var failChain = [], hlsFailed = false;
-var embedTimer1 = null, embedTimer2 = null, watchdogArmed = false;
+var embedTimer1 = null, embedTimer2 = null, embedTimer3 = null, watchdogArmed = false;
 var EMBED_STUCK_MS = 45000, EMBED_COUNTDOWN_MS = 10000;
 function stopAll(){
   cancelWatchdog();
@@ -684,12 +704,21 @@ frame.addEventListener("load", function(){
   if (src && src !== "about:blank" && !$("stage").classList.contains("hidden")) showSpin(false);
 });
 /* ---- embed watchdog: cross-origin iframes cannot report failure, so a
-   bounded wait + visible countdown is the honest failover. Tapping the
-   cloud button (opening any panel) cancels the pending advance — the
-   user is managing it. One auto-advance per server-open, max. ---- */
+   bounded wait + visible ticking countdown is the honest failover.
+   Opening any panel, tapping the cloud button, switching servers
+   manually, or returning to the launcher cancels the pending advance
+   immediately (the user is managing it). One auto-advance per
+   server-open, max. Single timer source: embedTimer1/2/3. ---- */
 function cancelWatchdog(){
-  clearTimeout(embedTimer1); clearTimeout(embedTimer2);
-  embedTimer1 = embedTimer2 = null;
+  clearTimeout(embedTimer1); clearTimeout(embedTimer2); clearInterval(embedTimer3);
+  embedTimer1 = embedTimer2 = embedTimer3 = null;
+  watchdogArmed = false;
+}
+function disarmWatchdog(){
+  /* User took over: cancel timers AND dismiss the stale countdown toast. */
+  cancelWatchdog();
+  $("toast").classList.add("hidden");
+  clearTimeout(toast._to);
 }
 function armWatchdog(srv){
   cancelWatchdog();
@@ -698,15 +727,27 @@ function armWatchdog(srv){
     if (!watchdogArmed) return;
     var next = nextFailoverCandidate(srv);
     var nextName = next ? serverName(next) : null;
-    toast(serverName(srv) + " abhi tak nahi chala — 10 second me " + (nextName ? nextName + " try hoga" : "server panel khulega") + ". Rokne ke liye cloud button dabao.", EMBED_COUNTDOWN_MS + 1500);
+    var remain = Math.round(EMBED_COUNTDOWN_MS / 1000);
+    var msg = function(n){
+      return serverName(srv) + " abhi tak nahi chala — " + n + " second me " + (nextName ? nextName + " try hoga" : "server panel khulega") + ". Rokne ke liye cloud button dabao.";
+    };
+    toast(msg(remain), EMBED_COUNTDOWN_MS + 1500);
+    clearInterval(embedTimer3);
+    embedTimer3 = setInterval(function(){
+      if (!watchdogArmed) { clearInterval(embedTimer3); embedTimer3 = null; return; }
+      remain--;
+      if (remain <= 0) { clearInterval(embedTimer3); embedTimer3 = null; return; }
+      var t = $("toastTxt");
+      if (t && !$("toast").classList.contains("hidden")) t.textContent = msg(remain);
+    }, 1000);
     embedTimer2 = setTimeout(function(){
+      clearInterval(embedTimer3); embedTimer3 = null;
       if (!watchdogArmed) return;
       watchdogArmed = false;
       failoverFrom(srv, serverName(srv) + " ne jawab nahi diya");
     }, EMBED_COUNTDOWN_MS);
   }, EMBED_STUCK_MS);
 }
-function disarmWatchdog(){ watchdogArmed = false; cancelWatchdog(); }
 function nextFailoverCandidate(failedId){
   var lane = laneOf(failedId);
   var ordered = SERVERS.filter(function(s){ return s.lane === lane && s.id !== failedId; })
@@ -769,6 +810,7 @@ function openPlayer(srvId, manual){
 }
 function backToLauncher(){
   stopAll();
+  disarmWatchdog();
   closeAllSheets();
   $("stage").classList.add("hidden");
   $("launcher").classList.remove("hidden");
@@ -790,6 +832,7 @@ $("vw").addEventListener("click", function(e){
   pokeBars();
 });
 ["topbar", "botblock"].forEach(function(id){ $(id).addEventListener("pointermove", pokeBars); });
+$("vw").addEventListener("mousemove", pokeBars);
 video.addEventListener("play", function(){ $("pausedOv").classList.add("hidden"); showSpin(false); updatePlayIco(); pokeBars(); });
 video.addEventListener("pause", function(){ if (isNativeLane()) $("pausedOv").classList.remove("hidden"); updatePlayIco(); pokeBars(); });
 video.addEventListener("playing", function(){ showSpin(false); });
@@ -846,8 +889,6 @@ document.addEventListener("keydown", function(e){
   if (e.key === "ArrowRight") video.currentTime += 10;
   if (e.key === "ArrowLeft") video.currentTime -= 10;
 });
-$("btnPrevEp").addEventListener("click", function(){ stepEpisode(-1); });
-$("btnNextEp").addEventListener("click", function(){ stepEpisode(1); });
 
 /* ============ audio / subtitle sheets: native lanes, REAL tracks only ============ */
 function renderAudioSheet(){
@@ -882,8 +923,8 @@ function renderSubsSheet(){
     body.innerHTML = '<p class="cardnote">Is stream me koi subtitle track nahi hai. Embed servers par subtitles embed ke apne button se badalti hain.</p>';
   }
 }
-$("btnAudio").addEventListener("click", function(){ renderAudioSheet(); closeAllSheets(); $("audioSheet").classList.remove("hidden"); });
-$("btnSubs").addEventListener("click", function(){ renderSubsSheet(); closeAllSheets(); $("subsSheet").classList.remove("hidden"); });
+$("btnAudio").addEventListener("click", function(){ disarmWatchdog(); renderAudioSheet(); closeAllSheets(); $("audioSheet").classList.remove("hidden"); });
+$("btnSubs").addEventListener("click", function(){ disarmWatchdog(); renderSubsSheet(); closeAllSheets(); $("subsSheet").classList.remove("hidden"); });
 
 /* ============ settings: accordion, all closed by default, one open at a time ============ */
 /* Dummy rows are GONE: Download / Auto-Skip-Intro (toasts in v2) do not exist.
@@ -909,7 +950,11 @@ function hasAudio(){ return !!(isNativeLane() && hls && hls.audioTracks && hls.a
 function hasSubs(){ return !!(isNativeLane() && video.textTracks && video.textTracks.length); }
 function accSection(key, title, bodyHtml){
   var open = openSec === key;
-  return '<div class="acc' + (open ? " open" : "") + '" data-acc="' + key + '"><button class="acc-head" data-acc-head="' + key + '"><span>' + title + '</span><span class="chev">›</span></button><div class="acc-body">' + (open ? bodyHtml : "") + "</div></div>";
+  var backRow = open ? '<button class="bkrow" data-acc-back="' + key + '"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span>Back to Settings</span></button>' : "";
+  return '<div class="acc' + (open ? " open" : "") + '" data-acc="' + key + '"><button class="acc-head" data-acc-head="' + key + '"><span>' + title + '</span><span class="chev">›</span></button><div class="acc-body">' + (open ? backRow + bodyHtml : "") + "</div></div>";
+}
+function subHead(title){
+  return '<div class="subhead"><button class="bk" id="setBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span>Back</span></button><h3>' + title + '</h3></div>';
 }
 function renderSettings(){
   var body = $("setBody");
@@ -924,9 +969,18 @@ function renderSettings(){
     if (MEDIA_TYPE === "tv") playBody += trow("play", "Auto Play Next Episode", setAutoNext, "autonext");
     playBody += trow("tap", "Double-tap to Seek", setDoubleTap, "doubletap");
     body.innerHTML = accSection("source", "Source", srcBody) + accSection("media", "Media", mediaBody) + accSection("playback", "Playback", playBody);
+  } else if (setView === "servers") {
+    /* Server list as a Settings sub-view: back returns to Settings,
+       never a dead-end replacement by the server panel. */
+    body.innerHTML = subHead("Server") + srvListsHtml();
+    var bkS = $("setBack");
+    if (bkS) bkS.addEventListener("click", function(){ setView = "main"; renderSettings(); });
+    Array.prototype.forEach.call(body.querySelectorAll("[data-srv]"), function(b){
+      b.addEventListener("click", function(){ closeAllSheets(); openPlayer(b.getAttribute("data-srv"), true); });
+    });
   } else {
     var title = { quality: "Quality", subs: "Subtitles", audio: "Audio" }[setSub] || "";
-    var h2 = '<div class="subhead"><button class="bk" id="setBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button><h3>' + title + '</h3></div>';
+    var h2 = subHead(title);
     if (setSub === "quality" && hasQuality()) {
       h2 += '<button class="srow" data-q="-1"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span><span class="vl">✓</span></button>';
       hls.levels.forEach(function(lv, i){
@@ -968,17 +1022,20 @@ function renderSettings(){
       renderSettings();
     });
   });
+  Array.prototype.forEach.call(body.querySelectorAll("[data-acc-back]"), function(b){
+    b.addEventListener("click", function(){ openSec = null; renderSettings(); });
+  });
   Array.prototype.forEach.call(body.querySelectorAll("[data-act]"), function(b){
     b.addEventListener("click", function(){
       var act = b.getAttribute("data-act");
-      if (act === "servers") { $("settings").classList.add("hidden"); openSrvPanel(); }
+      if (act === "servers") { setView = "servers"; renderSettings(); }
       else if (act === "quality" || act === "subs" || act === "audio") { setView = "sub"; setSub = act; renderSettings(); }
       else if (act === "autonext") { setAutoNext = !setAutoNext; renderSettings(); }
       else if (act === "doubletap") { setDoubleTap = !setDoubleTap; renderSettings(); }
     });
   });
 }
-$("btnSet").addEventListener("click", function(){ setView = "main"; openSec = null; renderSettings(); closeAllSheets(); $("settings").classList.remove("hidden"); });
+$("btnSet").addEventListener("click", function(){ disarmWatchdog(); setView = "main"; openSec = null; renderSettings(); closeAllSheets(); $("settings").classList.remove("hidden"); });
 $("btnCloseSet").addEventListener("click", function(){ $("settings").classList.add("hidden"); });
 
 /* Opening any panel cancels a pending embed auto-advance (user is managing it) */
