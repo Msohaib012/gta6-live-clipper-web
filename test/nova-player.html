@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Vidstuck Clone — Test Preview v4</title>
 <!-- VS-CLONE-V4 -->
+<!-- VS-CLONE-V4-EPFIX -->
 <style>
 :root{
   --bg:#000; --panel:#0a0a0a; --panel2:#0e0e0e; --row:#262626; --row2:#2e2e2e;
@@ -78,12 +79,12 @@ svg{display:block}
 .cbtn{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
 .cbtn svg{width:31px;height:31px;fill:#fff}
 .cbtn:disabled{opacity:.35}
-#volwrap{display:flex;align-items:center;gap:10px}
+#volwrap{display:flex;align-items:center;gap:10px;position:relative}
 #volSlider{width:0;opacity:0;transition:width .2s,opacity .2s;appearance:none;-webkit-appearance:none;height:5px;border-radius:99px;background:#e5e5e5;outline:none}
 #volwrap:hover #volSlider,#volwrap:focus-within #volSlider{width:80px;opacity:1}
 #volSlider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:#fff;border:0}
 #volSlider::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#fff;border:0}
-#volTip{position:absolute;bottom:118px;left:118px;background:#000;border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600}
+#volTip{position:absolute;bottom:calc(100% + 14px);left:50%;transform:translateX(-50%);white-space:nowrap;z-index:9;pointer-events:none;background:#000;border:1px solid var(--border);border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600}
 /* paused overlay (native lanes only) */
 #pausedOv{position:absolute;z-index:6;left:28px;bottom:230px;max-width:580px;text-align:left;pointer-events:none}
 #pausedOv .p1{color:var(--mut);font-size:15px;letter-spacing:.3em;font-weight:600}
@@ -257,6 +258,7 @@ svg{display:block}
           <span id="volwrap">
             <button class="cbtn" id="btnMute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/></svg></button>
             <input type="range" id="volSlider" min="0" max="1" step="0.05" value="1" aria-label="Volume">
+            <div id="volTip" class="hidden">Volume</div>
           </span>
         </div>
         <div class="ctlGroup" id="ctlRight">
@@ -267,7 +269,6 @@ svg{display:block}
         </div>
       </div>
     </div>
-    <div id="volTip" class="hidden">Volume</div>
   </div>
 </section>
 
@@ -429,9 +430,11 @@ $("lauBg").style.backgroundImage = META.bg ? ("url('" + META.bg + "')") : "none"
 if (META.logo) {
   var li = $("logoImg");
   li.src = META.logo; li.alt = META.title;
+  /* Logo is the first paint: show the image element at once; text only on error. */
+  li.classList.remove("hidden"); $("lauTitle").classList.add("hidden");
+  $("lauTitle").textContent = META.title;
   li.addEventListener("load", function(){ li.classList.remove("hidden"); $("lauTitle").classList.add("hidden"); });
   li.addEventListener("error", function(){ li.classList.add("hidden"); $("lauTitle").classList.remove("hidden"); });
-  $("lauTitle").textContent = META.title;
 } else {
   $("lauTitle").textContent = META.title;
 }
@@ -448,27 +451,40 @@ var probeDone = 0, probeTotal = 0;
   var rwServers = SERVERS.filter(function(s){ return s.rw; });
   probeTotal = rwServers.length;
   setStatus("INITIALIZING"); setSrc("—"); setProg(4);
-  var cyc = 0, cycNames = rwServers.map(function(s){ return s.name; });
-  var cycTimer = setInterval(function(){
-    if (probeDone >= probeTotal) { clearInterval(cycTimer); return; }
-    var si = Math.floor(cyc / 2) % cycNames.length, phase = cyc % 2; cyc++;
-    var nm = cycNames[si];
-    setStatus((phase ? "CONNECTING TO " : "CHECKING ") + nm);
+  /* Status sequencer: CHECKING / CONNECTING TO for every probed server, ~300ms
+     dwell per state, first state painted immediately. READY waits for the probes
+     AND the full sequence, so fast probes never skip states. */
+  var SEQ_DWELL = 300, seqIdx = 0, seqDone = false;
+  var seqNames = rwServers.map(function(s){ return s.name; });
+  var seqTotal = seqNames.length * 2;
+  function showSeq(i){
+    var nm = seqNames[Math.floor(i / 2)];
+    setStatus((i % 2 ? "CONNECTING TO " : "CHECKING ") + nm);
     setSrc(nm);
-  }, 900);
-  var finished = false;
+  }
+  if (seqTotal > 0) showSeq(0); else seqDone = true;
+  var cycTimer = seqTotal > 0 ? setInterval(function(){
+    seqIdx++;
+    if (seqIdx < seqTotal) showSeq(seqIdx);
+    else { seqDone = true; clearInterval(cycTimer); maybeFinish(); }
+  }, SEQ_DWELL) : null;
+  var finished = false, probesDone = false;
+  function maybeFinish(){
+    if (finished || !probesDone || !seqDone) return;
+    finishProbe();
+  }
   rwServers.forEach(function(srv){
     probeRW(srv).then(function(r){
       PROBE[srv.id] = r; probeDone++;
       setProg(10 + 80 * probeDone / Math.max(1, probeTotal));
       renderSrvPanel();
-      if (probeDone >= probeTotal) finishProbe();
+      if (probeDone >= probeTotal) { probesDone = true; maybeFinish(); }
     });
   });
-  setTimeout(function(){ if (probeDone < probeTotal) finishProbe(); }, 9500);
+  setTimeout(function(){ if (probeDone < probeTotal) { probesDone = true; maybeFinish(); } }, 9500);
   function finishProbe(){
     if (finished) return; finished = true;
-    clearInterval(cycTimer);
+    if (cycTimer) clearInterval(cycTimer);
     SERVERS.forEach(function(srv){ if (PROBE[srv.id] === undefined) PROBE[srv.id] = { ok: false, streams: [] }; });
     bestIdx = -1;
     for (var i = 0; i < SERVERS.length; i++) {
@@ -578,11 +594,14 @@ function epName(season, ep){
 function renderEpAcc(){
   var head = $("epAccHead"), box = $("epAccBody");
   if (!head || !box) return;
-  head.addEventListener("click", function(){
-    epAccOpen = !epAccOpen;
-    $("epAcc").classList.toggle("open", epAccOpen);
-    if (epAccOpen) renderEpAcc();
-  });
+  if (!head._epHeadBound) {
+    head._epHeadBound = true;
+    head.addEventListener("click", function(){
+      epAccOpen = !epAccOpen;
+      $("epAcc").classList.toggle("open", epAccOpen);
+      if (epAccOpen) renderEpAcc();
+    });
+  }
   if (!epAccOpen) return;
   var sh = "";
   var seasons = META.seasons ? Object.keys(META.seasons).map(Number).sort(function(a, b){ return a - b; }) : [1];
@@ -603,6 +622,9 @@ function renderEpAcc(){
   Array.prototype.forEach.call(box.querySelectorAll("[data-ep]"), function(b){
     b.addEventListener("click", function(){ switchEpisode(curSeason, parseInt(b.getAttribute("data-ep"), 10)); });
   });
+  var bp = $("btnPrevEp2"), bn = $("btnNextEp2");
+  if (bp) bp.addEventListener("click", function(){ stepEpisode(-1); });
+  if (bn) bn.addEventListener("click", function(){ stepEpisode(1); });
   updateEpButtons();
 }
 function updateEpButtons(){
@@ -871,7 +893,10 @@ $("btnBack15").addEventListener("click", function(){ video.currentTime = Math.ma
 $("btnFwd15").addEventListener("click", function(){ video.currentTime = video.currentTime + 15; });
 $("btnMute").addEventListener("click", function(){ video.muted = !video.muted; });
 $("volSlider").addEventListener("input", function(){ video.volume = parseFloat(this.value); video.muted = false; });
-$("btnMute").addEventListener("mouseenter", function(){ $("volTip").classList.remove("hidden"); setTimeout(function(){ $("volTip").classList.add("hidden"); }, 1200); });
+$("volwrap").addEventListener("mouseenter", function(){ $("volTip").classList.remove("hidden"); });
+$("volwrap").addEventListener("mouseleave", function(){ $("volTip").classList.add("hidden"); });
+$("volwrap").addEventListener("focusin", function(){ $("volTip").classList.remove("hidden"); });
+$("volwrap").addEventListener("focusout", function(){ $("volTip").classList.add("hidden"); });
 $("btnBack").addEventListener("click", backToLauncher);
 $("btnFs").addEventListener("click", function(){
   var el = $("vw");
