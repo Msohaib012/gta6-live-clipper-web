@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.2</title>
+<title>Nova Player — Test Preview v6.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&display=swap" rel="stylesheet">
@@ -44,6 +44,10 @@ svg{display:block;fill:currentColor}
 @media (hover:hover){.cbtn:hover .tip{opacity:1}}
 .cbtn.tipshow .tip{opacity:1}
 .cbtn .tip.below{bottom:auto;top:100%;margin-bottom:0;margin-top:8px}
+/* v6.3: topbar buttons sit at the very top edge — a label ABOVE the button
+   renders off-screen (measured top:-37 at 390px, clipped by #vw overflow).
+   Topbar labels go BELOW the button, like the launcher cloud button. */
+#topbar .cbtn .tip{bottom:auto;top:100%;margin-bottom:0;margin-top:8px}
 @media (min-width:768px){.cbtn svg{width:32px;height:32px}}
 @media (min-width:1024px){.cbtn svg{width:40px;height:40px}}
 @media (orientation:landscape) and (max-height:500px){.cbtn svg{width:24px;height:24px}}
@@ -258,6 +262,13 @@ svg{display:block;fill:currentColor}
 @keyframes popIn{from{opacity:0;transform:scale(.97) translateY(-4px)}to{opacity:1;transform:none}}
 #srvPanel{width:288px;right:12px;top:72px;max-height:calc(100dvh - 150px)}
 @media (min-width:768px){#srvPanel{width:356px;right:24px;top:88px}}
+/* v6.3: phone card was 288px with a 200px scroll window for 780px of content
+   and overlapped the topbar by 14px (measured). Wider, taller, below the bar. */
+@media (max-width:767px){
+  #srvPanel{width:min(340px,calc(100vw - 24px));top:92px;max-height:calc(100dvh - 170px)}
+  #srvPanel .popScroll{max-height:320px}
+  .kid{padding:10px 12px}
+}
 .pop2{width:min(356px,calc(100vw - 24px));right:12px;bottom:150px;max-height:calc(100dvh - 230px)}
 @media (min-width:768px){.pop2{right:24px;bottom:210px}}
 .popHead{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--bd);padding:12px 16px;
@@ -321,6 +332,13 @@ svg{display:block;fill:currentColor}
   transition:transform 450ms cubic-bezier(.22,1,.36,1);will-change:transform;overflow:hidden}
 #settings{max-width:576px}
 #epDrawer{max-width:1024px;max-height:90vh}
+/* v6.3: settings is a CENTERED sheet on phones (Vidstuck's form), not a
+   bottom sheet. Episodes stay a bottom sheet. Drag-close is episodes-only
+   now: a drag transform would fight the centering translate. */
+@media (max-width:767px){
+  #settings{left:12px;right:12px;top:50%;bottom:auto;transform:translateY(-50%);
+    max-height:calc(100dvh - 48px);border-radius:12px}
+}
 @media (orientation:landscape) and (max-height:500px){.drawer{max-height:100dvh}}
 .handle{width:100px;height:5px;border-radius:999px;background:rgba(255,255,255,.25);margin:8px auto 0;flex:none;cursor:grab}
 .drHead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;
@@ -341,6 +359,7 @@ svg{display:block;fill:currentColor}
 /* settings accordion */
 .acc-head{display:flex;width:100%;align-items:center;justify-content:space-between;border-radius:8px;
   padding:10px 12px;font-size:14px;line-height:20px;font-weight:600;text-align:left;transition:background-color .15s}
+.acc-head>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .acc-head:hover{background:rgba(38,38,38,.7)}
 @media (min-width:768px){.acc-head{font-size:16px;line-height:24px}}
 .acc-head .chev{transition:transform .2s;color:var(--mut)}
@@ -367,6 +386,10 @@ svg{display:block;fill:currentColor}
 .srow .tgl.on{background:var(--fg);color:#0a0a0a}
 .srow .tgl.off{background:var(--acc);color:var(--mut)}
 .cardnote{padding:12px;font-size:13px;line-height:19px;color:var(--mut)}
+/* v6.3: Vidstuck's settings sheet ends in a Close button. */
+.setClose{display:flex;width:100%;align-items:center;justify-content:center;border-radius:8px;
+  margin-top:16px;padding:12px;font-size:14px;line-height:20px;font-weight:600;background:var(--acc)}
+.setClose:hover{background:rgba(38,38,38,.7)}
 /* episodes drawer */
 #epDrawer .drBody{padding:16px 16px 24px}
 .epTopRow{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -492,7 +515,7 @@ svg{display:block;fill:currentColor}
   <div id="launcher">
     <div id="lauBgWrap"><img id="lauBg" alt=""><div id="lauShade"></div></div>
     <div id="lauTop">
-      <button class="cbtn" id="btnBackL" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
+      <button class="cbtn" id="btnBackL" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span class="tip below">Back</span></button>
       <div class="sp"></div>
       <button class="cbtn" id="btnCloudL" aria-label="Servers"><svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg><span class="tip below">Servers</span></button>
     </div>
@@ -560,12 +583,11 @@ svg{display:block;fill:currentColor}
   <div id="toast" class="hidden"><span id="toastTxt"></span><button id="toastX" aria-label="Dismiss">×</button></div>
 </div>
 <script>
-/* ============ v6.2: v6.1 + phone defects from his screenshots (embed ghost title,
-   stuck button labels, settings value previews, episode stills, watchdog re-arm).
-   D1-D5 from v6 stay as they were.
-   Own implementation; style values (colors/sizes/spacing/fonts) follow the
-   extracted Vidstuck rules. No Vidstuck code, logo, or brand assets copied.
-   No TMDB key anywhere in this file. ============ */
+/* ============ v6.3: v6.2 + real-phone defects (topbar labels clipped off-screen,
+   no tap-to-hide, stale embed bar timer trapping chrome, stale settings values,
+   cramped server card, bottom-sheet settings -> centered sheet on phones).
+   Own implementation; style values follow the extracted Vidstuck rules.
+   No Vidstuck code, logo, or brand assets copied. No TMDB key anywhere. ============ */
 var qp = new URLSearchParams(location.search);
 var MEDIA_TYPE = qp.get("type") === "tv" ? "tv" : "movie";
 var MEDIA_TMDB = parseInt(qp.get("tmdb") || (MEDIA_TYPE === "tv" ? "66732" : "550"), 10);
@@ -709,6 +731,16 @@ function closeDrawers(){
   maybeRearmWatchdog();
 }
 function closeAllSheets(){ closePops(); closeDrawers(); }
+/* v6.3: settings values/previews used to freeze at whatever was true when the
+   drawer opened — track lists arrive with the manifest, long after, on slow
+   connections. Re-render in place (view, open section and scroll kept) whenever
+   new track/metadata state lands while the drawer is open. */
+function refreshSettingsIfOpen(){
+  if (openDrawerId !== "settings") return;
+  var sc = $("setBody").scrollTop;
+  renderSettings();
+  $("setBody").scrollTop = sc;
+}
 function openPop(id){
   if (openPopId === id) { closePops(); return; }
   closeDrawers();
@@ -757,7 +789,8 @@ function attachDragClose(drawerId, bodyId, closeFn){
     dy = 0;
   });
 }
-attachDragClose("settings", "setBody", closeDrawers);
+/* v6.3: drag-close is episodes-only — the settings sheet is centered on phones
+   now, and a drag transform would fight the centering translate. */
 attachDragClose("epDrawer", "epBody", closeDrawers);
 
 /* ============ launcher ============ */
@@ -838,6 +871,7 @@ var probeDone = 0, probeTotal = 0;
     probeRW(srv).then(function(r){
       PROBE[srv.id] = r; probeDone++;
       renderSrvPanel();
+      refreshSettingsIfOpen();
       if (probeDone >= probeTotal) { probesDone = true; maybeFinish(); }
     });
   });
@@ -1050,6 +1084,11 @@ var failChain = [], hlsFailed = false;
 var embedTimer1 = null, embedTimer2 = null, embedTimer3 = null, watchdogArmed = false;
 var EMBED_STUCK_MS = 45000, EMBED_COUNTDOWN_MS = 10000;
 var barsHidden = false, barTimer = null, cueBound = false, selectedSubIdx = -1;
+/* v6.3 tap-toggle state: hideTimer2 = pending hide after a single tap (300ms,
+   so a second tap can still double-tap-seek); dtFired = a double-tap seek just
+   fired on touchstart; touchShowed = this tap's touchstart already showed the
+   bars, so the click that follows must not hide them again. */
+var hideTimer2 = null, dtFired = false, touchShowed = false;
 
 function showSpin(on){ $("bigSpin").classList.toggle("hidden", !on); }
 function isNativeLane(){ return curServer && laneOf(curServer) === "native" && !video.classList.contains("hidden"); }
@@ -1090,7 +1129,9 @@ function playNative(streams){
     hls = new Hls({ maxBufferLength: 30 });
     hls.loadSource(pick.url);
     hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, function(){ video.play().catch(function(){}); });
+    hls.on(Hls.Events.MANIFEST_PARSED, function(){ video.play().catch(function(){}); refreshSettingsIfOpen(); });
+    hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, refreshSettingsIfOpen);
+    hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, refreshSettingsIfOpen);
     hls.on(Hls.Events.ERROR, function(ev, data){
       if (data && data.fatal && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " ka stream toot gaya"); }
     });
@@ -1219,6 +1260,7 @@ function openPlayer(srvId, manual){
         if (r.ok) playNative(r.streams);
         else failoverFrom(srvId, serverName(srvId) + " par stream nahi mili");
         renderSrvPanel();
+        refreshSettingsIfOpen();
       });
     }
   } else {
@@ -1242,6 +1284,12 @@ function syncPausedOv(){
 }
 function setBars(visible){
   hideTips();
+  /* v6.3: on embed lanes our slim topbar is the ONLY way back to servers —
+     taps land inside the cross-origin iframe and never reach this document,
+     so a hidden bar can never be re-shown. Force it visible here, so no
+     stale timer or stray call can ever trap the user without chrome. */
+  if (isEmbedLane()) visible = true;
+  if (visible) { clearTimeout(hideTimer2); hideTimer2 = null; }
   barsHidden = !visible;
   ["topbar", "botblock", "centerCtl"].forEach(function(id){ $(id).classList.toggle("hide", !visible); });
   $("cueWrap").classList.toggle("bars", visible);
@@ -1249,15 +1297,25 @@ function setBars(visible){
   else { $("pausedOv").classList.add("hidden"); $("pausedOv").classList.remove("show"); }
 }
 function pokeBars(){
+  /* v6.3: ALWAYS clear the pending auto-hide first. The old code returned
+     early on embed lanes without clearing it, so a timer armed on a native
+     lane fired after the switch and hid the embed bar forever. */
+  clearTimeout(barTimer); barTimer = null;
   if (isEmbedLane()) { setBars(true); return; }
   setBars(true);
-  clearTimeout(barTimer);
   barTimer = setTimeout(function(){ setBars(false); }, 3500);
 }
 $("vw").addEventListener("click", function(e){
-  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop")) return;
+  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop")) return;
   if (!$("launcher").classList.contains("hidden")) return;
-  pokeBars();
+  /* v6.3: a tap on empty video area TOGGLES the bars (Vidstuck behavior).
+     The old code only ever showed them — a tap could never hide them. */
+  if (dtFired) { dtFired = false; pokeBars(); return; }
+  if (touchShowed) { touchShowed = false; return; }
+  if (barsHidden) { pokeBars(); return; }
+  if (isEmbedLane()) { pokeBars(); return; }
+  clearTimeout(hideTimer2);
+  hideTimer2 = setTimeout(function(){ hideTimer2 = null; setBars(false); }, 300);
 });
 ["topbar", "botblock"].forEach(function(id){ $(id).addEventListener("pointermove", pokeBars); });
 $("vw").addEventListener("mousemove", function(){ if ($("launcher").classList.contains("hidden")) pokeBars(); });
@@ -1276,6 +1334,7 @@ video.addEventListener("loadedmetadata", function(){
   $("tTot").textContent = fmt(video.duration);
   $("tTotD").textContent = $("tTot").textContent;
   bindTextTracks();
+  refreshSettingsIfOpen();
 });
 video.addEventListener("progress", updateBuffered);
 video.addEventListener("timeupdate", function(){
@@ -1334,11 +1393,11 @@ var lastTap = 0, lastTapSide = "";
 $("vw").addEventListener("touchstart", function(e){
   if (!setDoubleTap || !isNativeLane()) return;
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast")) return;
-  if (barsHidden) { pokeBars(); lastTap = 0; return; }
+  if (barsHidden) { pokeBars(); touchShowed = true; lastTap = 0; return; }
   var t = e.touches[0], r = $("vw").getBoundingClientRect();
   var side = (t.clientX - r.left) > r.width / 2 ? "R" : "L";
   var now = Date.now();
-  if (now - lastTap < 300 && side === lastTapSide) { lastTap = 0; skipBy(side === "R" ? 15 : -15); }
+  if (now - lastTap < 300 && side === lastTapSide) { lastTap = 0; clearTimeout(hideTimer2); hideTimer2 = null; dtFired = true; skipBy(side === "R" ? 15 : -15); }
   else { lastTap = now; lastTapSide = side; }
 }, { passive: true });
 video.addEventListener("dblclick", function(e){
@@ -1605,7 +1664,8 @@ function renderSettings(){
     if (MEDIA_TYPE === "tv") playPrev.push("Auto Next " + (setAutoNext ? "On" : "Off"));
     body.innerHTML = accSection("source", "Source", srcBody, srcPrev) +
       '<hr class="sep">' + accSection("media", "Media", mediaBody, mediaPrev) +
-      '<hr class="sep">' + accSection("playback", "Playback", playBody, playPrev.join(" · "));
+      '<hr class="sep">' + accSection("playback", "Playback", playBody, playPrev.join(" · ")) +
+      '<button class="setClose" data-act="close">Close</button>';
   } else if (setView === "servers") {
     body.innerHTML = srvListsHtml();
   } else if (setView === "quality" && hasQuality()) {
@@ -1667,7 +1727,8 @@ $("setBody").addEventListener("click", function(e){
   var act = e.target.closest("[data-act]");
   if (act) {
     var a = act.getAttribute("data-act");
-    if (a === "servers" || a === "quality" || a === "subs" || a === "audio" || a === "aspect" || a === "brightness" || a === "speed") { setView = a; renderSettings(); }
+    if (a === "close") { closeDrawers(); }
+    else if (a === "servers" || a === "quality" || a === "subs" || a === "audio" || a === "aspect" || a === "brightness" || a === "speed") { setView = a; renderSettings(); }
     else if (a === "autonext") { setAutoNext = !setAutoNext; renderSettings(); }
     else if (a === "doubletap") { setDoubleTap = !setDoubleTap; renderSettings(); }
     else if (a === "loop") { setLoop = !setLoop; applyVideoPrefs(); renderSettings(); }
