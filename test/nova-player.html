@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6</title>
+<title>Nova Player — Test Preview v6.1</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&display=swap" rel="stylesheet">
@@ -382,9 +382,9 @@ svg{display:block;fill:currentColor}
 .epnav2 button{flex:1;border:1px solid var(--bd2);border-radius:6px;padding:9px 8px;font-size:13px;line-height:18px;font-weight:500}
 .epnav2 button:hover:not(:disabled){background:var(--acc)}
 .epnav2 button:disabled{opacity:.35;cursor:not-allowed}
-.epgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
-@media (min-width:640px){.epgrid{grid-template-columns:repeat(3,1fr);gap:16px}}
-.epcard{text-align:left;border-radius:8px;padding:4px}
+.epgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (min-width:640px){.epgrid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}}
+.epcard{text-align:left;border-radius:8px;padding:4px;min-width:0}
 .epcard:hover{background:rgba(38,38,38,.5)}
 .epcard.sel{outline:2px solid var(--red);outline-offset:1px;background:rgba(38,38,38,.6)}
 .epcard .th{position:relative;aspect-ratio:16/9;border-radius:6px;background:var(--zinc900);
