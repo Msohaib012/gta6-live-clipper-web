@@ -1476,7 +1476,7 @@ function pokeBars(){
   barTimer = setTimeout(function(){ setBars(false); }, 3500);
 }
 $("vw").addEventListener("click", function(e){
-  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop")) return;
+  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop") || e.target.closest("#pausedOv")) return; /* v6.5 fixup: overlay taps resume */
   if (!$("launcher").classList.contains("hidden")) return;
   /* v6.3: a tap on empty video area TOGGLES the bars (Vidstuck behavior).
      The old code only ever showed them — a tap could never hide them. */
@@ -1563,7 +1563,7 @@ $("btnFs").addEventListener("click", function(){
 var lastTap = 0, lastTapSide = "";
 $("vw").addEventListener("touchstart", function(e){
   if (!setDoubleTap || !isNativeLane()) return;
-  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast")) return;
+  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#pausedOv")) return; /* v6.5 fixup: overlay taps resume, never pokeBars */
   if (barsHidden) { pokeBars(); touchShowed = true; lastTap = 0; return; }
   var t = e.touches[0], r = $("vw").getBoundingClientRect();
   var side = (t.clientX - r.left) > r.width / 2 ? "R" : "L";
