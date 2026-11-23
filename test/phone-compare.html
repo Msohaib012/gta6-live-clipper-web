@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phone-width side-by-side: Vidstuck vs Hamara Player (390px)</title>
+<style>
+  body { margin:0; background:#111; color:#eee; font-family:system-ui, sans-serif; }
+  h1 { font-size:18px; margin:16px; }
+  p.note { margin:0 16px 16px; color:#aaa; font-size:13px; }
+  .row { display:flex; gap:24px; margin:0 16px 32px; align-items:flex-start; }
+  .cell h2 { font-size:15px; margin:0 0 8px; }
+  iframe { width:390px; height:844px; border:1px solid #444; background:#000; display:block; }
+</style>
+</head>
+<body>
+<h1>Phone width (390px) side-by-side — LEFT: Vidstuck asal, RIGHT: Hamara player</h1>
+<p class="note">Har frame bilkul 390px chaura hai, taake phone wali CSS lage. Dono ek hi waqt par dikhte hain.</p>
+
+<div class="row">
+  <div class="cell"><h2>LEFT — Vidstuck asal (Movie)</h2>
+    <iframe src="https://vidstuck.cc/embed/movie/550" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+  <div class="cell"><h2>RIGHT — Hamara player (Movie)</h2>
+    <iframe src="https://msohaib012.github.io/gta6-live-clipper-web/test/nova-player.html" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+</div>
+
+<div class="row">
+  <div class="cell"><h2>LEFT — Vidstuck asal (TV S1E1)</h2>
+    <iframe src="https://vidstuck.cc/embed/tv/66732/1/1" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+  <div class="cell"><h2>RIGHT — Hamara player (TV S1E1)</h2>
+    <iframe src="https://msohaib012.github.io/gta6-live-clipper-web/test/nova-player.html?type=tv&amp;tmdb=66732&amp;s=1&amp;e=1" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+</div>
+</body>
+</html>
