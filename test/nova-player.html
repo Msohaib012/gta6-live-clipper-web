@@ -1272,6 +1272,10 @@ function playEmbed(srv){
   /* sandbox rule (live player): sandbox ONLY on hindi/Vega */
   if (srv === "hindi") frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-presentation allow-forms");
   else frame.removeAttribute("sandbox");
+  /* v6.5 (Item 6): never show our spinner over an embed — a spinner left
+     visible by a previous native lane would spin forever above the
+     embed's own player. */
+  showSpin(false);
   frame.src = url;
   $("pausedOv").classList.add("hidden"); $("pausedOv").classList.remove("show");
   applyLaneChrome();
