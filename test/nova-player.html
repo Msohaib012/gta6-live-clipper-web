@@ -1472,6 +1472,8 @@ function pokeBars(){
 }
 $("vw").addEventListener("click", function(e){
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop") || e.target.closest("#pausedOv")) return; /* v6.5 fixup: overlay taps resume */
+  /* v6.5 fixup 3: touch taps retarget to #vid, so resume here whenever the overlay is up. */
+  if ($("pausedOv").classList.contains("show")) { hidePausedOv(); attemptPlay(); return; }
   if (!$("launcher").classList.contains("hidden")) return;
   /* v6.3: a tap on empty video area TOGGLES the bars (Vidstuck behavior).
      The old code only ever showed them — a tap could never hide them. */
