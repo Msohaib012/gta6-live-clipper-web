@@ -664,48 +664,48 @@ function paintMetaTitles(){
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
    25.7 KB/s, so the abort killed it and "Title <id>" stuck forever.
    Now: 30s per attempt, a fast retry, then background retries while the
-   page is alive (capped). Playback/failover never wait on the fetch. */
+   page is alive (capped). Same guards and paint path as v6.4 — the
+   chunk only ever fills metadata, never touches playback/failover. */
 var metaTried = 0, metaDone = false;
-function applyChunkMeta(ent){
-  if (!ent || !ent.ld) return;
-  if (ent.ld.name) {
-    META.title = ent.ld.name;
-    var wt = $("watchTitle"); if (wt) wt.textContent = ent.ld.name;
-    var lt = $("lauTitle"); if (lt) lt.textContent = ent.ld.name;
-    try { document.title = ent.ld.name + " — Nova Player Test v6.5"; } catch(e){}
-    var lg = $("lauLogo"); if (lg) lg.classList.add("hidden");
-    var ti = $("lauTitle"); if (ti) ti.classList.remove("hidden");
-    if (ent.ld.genre) {
-      var gv = Array.isArray(ent.ld.genre) ? ent.ld.genre.join(" / ") : String(ent.ld.genre);
-      META.genres = Array.isArray(ent.ld.genre) ? ent.ld.genre : [String(ent.ld.genre)];
-      var g = $("lauGenre"); if (g) g.textContent = gv.toUpperCase();
+function applyChunkMeta(e){
+  if (!e || !e.ld) return;
+  if (e.ld.name && META_TITLE_IS_FALLBACK) META.title = e.ld.name;
+  if (e.ld.genre && e.ld.genre.length) META.genres = e.ld.genre.slice();
+  if (e.ld.description || e.d) META.ov = e.ld.description || e.d;
+  if (e.ld.tagline) META.tagline = e.ld.tagline;
+  var dp = (e.ld.datePublished || "").slice(0, 4);
+  if (dp) META.year = dp;
+  if (e.ld.duration) META.runtime = e.ld.duration;
+  if (e.ld.aggregateRating && e.ld.aggregateRating.ratingValue) META.rate = e.ld.aggregateRating.ratingValue;
+  var art = e.img || e.ld.image || "";
+  if (art && !META.bg){
+    META.bg = art;
+    var lb = $("lauBg");
+    if (lb && !$("launcher").classList.contains("hidden")){
+      lb.src = META.bg;
+      lb.addEventListener("load", function(){ lb.classList.add("loaded"); $("lauCenter").classList.add("in"); });
     }
   }
-  if (ent.ld.description || ent.d) META.ov = ent.ld.description || ent.d;
-  if (ent.ld.tagline) META.tagline = ent.ld.tagline;
-  if (ent.img) { META.backdrop = ent.img; var im = $("lauArt"); if (im) im.src = ent.img; }
-  var dp = (ent.ld.datePublished || "").slice(0, 4);
-  if (dp) META.year = dp;
-  if (ent.ld.duration) META.runtime = ent.ld.duration;
-  if (ent.ld.aggregateRating && ent.ld.aggregateRating.ratingValue) META.rate = ent.ld.aggregateRating.ratingValue;
+  paintMetaTitles();
   buildPausedOv();
 }
 function loadChunkMeta(){
-  if (META_HARDCODED || metaDone) return;
-  var id = MEDIA_TMDB, bb = (parseInt(id, 10) % 100);
-  if (isNaN(bb)) return;
+  if (META_HAS_DEMO || metaDone) return;
+  if (typeof fetch !== "function") return;
+  var wantId = MEDIA_TMDB, wantType = MEDIA_TYPE, ctl = null;
+  try { ctl = new AbortController(); } catch(e){ ctl = null; }
   metaTried++;
-  var ctrl = new AbortController();
   var settled = false;
-  var to = setTimeout(function(){ try { ctrl.abort(); } catch (e) {} }, 30000);
-  fetch("https://raw.githubusercontent.com/Msohaib012/flickatlas-site/main/js/seo/" + bb + ".json", { signal: ctrl.signal })
-    .then(function(r){ if (!r.ok) throw new Error("chunk " + r.status); return r.json(); })
+  var to = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch(e){} }, 30000);
+  fetch("https://raw.githubusercontent.com/Msohaib012/flickatlas-site/main/js/seo/" + (MEDIA_TMDB % 100) + ".json", ctl ? { signal: ctl.signal } : undefined)
+    .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(j){
       if (settled) return; settled = true; clearTimeout(to);
-      var ent = j[MEDIA_TYPE + ":" + id];
-      if (!ent || !ent.ld) { scheduleMetaRetry(); return; }
+      if (!j || MEDIA_TMDB !== wantId || MEDIA_TYPE !== wantType) { scheduleMetaRetry(); return; }
+      var e = (j.titles || {})[wantType + ":" + wantId];
+      if (!e || !e.ld) { scheduleMetaRetry(); return; }
       metaDone = true;
-      applyChunkMeta(ent);
+      applyChunkMeta(e);
     })
     .catch(function(){ if (settled) return; settled = true; clearTimeout(to); scheduleMetaRetry(); });
 }
