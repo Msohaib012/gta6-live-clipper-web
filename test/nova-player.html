@@ -336,7 +336,7 @@ svg{display:block;fill:currentColor}
 #drawerBk{position:absolute;inset:0;z-index:60;background:rgba(10,10,10,.5);opacity:0;transition:opacity .3s ease}
 #drawerBk.open{opacity:1}
 .drawer{position:absolute;left:0;right:0;bottom:0;z-index:60;margin:0 auto;display:flex;flex-direction:column;
-  background:rgba(10,10,10,.8);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
+  background:var(--bg);
   border-radius:6.4px 6.4px 0 0;max-height:90dvh;font-size:14px;line-height:20px;
   translate:0 26px;opacity:0;transition:translate .3s cubic-bezier(.22,1,.36,1),opacity .3s ease,transform 450ms cubic-bezier(.22,1,.36,1);will-change:transform;overflow:hidden}
 .drawer.open{translate:0 0;opacity:1}
@@ -345,14 +345,10 @@ svg{display:block;fill:currentColor}
 /* v6.3: settings is a CENTERED sheet on phones (Vidstuck's form), not a
    bottom sheet. Episodes stay a bottom sheet. Drag-close is episodes-only
    now: a drag transform would fight the centering translate. */
-@media (max-width:767px){
-  #settings{left:12px;right:12px;top:50%;bottom:auto;transform:translateY(-50%);
-    max-height:calc(100dvh - 48px);border-radius:12px}
-}
 @media (orientation:landscape) and (max-height:500px){.drawer{max-height:100dvh}}
 .handle{width:100px;height:5px;border-radius:999px;background:rgba(255,255,255,.25);margin:8px auto 0;flex:none;cursor:grab}
 .drHead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;
-  padding:12px 16px;background:rgba(10,10,10,.92)}
+  padding:12px 16px;background:var(--bg)}
 .drHead .bkbtn{display:flex;align-items:center;gap:2px;margin-left:-8px;color:var(--fg);flex:none}
 .drHead .bkbtn svg{width:20px;height:20px}
 .drHead .bkbtn span{font-size:13px;line-height:18px}
@@ -442,6 +438,41 @@ svg{display:block;fill:currentColor}
   backdrop-filter:blur(20px);padding:10px 12px;font-size:13px;line-height:19px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
 #toastTxt{flex:1}
 #toastX{color:var(--mut);flex:none;font-size:16px;line-height:1;padding:2px 4px}
+
+/* ===== v6.5 revision: Vidstuck settings form (code-extracted), servers refine ===== */
+#settings .tt h3 svg{display:none}
+#settings .tt h3{font-size:14px;line-height:20px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+#settings .bkbtn span{display:none}
+@media (max-width:767px){#btnCloseSet{display:none}}
+.drFoot{flex:none;padding:12px 8px 16px;background:var(--bg)}
+.setClose{display:flex;width:100%;align-items:center;justify-content:center;border-radius:8px;padding:10px 12px;font-size:14px;line-height:20px;font-weight:500;background:var(--acc);margin-top:0}
+.acc-head{font-size:12px;line-height:16px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:8px 12px;border-radius:8px}
+.acc-head .acc-val{font-size:14px;line-height:20px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--mut)}
+.acc-head .chev svg{width:20px;height:20px;opacity:.5}
+.acc-body{padding:0 0 2px}
+.srow{gap:12px;border-radius:12px;padding:8px;font-size:14px;line-height:20px}
+.srow .ic{flex:none;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:var(--mut)}
+.srow .lb{font-weight:500;color:var(--fg)}
+.srow .vl{font-size:14px;line-height:20px}
+.srow .chev svg{width:20px;height:20px;opacity:.5}
+.sep{margin:16px 8px;border:0;border-top:1px solid var(--bd)}
+.opt{font-size:14px;line-height:20px;color:var(--mut);padding:10px 12px}
+.opt.sel{background:var(--acc);color:var(--fg)}
+.opt svg{width:16px;height:16px;flex:none}
+.drBody .srow[data-q],.drBody .srow[data-au],.drBody .srow[data-sub],.drBody .srow[data-aspect],.drBody .srow[data-bright],.drBody .srow[data-speed]{padding:10px 12px;color:var(--mut)}
+.drBody .srow[data-q] .ic,.drBody .srow[data-au] .ic,.drBody .srow[data-sub] .ic,.drBody .srow[data-aspect] .ic,.drBody .srow[data-bright] .ic,.drBody .srow[data-speed] .ic{display:none}
+.drBody .srow[data-q]:has(.vl),.drBody .srow[data-au]:has(.vl),.drBody .srow[data-sub]:has(.vl),.drBody .srow[data-aspect]:has(.vl),.drBody .srow[data-bright]:has(.vl),.drBody .srow[data-speed]:has(.vl){background:var(--acc);color:var(--fg)}
+.drBody .srow[data-q]:has(.vl) .lb,.drBody .srow[data-au]:has(.vl) .lb,.drBody .srow[data-sub]:has(.vl) .lb,.drBody .srow[data-aspect]:has(.vl) .lb,.drBody .srow[data-bright]:has(.vl) .lb,.drBody .srow[data-speed]:has(.vl) .lb{color:var(--fg)}
+.tgl{position:relative;flex:none;width:44px;height:24px;border-radius:999px;background:rgba(255,255,255,.18);padding:0}
+.tgl i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s}
+.tgl.on{background:#e5e5e5}
+.tgl.on i{left:22px;background:#0a0a0a}
+/* servers sheet: Vidstuck w-72 size, slight blur, bolder headings */
+#srvPanel{background:rgba(10,10,10,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1)}
+#srvPanel .popHead{font-weight:600}
+#srvPanel .popHead svg{width:20px;height:20px}
+.srvsec{font-weight:700}
+@media (max-width:767px){#srvPanel{width:min(288px,calc(100vw - 24px));top:92px;max-height:calc(100dvh - 170px)}}
 </style>
 </head>
 <body>
@@ -462,9 +493,9 @@ svg{display:block;fill:currentColor}
 
   <!-- center controls: phone portrait only -->
   <div id="centerCtl">
-    <button class="cbtn" id="btnBack15C" aria-label="Backward 15 seconds"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6L11 18zm.5-6l8.5 6V6l-8.5 6z"/></svg></button>
+    <button class="cbtn" id="btnBack15C" aria-label="Backward 15 seconds"><svg viewBox="0 0 24 24"><path d="M12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12H4C4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4 9.53614 4 7.33243 5.11383 5.86492 6.86543L8 9H2V3L4.44656 5.44648C6.28002 3.33509 8.9841 2 12 2ZM8.5 8.5H10V15.5H8.5V8.5ZM16.75 8.5H12V12.75H14.875C15.2202 12.75 15.5 13.0298 15.5 13.375 15.5 13.7202 15.2202 14 14.875 14H12V15.5H14.875C16.0486 15.5 17 14.5486 17 13.375 17 12.2014 16.0486 11.25 14.875 11.25H13.5V10H16.75V8.5Z"/></svg></button>
     <button class="cbtn" id="btnPlayC" aria-label="Play or pause"><span id="playIcoC"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></button>
-    <button class="cbtn" id="btnFwd15C" aria-label="Forward 15 seconds"><svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg></button>
+    <button class="cbtn" id="btnFwd15C" aria-label="Forward 15 seconds"><svg viewBox="0 0 24 24"><path d="M12 2C6.47715 2 2 6.47715 2 12 2 17.5228 6.47715 22 12 22 17.5228 22 22 17.5228 22 12H20C20 16.4183 16.4183 20 12 20 7.58172 20 4 16.4183 4 12 4 7.58172 7.58172 4 12 4 14.4639 4 16.6676 5.11383 18.1351 6.86543L16.5001 8.5H12V12.75H14.875C15.2202 12.75 15.5 13.0298 15.5 13.375 15.5 13.7202 15.2202 14 14.875 14H12V15.5H14.875C16.0486 15.5 17 14.5486 17 13.375 17 12.2014 16.0486 11.25 14.875 11.25H13.5V10H16.75V9H22V3L19.5534 5.44648C17.72 3.33509 15.0159 2 12 2ZM8.5 8.5H10V15.5H8.5V8.5Z"/></svg></button>
   </div>
 
   <!-- double-tap indicators -->
@@ -496,18 +527,18 @@ svg{display:block;fill:currentColor}
     <div id="timesRow"><span id="tCur">0:00</span><span id="tTot">0:00</span></div>
     <div id="ctlRow">
       <button class="cbtn onlyDesk playctl" id="btnPlay" aria-label="Play or pause"><span id="playIco"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span><span class="tip">Play</span></button>
-      <button class="cbtn onlyDesk" id="btnBack15" aria-label="Backward 15 seconds"><svg viewBox="0 0 24 24"><path d="M11 18V6l-8.5 6L11 18zm.5-6l8.5 6V6l-8.5 6z"/></svg><span class="tip">Back 15s</span></button>
-      <button class="cbtn onlyDesk" id="btnFwd15" aria-label="Forward 15 seconds"><svg viewBox="0 0 24 24"><path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/></svg><span class="tip">Forward 15s</span></button>
+      <button class="cbtn onlyDesk" id="btnBack15" aria-label="Backward 15 seconds"><svg viewBox="0 0 24 24"><path d="M12 2C17.5228 2 22 6.47715 22 12 22 17.5228 17.5228 22 12 22 6.47715 22 2 17.5228 2 12H4C4 16.4183 7.58172 20 12 20 16.4183 20 20 16.4183 20 12 20 7.58172 16.4183 4 12 4 9.53614 4 7.33243 5.11383 5.86492 6.86543L8 9H2V3L4.44656 5.44648C6.28002 3.33509 8.9841 2 12 2ZM8.5 8.5H10V15.5H8.5V8.5ZM16.75 8.5H12V12.75H14.875C15.2202 12.75 15.5 13.0298 15.5 13.375 15.5 13.7202 15.2202 14 14.875 14H12V15.5H14.875C16.0486 15.5 17 14.5486 17 13.375 17 12.2014 16.0486 11.25 14.875 11.25H13.5V10H16.75V8.5Z"/></svg><span class="tip">Back 15s</span></button>
+      <button class="cbtn onlyDesk" id="btnFwd15" aria-label="Forward 15 seconds"><svg viewBox="0 0 24 24"><path d="M12 2C6.47715 2 2 6.47715 2 12 2 17.5228 6.47715 22 12 22 17.5228 22 22 17.5228 22 12H20C20 16.4183 16.4183 20 12 20 7.58172 20 4 16.4183 4 12 4 7.58172 7.58172 4 12 4 14.4639 4 16.6676 5.11383 18.1351 6.86543L16.5001 8.5H12V12.75H14.875C15.2202 12.75 15.5 13.0298 15.5 13.375 15.5 13.7202 15.2202 14 14.875 14H12V15.5H14.875C16.0486 15.5 17 14.5486 17 13.375 17 12.2014 16.0486 11.25 14.875 11.25H13.5V10H16.75V9H22V3L19.5534 5.44648C17.72 3.33509 15.0159 2 12 2ZM8.5 8.5H10V15.5H8.5V8.5Z"/></svg><span class="tip">Forward 15s</span></button>
       <button class="cbtn onlyDeskNext hidden" id="btnNextEp" aria-label="Next episode"><svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg><span class="tip">Next Episode</span></button>
       <div id="volWrap">
         <button class="cbtn" id="btnMute" aria-label="Mute"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg><span class="tip" id="volTip">Volume</span></button>
         <span id="volSliderWrap"><input type="range" id="volSlider" min="0" max="1" step="0.05" value="1" aria-label="Volume"></span>
       </div>
       <div class="sp"></div>
-      <button class="cbtn" id="btnAudio" aria-label="Audio"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg><span class="tip">Audio</span></button>
-      <button class="cbtn" id="btnSubs" aria-label="Subtitles"><svg viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 7H9.5v-.5h-2v3h2v-.5H11v1H6V9h5v2zm7 0h-1.5v-.5h-2v3h2v-.5H18v1h-5V9h5v2z"/></svg><span class="tip">Subtitles</span></button>
+      <button class="cbtn" id="btnAudio" aria-label="Audio"><svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg><span class="tip">Audio</span></button>
+      <button class="cbtn" id="btnSubs" aria-label="Subtitles"><svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect width="18" height="14" x="3" y="5" rx="2" ry="2" key="12ruh7"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg><span class="tip">Subtitles</span></button>
       <button class="cbtn" id="btnSet" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg><span class="tip">Settings</span></button>
-      <button class="cbtn" id="btnFs" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg><span class="tip">Fullscreen</span></button>
+      <button class="cbtn" id="btnFs" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M17.5858 5H14V3H21V10H19V6.41421L14.7071 10.7071L13.2929 9.29289L17.5858 5ZM3 14H5V17.5858L9.29289 13.2929L10.7071 14.7071L6.41421 19H10V21H3V14Z"/></svg><span class="tip">Fullscreen</span></button>
     </div>
   </div>
 
@@ -555,13 +586,13 @@ svg{display:block;fill:currentColor}
 
   <!-- audio popover -->
   <div class="popover pop2 hidden" id="audioSheet" role="dialog" aria-label="Audio">
-    <div class="popHead"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg><span>Audio</span></div>
+    <div class="popHead"><svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg><span>Audio</span></div>
     <div class="popScroll" id="audioSheetBody"></div>
   </div>
 
   <!-- subtitles popover -->
   <div class="popover pop2 hidden" id="subsSheet" role="dialog" aria-label="Subtitles">
-    <div class="popHead"><svg viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 7H9.5v-.5h-2v3h2v-.5H11v1H6V9h5v2zm7 0h-1.5v-.5h-2v3h2v-.5H18v1h-5V9h5v2z"/></svg><span>Subtitles</span></div>
+    <div class="popHead"><svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><rect width="18" height="14" x="3" y="5" rx="2" ry="2" key="12ruh7"/><path d="M7 15h4M15 15h2M7 11h2M13 11h4"/></svg><span>Subtitles</span></div>
     <div class="popScroll" id="subsSheetBody"></div>
   </div>
 
@@ -577,6 +608,7 @@ svg{display:block;fill:currentColor}
       <button class="xbtn" id="btnCloseSet" aria-label="Close settings"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
     </div>
     <div class="drBody" id="setBody"></div>
+    <div class="drFoot"><button class="setClose" id="btnCloseSetFoot">Close</button></div>
   </div>
 
   <!-- episodes drawer -->
@@ -906,7 +938,7 @@ function attachDragClose(drawerId, bodyId, closeFn){
 }
 /* v6.3: drag-close is episodes-only — the settings sheet is centered on phones
    now, and a drag transform would fight the centering translate. */
-attachDragClose("epDrawer", "epBody", closeDrawers);
+attachDragClose("epDrawer", "epBody", closeDrawers); attachDragClose("settings", "setBody", closeDrawers);
 
 /* ============ launcher ============ */
 var lauBg = $("lauBg");
@@ -1813,12 +1845,12 @@ $("btnSubs").addEventListener("click", function(){ renderSubsSheet(); openPop("s
 
 /* ============ settings drawer: accordion + sub-views, DELEGATED ============ */
 var setView = "main", openSec = null;
-function ico(path){ return '<svg viewBox="0 0 24 24"><path d="' + path + '"/></svg>'; }
+function ico(path){ if (path.charAt(0) === "<") return '<svg viewBox="0 0 24 24" style="fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round">' + path + '</svg>'; return '<svg viewBox="0 0 24 24"><path d="' + path + '"/></svg>'; }
 var ICONS = {
   server: "M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z",
-  quality: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z",
-  subs: "M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 7H9.5v-.5h-2v3h2v-.5H11v1H6V9h5v2zm7 0h-1.5v-.5h-2v3h2v-.5H18v1h-5V9h5v2z",
-  audio: "M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z",
+  quality: "<path d='M10 12H6'/><path d='M10 15V9'/><path d='M14 14.5a.5.5 0 0 0 .5.5h1a2.5 2.5 0 0 0 2.5-2.5v-1A2.5 2.5 0 0 0 15.5 9h-1a.5.5 0 0 0-.5.5z'/><path d='M6 15V9'/><rect x='2' y='5' width='20' height='14' rx='2' key='qneu4z'/>",
+  subs: "<rect width='18' height='14' x='3' y='5' rx='2' ry='2' key='12ruh7'/><path d='M7 15h4M15 15h2M7 11h2M13 11h4'/>",
+  audio: "<path d='m5 8 6 6'/><path d='m4 14 6-6 2-3'/><path d='M2 5h12'/><path d='M7 2h1'/><path d='m22 22-5-10-5 10'/><path d='M14 18h6'/>",
   play: "M8 5v14l11-7z",
   tap: "M9 11.24V7.5A2.5 2.5 0 0 1 11.5 5c.54 0 1.05.21 1.43.59l1.7 1.7 3.54-.37a1.5 1.5 0 0 1 1.32 2.23l-1.9 4.08c-.5 1.07-1.58 1.77-2.77 1.77H11v-3.5l-2 1.74z",
   ratio: "M19 12H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2zm0 5H5v-3h14v3zM5 5h14a2 2 0 0 1 2 2v1H3V7a2 2 0 0 1 2-2z",
@@ -1833,7 +1865,7 @@ function srow(iconKey, label, value, action){
   return '<button class="srow" data-act="' + action + '"><span class="ic">' + ico(ICONS[iconKey]) + '</span><span class="lb">' + label + '</span><span class="vl">' + value + '</span>' + chevSvg() + '</button>';
 }
 function trow(iconKey, label, on, action){
-  return '<button class="srow" data-act="' + action + '"><span class="ic">' + ico(ICONS[iconKey]) + '</span><span class="lb">' + label + '</span><span class="tgl ' + (on ? "on" : "off") + '">' + (on ? "On" : "Off") + '</span></button>';
+  return '<button class="srow" data-act="' + action + '"><span class="ic">' + ico(ICONS[iconKey]) + '</span><span class="lb">' + label + '</span><span class="tgl ' + (on ? "on" : "off") + '"><i></i></span></button>';
 }
 function hasQuality(){ return !!(isNativeLane() && hls && hls.levels && hls.levels.length); }
 function hasAudio(){ return audioTracks().length > 0; }
@@ -1856,7 +1888,7 @@ function currentAudioLabel(){
 }
 function renderSettings(){
   var body = $("setBody");
-  var titles = { main: "Settings", servers: "Server", quality: "Quality", audio: "Audio", subs: "Subtitles", aspect: "Aspect Ratio", brightness: "Brightness", speed: "Playback Speed" };
+  var titles = { main: "Player Settings", servers: "Server", quality: "Video Quality", audio: "Audio", subs: "Subtitles", aspect: "Aspect Ratio", brightness: "Brightness", speed: "Playback Speed" };
   $("setTitle").textContent = titles[setView] || "Settings";
   $("setSub").textContent = setView === "main" ? "Customize your playback experience." : "";
   $("setBack").classList.toggle("hidden", setView === "main");
@@ -1897,7 +1929,7 @@ function renderSettings(){
       '<hr class="sep">' + accSection("media", "Media", mediaBody, mediaPrev) +
       '<hr class="sep">' + accSection("video", "Video", videoBody, videoPrev) +
       '<hr class="sep">' + accSection("playback", "Playback", playBody, playPrev.join(" · ")) +
-      '<button class="setClose" data-act="close">Close</button>';
+      '';
   } else if (setView === "quality" && hasQuality()) {
     var hq = '<button class="srow" data-q="-1"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span>' + (qualityLabel === "Auto" ? '<span class="vl">✓</span>' : "") + '</button>';
     hls.levels.forEach(function(lv, i){
@@ -1974,7 +2006,7 @@ $("setBody").addEventListener("click", function(e){
 });
 $("setBack").addEventListener("click", function(){ setView = "main"; renderSettings(); });
 $("btnSet").addEventListener("click", function(){ setView = "main"; openSec = null; renderSettings(); openDrawer("settings"); });
-$("btnCloseSet").addEventListener("click", closeDrawers);
+$("btnCloseSet").addEventListener("click", closeDrawers); $("btnCloseSetFoot").addEventListener("click", closeDrawers);
 
 /* ============ deep link: ?play=1 auto-opens best server ============ */
 if (MEDIA_PLAY) {
