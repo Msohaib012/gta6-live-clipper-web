@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.4</title>
+<title>Nova Player — Test Preview v6.5</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&display=swap" rel="stylesheet">
@@ -29,9 +29,15 @@ svg{display:block;fill:currentColor}
 #vid{object-fit:contain}
 #grad{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;
   background:linear-gradient(to top,rgba(0,0,0,.8),transparent,rgba(0,0,0,.4));z-index:30}
+/* v6.5 (Item 6): on embed lanes ONLY back + server buttons overlay the
+   embed's own player — no title block, no divider, no episodes button,
+   no opaque bar; the embed fills the screen. */
 #vw.embed #grad{display:none}
-#vw.embed #topbar{background:#000}
+#vw.embed #topbar{background:transparent;padding:14px 16px}
 #vw.embed #topbar .ttblock{display:none}
+#vw.embed #topbar .topdiv{display:none}
+#vw.embed #topbar #btnEpsTop{display:none}
+#vw.embed #topbar .cbtn svg{filter:drop-shadow(0 1px 3px rgba(0,0,0,.85))}
 
 /* ===== control buttons (cP) ===== */
 .cbtn{position:relative;display:flex;align-items:center;justify-content:center;color:var(--fg);
@@ -172,7 +178,7 @@ svg{display:block;fill:currentColor}
 #volSlider{height:6px;width:100px;cursor:pointer;accent-color:#fff}
 
 /* ===== paused overlay ===== */
-#pausedOv{position:absolute;inset:0;z-index:40;display:flex;align-items:center;background:rgba(0,0,0,.7);
+#pausedOv{position:absolute;inset:0;z-index:29;display:flex;align-items:center;background:rgba(0,0,0,.7);
   backdrop-filter:blur(2px);pointer-events:none;user-select:none;font-family:Lexend,Geist,Arial,sans-serif}
 #pausedOv .in{width:100%;max-width:48rem;padding:0 24px;transform:translateX(-20px);transition:transform .45s ease-out;opacity:0}
 #pausedOv.show .in{transform:translateX(0);opacity:1}
@@ -191,6 +197,8 @@ svg{display:block;fill:currentColor}
 #pausedOv .genres span{border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:3px 10px;font-size:12px;line-height:16px;color:rgba(255,255,255,.8)}
 #pausedOv .ov{margin-top:12px;font-size:14px;line-height:21px;color:rgba(255,255,255,.7);
   display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#pausedOv.show{pointer-events:auto}
+#pausedOv .plogo{max-width:280px;max-height:110px;object-fit:contain;margin-bottom:12px;filter:drop-shadow(0 8px 24px rgba(0,0,0,.6))}
 #vw.embed #pausedOv{display:none}
 </style>
 <style>
@@ -254,12 +262,15 @@ svg{display:block;fill:currentColor}
 #lauTips.fade{opacity:0}
 
 /* ===== popovers (servers / audio / subtitles) ===== */
-.popBk{position:absolute;inset:0;z-index:60;background:rgba(10,10,10,.5)}
+/* v6.5: sheets animate in/out with transitions (was a .1s popIn keyframe +
+   instant close = "popup" feel). Base state = pre-animation; .open = final. */
+.popBk{position:absolute;inset:0;z-index:60;background:rgba(10,10,10,.5);opacity:0;transition:opacity .22s ease}
+.popBk.open{opacity:1}
 .popover{position:absolute;z-index:60;display:flex;flex-direction:column;gap:10px;border-radius:6.4px;
   background:rgba(10,10,10,.8);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
   padding:4px;font-size:14px;line-height:20px;box-shadow:0 25px 50px rgba(0,0,0,.5);overflow:hidden;
-  animation:popIn .1s ease-out}
-@keyframes popIn{from{opacity:0;transform:scale(.97) translateY(-4px)}to{opacity:1;transform:none}}
+  opacity:0;transform:translateY(8px) scale(.98);transition:opacity .22s ease,transform .22s ease}
+.popover.open{opacity:1;transform:none}
 #srvPanel{width:288px;right:12px;top:72px;max-height:calc(100dvh - 150px)}
 @media (min-width:768px){#srvPanel{width:356px;right:24px;top:88px}}
 /* v6.3: phone card was 288px with a 200px scroll window for 780px of content
@@ -327,11 +338,13 @@ svg{display:block;fill:currentColor}
 .popEmpty{padding:24px 12px;text-align:center;font-size:14px;line-height:20px;color:var(--mut)}
 
 /* ===== drawers (settings / episodes) ===== */
-#drawerBk{position:absolute;inset:0;z-index:60;background:rgba(10,10,10,.5)}
+#drawerBk{position:absolute;inset:0;z-index:60;background:rgba(10,10,10,.5);opacity:0;transition:opacity .3s ease}
+#drawerBk.open{opacity:1}
 .drawer{position:absolute;left:0;right:0;bottom:0;z-index:60;margin:0 auto;display:flex;flex-direction:column;
   background:rgba(10,10,10,.8);backdrop-filter:blur(40px);-webkit-backdrop-filter:blur(40px);
   border-radius:6.4px 6.4px 0 0;max-height:90dvh;font-size:14px;line-height:20px;
-  transition:transform 450ms cubic-bezier(.22,1,.36,1);will-change:transform;overflow:hidden}
+  translate:0 26px;opacity:0;transition:translate .3s cubic-bezier(.22,1,.36,1),opacity .3s ease,transform 450ms cubic-bezier(.22,1,.36,1);will-change:transform;overflow:hidden}
+.drawer.open{translate:0 0;opacity:1}
 #settings{max-width:576px}
 #epDrawer{max-width:1024px;max-height:90vh}
 /* v6.3: settings is a CENTERED sheet on phones (Vidstuck's form), not a
@@ -496,7 +509,7 @@ svg{display:block;fill:currentColor}
         <span id="volSliderWrap"><input type="range" id="volSlider" min="0" max="1" step="0.05" value="1" aria-label="Volume"></span>
       </div>
       <div class="sp"></div>
-      <button class="cbtn" id="btnAudio" aria-label="Audio"><svg viewBox="0 0 24 24"><path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zM16 4l4 3-4 3v-2h-2v-2h2z"/></svg><span class="tip">Audio</span></button>
+      <button class="cbtn" id="btnAudio" aria-label="Audio"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg><span class="tip">Audio</span></button>
       <button class="cbtn" id="btnSubs" aria-label="Subtitles"><svg viewBox="0 0 24 24"><path d="M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 7H9.5v-.5h-2v3h2v-.5H11v1H6V9h5v2zm7 0h-1.5v-.5h-2v3h2v-.5H18v1h-5V9h5v2z"/></svg><span class="tip">Subtitles</span></button>
       <button class="cbtn" id="btnSet" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg><span class="tip">Settings</span></button>
       <button class="cbtn" id="btnFs" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg><span class="tip">Fullscreen</span></button>
@@ -505,6 +518,7 @@ svg{display:block;fill:currentColor}
 
   <!-- paused overlay -->
   <div id="pausedOv" class="hidden"><div class="in">
+    <img id="pLogo" class="plogo hidden" alt="">
     <div class="prow"><span>PAUSED</span></div>
     <h1 id="pTitle"></h1>
     <p class="tag" id="pTag"></p>
@@ -546,7 +560,7 @@ svg{display:block;fill:currentColor}
 
   <!-- audio popover -->
   <div class="popover pop2 hidden" id="audioSheet" role="dialog" aria-label="Audio">
-    <div class="popHead"><svg viewBox="0 0 24 24"><path d="M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zM16 4l4 3-4 3v-2h-2v-2h2z"/></svg><span>Audio</span></div>
+    <div class="popHead"><svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg><span>Audio</span></div>
     <div class="popScroll" id="audioSheetBody"></div>
   </div>
 
@@ -585,7 +599,7 @@ svg{display:block;fill:currentColor}
   <div id="toast" class="hidden"><span id="toastTxt"></span><button id="toastX" aria-label="Dismiss">×</button></div>
 </div>
 <script>
-/* ============ v6.4: v6.3 + metadata enrichment for non-DEMO ids (real title,
+/* ============ v6.5: v6.3 + metadata enrichment for non-DEMO ids (real title,
    genres, and artwork from the public FlickAtlas SEO chunks; DEMO ids keep
    their hardcoded logo/backdrop; failures keep the "Title <id>" fallback).
    v6.3: v6.2 + real-phone defects (topbar labels clipped off-screen,
@@ -623,7 +637,7 @@ var META = DEMO[MEDIA_TMDB] || {
   logo: "", bg: "", seasons: MEDIA_TYPE === "tv" ? { 1: 8 } : null, epNames: null
 };
 
-/* ============ v6.4: metadata enrichment for non-DEMO ids ============
+/* ============ v6.5: metadata enrichment for non-DEMO ids ============
    DEMO ids (550/66732) keep their hardcoded logo/backdrop/title and never
    fetch. Any other id loads its real title/genres/art from the public
    FlickAtlas SEO chunks (keyless, CORS-open raw.githubusercontent.com).
@@ -644,32 +658,61 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.4"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.5"; } catch(e){}
+}
+/* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
+   timeout; the 322KB Swapped chunk needs ~13s at the user's measured
+   25.7 KB/s, so the abort killed it and "Title <id>" stuck forever.
+   Now: 30s per attempt, a fast retry, then background retries while the
+   page is alive (capped). Playback/failover never wait on the fetch. */
+var metaTried = 0, metaDone = false;
+function applyChunkMeta(ent){
+  if (!ent || !ent.ld) return;
+  if (ent.ld.name) {
+    META.title = ent.ld.name;
+    var wt = $("watchTitle"); if (wt) wt.textContent = ent.ld.name;
+    var lt = $("lauTitle"); if (lt) lt.textContent = ent.ld.name;
+    try { document.title = ent.ld.name + " — Nova Player Test v6.5"; } catch(e){}
+    var lg = $("lauLogo"); if (lg) lg.classList.add("hidden");
+    var ti = $("lauTitle"); if (ti) ti.classList.remove("hidden");
+    if (ent.ld.genre) {
+      var gv = Array.isArray(ent.ld.genre) ? ent.ld.genre.join(" / ") : String(ent.ld.genre);
+      META.genres = Array.isArray(ent.ld.genre) ? ent.ld.genre : [String(ent.ld.genre)];
+      var g = $("lauGenre"); if (g) g.textContent = gv.toUpperCase();
+    }
+  }
+  if (ent.ld.description || ent.d) META.ov = ent.ld.description || ent.d;
+  if (ent.ld.tagline) META.tagline = ent.ld.tagline;
+  if (ent.img) { META.backdrop = ent.img; var im = $("lauArt"); if (im) im.src = ent.img; }
+  var dp = (ent.ld.datePublished || "").slice(0, 4);
+  if (dp) META.year = dp;
+  if (ent.ld.duration) META.runtime = ent.ld.duration;
+  if (ent.ld.aggregateRating && ent.ld.aggregateRating.ratingValue) META.rate = ent.ld.aggregateRating.ratingValue;
+  buildPausedOv();
 }
 function loadChunkMeta(){
-  if (META_HAS_DEMO) return;
-  if (typeof fetch !== "function") return;
-  var wantId = MEDIA_TMDB, wantType = MEDIA_TYPE, ctl = null;
-  try { ctl = new AbortController(); } catch(e){ ctl = null; }
-  var to = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch(e){} }, 8000);
-  fetch("https://raw.githubusercontent.com/Msohaib012/flickatlas-site/main/js/seo/" + (MEDIA_TMDB % 100) + ".json", ctl ? { signal: ctl.signal } : undefined).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
-    clearTimeout(to);
-    if (!j || MEDIA_TMDB !== wantId || MEDIA_TYPE !== wantType) return;
-    var e = (j.titles || {})[wantType + ":" + wantId];
-    if (!e || !e.ld) return;
-    if (e.ld.name && META_TITLE_IS_FALLBACK) META.title = e.ld.name;
-    if (e.ld.genre && e.ld.genre.length) META.genres = e.ld.genre.slice();
-    var art = e.img || e.ld.image || "";
-    if (art && !META.bg){
-      META.bg = art;
-      var lb = $("lauBg");
-      if (lb && !$("launcher").classList.contains("hidden")){
-        lb.src = META.bg;
-        lb.addEventListener("load", function(){ lb.classList.add("loaded"); $("lauCenter").classList.add("in"); });
-      }
-    }
-    paintMetaTitles();
-  }).catch(function(){ clearTimeout(to); });
+  if (META_HARDCODED || metaDone) return;
+  var id = MEDIA_TMDB, bb = (parseInt(id, 10) % 100);
+  if (isNaN(bb)) return;
+  metaTried++;
+  var ctrl = new AbortController();
+  var settled = false;
+  var to = setTimeout(function(){ try { ctrl.abort(); } catch (e) {} }, 30000);
+  fetch("https://raw.githubusercontent.com/Msohaib012/flickatlas-site/main/js/seo/" + bb + ".json", { signal: ctrl.signal })
+    .then(function(r){ if (!r.ok) throw new Error("chunk " + r.status); return r.json(); })
+    .then(function(j){
+      if (settled) return; settled = true; clearTimeout(to);
+      var ent = j[MEDIA_TYPE + ":" + id];
+      if (!ent || !ent.ld) { scheduleMetaRetry(); return; }
+      metaDone = true;
+      applyChunkMeta(ent);
+    })
+    .catch(function(){ if (settled) return; settled = true; clearTimeout(to); scheduleMetaRetry(); });
+}
+function scheduleMetaRetry(){
+  if (metaDone || metaTried >= 6) return;
+  var delay = metaTried < 2 ? 5000 : 30000;
+  setTimeout(function(){ if (!metaDone) loadChunkMeta(); }, delay);
 }
 loadChunkMeta();
 
@@ -768,18 +811,28 @@ $("toastX").addEventListener("click", function(){ $("toast").classList.add("hidd
 /* ============ popovers + drawers: one open at a time; toggle; Escape/backdrop close ============ */
 var openPopId = null, openDrawerId = null;
 function closePops(){
-  ["srvPanel", "audioSheet", "subsSheet"].forEach(function(id){ $(id).classList.add("hidden"); });
-  $("popBk").classList.add("hidden");
+  ["srvPanel", "audioSheet", "subsSheet"].forEach(function(id){
+    var el = $(id);
+    el.classList.remove("open");
+    setTimeout(function(){ if (!el.classList.contains("open")) el.classList.add("hidden"); }, 240);
+  });
+  var bk = $("popBk");
+  bk.classList.remove("open");
+  setTimeout(function(){ if (!bk.classList.contains("open")) bk.classList.add("hidden"); }, 240);
   openPopId = null;
   hideTips();
   maybeRearmWatchdog();
 }
 function closeDrawers(){
   ["settings", "epDrawer"].forEach(function(id){
-    $(id).classList.add("hidden");
-    $(id).style.transform = "";
+    var el = $(id);
+    el.classList.remove("open");
+    el.style.transform = "";
+    setTimeout(function(){ if (!el.classList.contains("open")) el.classList.add("hidden"); }, 300);
   });
-  $("drawerBk").classList.add("hidden");
+  var bk = $("drawerBk");
+  bk.classList.remove("open");
+  setTimeout(function(){ if (!bk.classList.contains("open")) bk.classList.add("hidden"); }, 300);
   var sm = $("epSeasonMenu"); if (sm) sm.classList.add("hidden");
   openDrawerId = null;
   hideTips();
@@ -801,17 +854,29 @@ function openPop(id){
   closeDrawers();
   closePops();
   disarmWatchdog();
-  $(id).classList.remove("hidden");
-  $("popBk").classList.remove("hidden");
+  var el = $(id);
+  el.classList.remove("hidden");
+  void el.offsetWidth;
+  el.classList.add("open");
+  var bk = $("popBk");
+  bk.classList.remove("hidden");
+  void bk.offsetWidth;
+  bk.classList.add("open");
   openPopId = id;
 }
 function openDrawer(id){
   closePops();
   closeDrawers();
   disarmWatchdog();
-  $(id).classList.remove("hidden");
-  $(id).style.transform = "";
-  $("drawerBk").classList.remove("hidden");
+  var el = $(id);
+  el.classList.remove("hidden");
+  el.style.transform = "";
+  void el.offsetWidth;
+  el.classList.add("open");
+  var bk = $("drawerBk");
+  bk.classList.remove("hidden");
+  void bk.offsetWidth;
+  bk.classList.add("open");
   openDrawerId = id;
 }
 $("popBk").addEventListener("click", closePops);
@@ -965,47 +1030,16 @@ function parseStream(s){
   else if (url.indexOf("/360/") > 0) qual = "360p";
   return { url: url, lang: lang, qual: qual, name: name };
 }
-function streamQuals(streams){
-  var seen = {}, out = [];
-  (streams || []).forEach(function(s){
-    var q = parseStream(s).qual;
-    if (!seen[q]) { seen[q] = 1; out.push(q); }
-  });
-  return out;
-}
+
+/* v6.5: server rows are name-only (user order) — no quality kid-rows, no
+   status/description lines. Quality/audio/subtitle selection lives only
+   in Settings > Media. Failed servers keep the .fail style (dimmed,
+   struck-through name) as the only failure signal. */
 function srvRowHtml(srv){
   var p = PROBE[srv.id];
   var sel = srv.id === curServer;
-  var h = "";
-  function row(stHtml, ds){
-    return '<button class="srv' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span>' + stHtml + '</span><span class="ds">' + ds + '</span></button>';
-  }
-  if (srv.lane === "native") {
-    if (p === undefined) {
-      h += row('<span class="st dim"><span class="spin"></span></span>', "Checking…");
-    } else if (p.unreachable) {
-      h += row(sel ? '<span class="st ok">' + ckSvg() + '</span>' : '<span class="st dim">—</span>', "Check nahi hua");
-    } else if (!p.ok) {
-      h += '<button class="srv fail' + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + '</span><span class="st bad">' + xSvg() + '</span></span><span class="ds">No usable sources found</span></button>';
-    } else {
-      var qs = streamQuals(p.streams);
-      h += row(sel ? '<span class="st ok">' + ckSvg() + '</span>' : '<span class="st">' + p.streams.length + ' streams</span>', srv.ds);
-      if (qs.length) {
-        h += '<div class="kids">' + qs.map(function(q, qi){
-          return '<button class="kid' + (qi === 0 ? " sel" : "") + '" data-srv="' + srv.id + '"><span>' + q + '</span><span class="ks ' + (qi === 0 ? "ready" : "queue") + '">' + (qi === 0 ? "Ready" : "Queue") + '</span></button>';
-        }).join("") + '</div>';
-      }
-    }
-  } else if (srv.id === "vidstuck") {
-    h += row(sel ? '<span class="st ok">' + ckSvg() + '</span>' : "", srv.ds) +
-         '<div class="kids">' +
-         '<button class="kid sel" data-srv="vidstuck"><span>360p</span><span class="ks ready">Ready</span></button>' +
-         '<button class="kid" data-srv="vidstuck"><span>480p</span><span class="ks queue">Queue</span></button>' +
-         '<button class="kid" data-srv="vidstuck"><span>720p</span><span class="ks queue">Queue</span></button></div>';
-  } else {
-    h += row(sel ? '<span class="st ok">' + ckSvg() + '</span>' : '<span class="st dim">—</span>', srv.ds);
-  }
-  return h;
+  var fail = !!(p && !p.ok && !p.unreachable);
+  return '<button class="srv' + (fail ? " fail" : "") + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + "</span>" + (sel ? '<span class="st ok">' + ckSvg() + "</span>" : "") + "</span></button>";
 }
 function ckSvg(){ return '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'; }
 function xSvg(){ return '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'; }
@@ -1170,30 +1204,65 @@ function applyLaneChrome(){
   }
   pokeBars();
 }
+/* v6.5: autoplay attempts go through attemptPlay — play with sound, one
+   muted retry on rejection, then a clean paused state. A rejected play()
+   used to leave the spinner visible forever on a loaded-but-paused video. */
+var curStreams = [];
+var curStreamIdx = 0;
+function attemptPlay(){
+  if (!isNativeLane()) return;
+  var p = null;
+  try { p = video.play(); } catch (e) { p = null; }
+  if (p && typeof p.catch === "function") p.catch(function(){
+    if (!isNativeLane()) return;
+    video.muted = true;
+    var p2 = null;
+    try { p2 = video.play(); } catch (e2) { p2 = null; }
+    if (p2 && typeof p2.catch === "function") p2.catch(function(){
+      if (video.readyState >= 2) showSpin(false);
+      updatePlayIco();
+    });
+  });
+}
+function playPickedStream(st, pos, autoplay){
+  showSpin(true);
+  hlsFailed = false;
+  video.classList.remove("hidden");
+  frame.classList.add("hidden");
+  applyVideoPrefs();
+  if (hls) { try { hls.destroy(); } catch(e){} hls = null; }
+  if (window.Hls && Hls.isSupported() && /\.m3u8/i.test(st.url)) {
+    hls = new Hls({ maxBufferLength: 30 });
+    hls.loadSource(st.url);
+    hls.attachMedia(video);
+    hls.on(Hls.Events.MANIFEST_PARSED, function(){
+      try { video.currentTime = pos; } catch(e){}
+      if (autoplay) attemptPlay(); else if (video.readyState >= 2) showSpin(false);
+      bindTextTracks(); refreshSettingsIfOpen();
+    });
+    hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, refreshSettingsIfOpen);
+    hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(){ bindTextTracks(); refreshSettingsIfOpen(); });
+    hls.on(Hls.Events.ERROR, function(ev, data){
+      if (data && data.fatal && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " ka stream toot gaya"); }
+    });
+  } else {
+    video.src = st.url;
+    var h = function(){
+      video.removeEventListener("loadedmetadata", h);
+      try { video.currentTime = pos; } catch(e){}
+      if (autoplay) attemptPlay(); else if (video.readyState >= 2) showSpin(false);
+    };
+    video.addEventListener("loadedmetadata", h);
+  }
+}
 function playNative(streams){
   curStreams = streams.map(parseStream).filter(function(x){ return x.url; });
   if (!curStreams.length) { failoverFrom(curServer, "Is server par koi stream nahi mili"); return; }
   var pick = curStreams[0], hi = -1;
   for (var i = 0; i < curStreams.length; i++) if (/hindi/i.test(curStreams[i].lang)) { hi = i; break; }
   if (hi >= 0) pick = curStreams[hi];
-  showSpin(true);
-  hlsFailed = false;
-  video.classList.remove("hidden"); frame.classList.add("hidden");
-  applyVideoPrefs();
-  if (window.Hls && Hls.isSupported() && /\.m3u8/i.test(pick.url)) {
-    hls = new Hls({ maxBufferLength: 30 });
-    hls.loadSource(pick.url);
-    hls.attachMedia(video);
-    hls.on(Hls.Events.MANIFEST_PARSED, function(){ video.play().catch(function(){}); refreshSettingsIfOpen(); });
-    hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, refreshSettingsIfOpen);
-    hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, refreshSettingsIfOpen);
-    hls.on(Hls.Events.ERROR, function(ev, data){
-      if (data && data.fatal && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " ka stream toot gaya"); }
-    });
-  } else {
-    video.src = pick.url;
-    video.play().catch(function(){});
-  }
+  curStreamIdx = curStreams.indexOf(pick);
+  playPickedStream(pick, 0, true);
   applyLaneChrome();
 }
 function playEmbed(srv){
@@ -1203,7 +1272,6 @@ function playEmbed(srv){
   /* sandbox rule (live player): sandbox ONLY on hindi/Vega */
   if (srv === "hindi") frame.setAttribute("sandbox", "allow-same-origin allow-scripts allow-presentation allow-forms");
   else frame.removeAttribute("sandbox");
-  showSpin(true);
   frame.src = url;
   $("pausedOv").classList.add("hidden"); $("pausedOv").classList.remove("show");
   applyLaneChrome();
@@ -1297,11 +1365,7 @@ function openPlayer(srvId, manual){
   if (META.year) pills += '<span>' + META.year + '</span>';
   $("deskPills").innerHTML = pills;
   $("btnEpsTop").classList.toggle("hidden", MEDIA_TYPE !== "tv");
-  $("pTitle").textContent = META.title;
-  $("pTag").textContent = META.tagline || "";
-  $("pMeta").innerHTML = [META.year, META.runtime, META.rate ? "★ " + META.rate : ""].filter(Boolean).join('<span>•</span>');
-  $("pPills").innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  $("pOv").textContent = META.ov || "";
+  buildPausedOv();
   syncNextEpBtn();
   renderSrvPanel();
   var srv = serverById(srvId);
@@ -1332,11 +1396,58 @@ function backToLauncher(){
 }
 
 /* ============ bars auto-hide + paused overlay ============ */
-function syncPausedOv(){
-  var show = isNativeLane() && video.paused && barsHidden && video.readyState >= 1;
-  $("pausedOv").classList.toggle("hidden", !show);
-  $("pausedOv").classList.toggle("show", show);
+function povMetaLine(){
+  var parts = [];
+  if (META.year) parts.push(String(META.year));
+  if (META.runtime) parts.push(fmtRuntime(META.runtime));
+  if (META.rate) parts.push("★ " + META.rate);
+  return parts.join("  ·  ");
 }
+function fmtRuntime(rt){
+  if (typeof rt === "number") { var h = Math.floor(rt / 60), m = rt % 60; return h ? (h + "h " + m + "m") : (m + "m"); }
+  var mm = String(rt).match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+  if (mm) { var h2 = parseInt(mm[1] || "0", 10), m2 = parseInt(mm[2] || "0", 10); return h2 ? (h2 + "h " + m2 + "m") : (m2 + "m"); }
+  return String(rt);
+}
+function buildPausedOv(){
+  var logo = $("pLogo");
+  if (logo) {
+    if (META.logo) { logo.src = META.logo; logo.classList.remove("hidden"); }
+    else { logo.classList.add("hidden"); logo.removeAttribute("src"); }
+  }
+  var t = $("pTitle"); if (t) t.textContent = META.title || "";
+  var tag = $("pTag");
+  if (tag) { tag.textContent = META.tagline || ""; tag.style.display = META.tagline ? "" : "none"; }
+  var meta = $("pMeta");
+  if (meta) { var ml = povMetaLine(); meta.textContent = ml; meta.style.display = ml ? "" : "none"; }
+  var pills = $("pPills");
+  if (pills) {
+    var gs = META.genres || [];
+    pills.innerHTML = gs.map(function(g){ return "<span>" + String(g).toUpperCase() + "</span>"; }).join("");
+    pills.style.display = gs.length ? "" : "none";
+  }
+  var ov = $("pOv");
+  if (ov) { var o = (META.ov || "").trim(); ov.textContent = o.length > 220 ? o.slice(0, 220).trim() + "…" : o; ov.style.display = o ? "" : "none"; }
+}
+function hidePausedOv(){
+  var ov = $("pausedOv");
+  ov.classList.add("hidden"); ov.classList.remove("show");
+}
+function syncPausedOv(){
+  /* Native lanes only, after the bars idle away, on a genuine pause of a
+     loaded stream — never during loading/failover/connecting (launcher
+     visible / no playable data / position 0) and never over a panel. */
+  var lauHidden = $("launcher").classList.contains("hidden");
+  var show = isNativeLane() && barsHidden && lauHidden &&
+    video.readyState >= 1 && video.paused && !video.seeking &&
+    video.currentTime > 0 && !openPopId && !openDrawerId;
+  if (show) buildPausedOv();
+  var ov = $("pausedOv");
+  ov.classList.toggle("hidden", !show);
+  ov.classList.toggle("show", show);
+}
+/* v6.5: tap anywhere on the paused detail overlay resumes playback. */
+$("pausedOv").addEventListener("click", function(){ hidePausedOv(); attemptPlay(); });
 function setBars(visible){
   hideTips();
   /* v6.3: on embed lanes our slim topbar is the ONLY way back to servers —
@@ -1378,8 +1489,9 @@ $("btnBack").addEventListener("click", backToLauncher);
 
 /* ============ video events ============ */
 video.addEventListener("play", function(){ showSpin(false); updatePlayIco(); pokeBars(); });
-video.addEventListener("pause", function(){ updatePlayIco(); pokeBars(); });
+video.addEventListener("pause", function(){ updatePlayIco(); if (video.readyState >= 2) showSpin(false); pokeBars(); });
 video.addEventListener("playing", function(){ showSpin(false); });
+  video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
 video.addEventListener("error", function(){
   if (isNativeLane() && !hlsFailed) { hlsFailed = true; failoverFrom(curServer, serverName(curServer) + " ka stream nahi chala"); }
@@ -1552,13 +1664,69 @@ function applyVideoPrefs(){
 <script>
 /* ============ audio / subtitle popovers: native lanes, REAL tracks only ============ */
 function audioTracks(){
-  if (isNativeLane() && hls && hls.audioTracks && hls.audioTracks.length) return hls.audioTracks;
+  if (!isNativeLane()) return [];
+  /* Dubs arrive as SEPARATE probe streams per language (e.g. a Hindi
+     stream URL) — hls.audioTracks is empty on those lanes, so the
+     language list must come from the probe streams first. */
+  var langs = [];
+  (curStreams || []).forEach(function(st, i){
+    if (!st.lang || /unknown/i.test(st.lang)) return;
+    for (var k = 0; k < langs.length; k++) if (langs[k].lang === st.lang) return;
+    langs.push({ label: st.lang, lang: st.lang, kind: "stream", si: i, hi: -1 });
+  });
+  if (langs.length) return langs;
+  if (hls && hls.audioTracks) {
+    return hls.audioTracks.map(function(t, i){
+      return { label: t.name || t.lang || ("Audio " + (i + 1)), lang: t.lang || "", kind: "hls", si: -1, hi: i };
+    });
+  }
   return [];
 }
+function audioSelIdx(){
+  var list = audioTracks();
+  if (!list.length) return -1;
+  if (list[0].kind === "stream") {
+    for (var i = 0; i < list.length; i++) if (list[i].si === curStreamIdx) return i;
+    return -1;
+  }
+  if (hls) {
+    for (var j = 0; j < list.length; j++) if (list[j].hi === hls.audioTrack) return j;
+  }
+  return -1;
+}
+function selectAudio(idx){
+  var list = audioTracks();
+  var t = list[idx];
+  if (!t) return;
+  if (t.kind === "stream") {
+    var wasPaused = video.paused, pos = video.currentTime;
+    curStreamIdx = t.si;
+    playPickedStream(curStreams[t.si], pos, !wasPaused);
+  } else if (hls) {
+    try { hls.audioTrack = t.hi; } catch (e) {}
+  }
+  refreshSettingsIfOpen();
+}
 function subTracks(){
-  if (!isNativeLane() || !video.textTracks) return [];
+  if (!isNativeLane()) return [];
   var out = [];
-  for (var i = 0; i < video.textTracks.length; i++) out.push(video.textTracks[i]);
+  var seen = {};
+  var tt = video.textTracks || [];
+  for (var i = 0; i < tt.length; i++) {
+    var key = (tt[i].label || "") + "|" + (tt[i].language || "");
+    if (seen[key]) continue;
+    seen[key] = 1;
+    out.push({ label: tt[i].label || "", lang: tt[i].language || "", kind: "text", ti: i, hi: -1, track: tt[i] });
+  }
+  if (hls && hls.subtitleTracks) {
+    for (var j = 0; j < hls.subtitleTracks.length; j++) {
+      var st = hls.subtitleTracks[j];
+      var k2 = (st.name || "") + "|" + (st.lang || "");
+      if (seen[k2]) continue;
+      seen[k2] = 1;
+      out.push({ label: st.name || "", lang: st.lang || "", kind: "hls", ti: -1, hi: j, track: null });
+    }
+  }
   return out;
 }
 function renderAudioSheet(){
@@ -1566,7 +1734,7 @@ function renderAudioSheet(){
   var list = audioTracks();
   if (list.length) {
     body.innerHTML = list.map(function(t, i){
-      return '<button class="opt' + (hls.audioTrack === i ? " sel" : "") + '" data-au="' + i + '" style="animation-delay:' + (i * 0.06).toFixed(2) + 's"><span>' + (t.name || ("Audio " + (i + 1))) + "</span>" + (hls.audioTrack === i ? '<span>' + ckSvg() + '</span>' : "") + "</button>";
+      return '<button class="opt' + (audioSelIdx() === i ? " sel" : "") + '" data-au="' + i + '" style="animation-delay:' + (i * 0.06).toFixed(2) + 's"><span>' + (t.label || ("Audio " + (i + 1))) + "</span>" + (audioSelIdx() === i ? '<span>' + ckSvg() + '</span>' : "") + "</button>";
     }).join("");
   } else {
     body.innerHTML = '<p class="popEmpty">No audio languages available.</p>';
@@ -1588,8 +1756,8 @@ function renderSubsSheet(){
 /* Delegated: popover rows never lose their handlers on re-render. */
 $("audioSheetBody").addEventListener("click", function(e){
   var b = e.target.closest("[data-au]");
-  if (!b || !hls) return;
-  hls.audioTrack = parseInt(b.getAttribute("data-au"), 10);
+  if (!b) return;
+  selectAudio(parseInt(b.getAttribute("data-au"), 10));
   closePops();
 });
 $("subsSheetBody").addEventListener("click", function(e){
@@ -1600,28 +1768,31 @@ $("subsSheetBody").addEventListener("click", function(e){
 });
 function selectSub(idx){
   selectedSubIdx = idx;
-  if (hls && hls.subtitleTracks && hls.subtitleTracks.length) {
-    try { hls.subtitleTrack = idx; } catch (e) {}
-  }
   var list = subTracks();
   for (var j = 0; j < list.length; j++) {
-    /* "hidden": cues fire for our custom overlay, browser renders nothing. */
-    list[j].mode = (j === idx) ? "hidden" : "disabled";
+    if (list[j].track) list[j].track.mode = (j === idx) ? "hidden" : "disabled";
+  }
+  if (hls && hls.subtitleTracks && hls.subtitleTracks.length) {
+    try {
+      var hi = -1;
+      if (idx >= 0 && list[idx]) hi = list[idx].hi;
+      hls.subtitleTrack = hi;
+    } catch (e) {}
   }
   syncCue();
 }
 function bindTextTracks(){
-  if (cueBound || !video.textTracks) return;
-  cueBound = true;
+  /* Re-runnable: tracks can arrive with the manifest, long after the
+     first bind. Each track is bound once (per-track flag). */
+  if (!video.textTracks) return;
   for (var i = 0; i < video.textTracks.length; i++) {
-    (function(tr){
-      tr.addEventListener("cuechange", syncCue);
-    })(video.textTracks[i]);
+    var tr = video.textTracks[i];
+    if (tr.__cueBound) continue;
+    tr.__cueBound = true;
+    tr.oncuechange = function(){ syncCue(); };
+    if (selectedSubIdx === i) tr.mode = "hidden";
   }
-  if (hls && hls.subtitleTracks && hls.subtitleTracks.length && selectedSubIdx < 0) {
-    /* keep subtitles off until the user picks one */
-    for (var j = 0; j < video.textTracks.length; j++) video.textTracks[j].mode = "disabled";
-  }
+  cueBound = video.textTracks.length > 0;
 }
 function syncCue(){
   var box = $("cueBox");
@@ -1646,7 +1817,7 @@ var ICONS = {
   server: "M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z",
   quality: "M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16zm0 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6z",
   subs: "M19 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm-8 7H9.5v-.5h-2v3h2v-.5H11v1H6V9h5v2zm7 0h-1.5v-.5h-2v3h2v-.5H18v1h-5V9h5v2z",
-  audio: "M3 10h11v2H3zm0-4h11v2H3zm0 8h7v2H3zM16 4l4 3-4 3v-2h-2v-2h2z",
+  audio: "M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z",
   play: "M8 5v14l11-7z",
   tap: "M9 11.24V7.5A2.5 2.5 0 0 1 11.5 5c.54 0 1.05.21 1.43.59l1.7 1.7 3.54-.37a1.5 1.5 0 0 1 1.32 2.23l-1.9 4.08c-.5 1.07-1.58 1.77-2.77 1.77H11v-3.5l-2 1.74z",
   ratio: "M19 12H5a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2zm0 5H5v-3h14v3zM5 5h14a2 2 0 0 1 2 2v1H3V7a2 2 0 0 1 2-2z",
@@ -1677,9 +1848,10 @@ function currentSubLabel(){
   return list[selectedSubIdx] ? (list[selectedSubIdx].label || ("Subtitle " + (selectedSubIdx + 1))) : "Off";
 }
 function currentAudioLabel(){
-  if (!hls || !hls.audioTracks || !hls.audioTracks.length) return "";
-  var t = hls.audioTracks[hls.audioTrack];
-  return t ? (t.name || ("Audio " + (hls.audioTrack + 1))) : "";
+  var list = audioTracks();
+  var i = audioSelIdx();
+  if (i < 0 || !list[i]) return "";
+  return list[i].label || ("Audio " + (i + 1));
 }
 function renderSettings(){
   var body = $("setBody");
@@ -1688,57 +1860,61 @@ function renderSettings(){
   $("setSub").textContent = setView === "main" ? "Customize your playback experience." : "";
   $("setBack").classList.toggle("hidden", setView === "main");
   if (setView === "main") {
-    var srcBody = srow("server", "Server", serverName(curServer), "servers");
-    var mediaBody = "";
     var native = isNativeLane();
+    /* SOURCE: server summary only — switching opens the server sheet. */
+    var srcBody = srow("server", "Server", serverName(curServer), "servers");
+    var srcPrev = serverName(curServer);
+    /* MEDIA: track selection ONLY (quality / subtitles / audio). */
+    var mediaBody = "";
     if (hasQuality()) mediaBody += srow("quality", "Quality", qualityLabel, "quality");
     if (hasSubs()) mediaBody += srow("subs", "Subtitles", currentSubLabel(), "subs");
     if (hasAudio()) mediaBody += srow("audio", "Audio", currentAudioLabel(), "audio");
-    if (native) {
-      mediaBody += srow("ratio", "Aspect Ratio", aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill", "aspect");
-      mediaBody += srow("bright", "Brightness", brightnessVal + "%", "brightness");
-      mediaBody += trow("mirror", "Mirror", setMirror, "mirror");
-      mediaBody += srow("pip", "Picture-in-Picture", "", "pip");
-      mediaBody += srow("speed", "Playback Speed", (speedVal + "x").replace(".0x", "x"), "speed");
-    }
-    if (!mediaBody) mediaBody = '<p class="cardnote">Is stream me quality/subtitle/audio ki koi track nahi hai — embed servers par ye settings embed ke apne controls se badalti hain.</p>';
-    var playBody = "";
-    playBody += trow("loop", "Loop", setLoop, "loop");
-    if (MEDIA_TYPE === "tv") playBody += trow("play", "Auto Play Next Episode", setAutoNext, "autonext");
-    playBody += trow("tap", "Double-tap to Seek", setDoubleTap, "doubletap");
-    var srcPrev = serverName(curServer);
+    if (!mediaBody) mediaBody = '<p class="cardnote">Is stream me quality/subtitle/audio ki koi track nahi hai.</p>';
     var mediaParts = [];
     if (hasQuality()) mediaParts.push(qualityLabel);
     if (hasAudio()) mediaParts.push(currentAudioLabel() || "Audio");
     if (hasSubs()) mediaParts.push(currentSubLabel());
-    var mediaPrev;
-    if (mediaParts.length) mediaPrev = mediaParts.join(" · ");
-    else if (native) mediaPrev = (aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill") + " · " + brightnessVal + "%";
-    else mediaPrev = "Embed controls";
+    var mediaPrev = mediaParts.length ? mediaParts.join(" · ") : "No tracks";
+    /* VIDEO: picture settings only. */
+    var videoBody = "";
+    if (native) {
+      videoBody += srow("ratio", "Aspect Ratio", aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill", "aspect");
+      videoBody += srow("bright", "Brightness", brightnessVal + "%", "brightness");
+      videoBody += trow("mirror", "Mirror", setMirror, "mirror");
+      videoBody += srow("pip", "Picture-in-Picture", "", "pip");
+    }
+    var videoPrev = native ? (aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill") + " · " + brightnessVal + "%" : "Embed controls";
+    /* PLAYBACK: speed + loop + auto-next + double-tap. */
+    var playBody = "";
+    playBody += srow("speed", "Playback Speed", (speedVal + "x").replace(".0x", "x"), "speed");
+    playBody += trow("loop", "Loop", setLoop, "loop");
+    if (MEDIA_TYPE === "tv") playBody += trow("play", "Auto Play Next Episode", setAutoNext, "autonext");
+    playBody += trow("tap", "Double-tap to Seek", setDoubleTap, "doubletap");
     var playPrev = [(speedVal + "x").replace(".0x", "x"), "Loop " + (setLoop ? "On" : "Off")];
     if (MEDIA_TYPE === "tv") playPrev.push("Auto Next " + (setAutoNext ? "On" : "Off"));
     body.innerHTML = accSection("source", "Source", srcBody, srcPrev) +
       '<hr class="sep">' + accSection("media", "Media", mediaBody, mediaPrev) +
+      '<hr class="sep">' + accSection("video", "Video", videoBody, videoPrev) +
       '<hr class="sep">' + accSection("playback", "Playback", playBody, playPrev.join(" · ")) +
       '<button class="setClose" data-act="close">Close</button>';
-  } else if (setView === "servers") {
-    body.innerHTML = srvListsHtml();
   } else if (setView === "quality" && hasQuality()) {
     var hq = '<button class="srow" data-q="-1"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span>' + (qualityLabel === "Auto" ? '<span class="vl">✓</span>' : "") + '</button>';
     hls.levels.forEach(function(lv, i){
       hq += '<button class="srow" data-q="' + i + '"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">' + (lv.height ? lv.height + "p" : "Level " + (i + 1)) + "</span>" + (qualityLabel === (lv.height + "p") ? '<span class="vl">✓</span>' : "") + "</button>";
     });
     body.innerHTML = hq;
-  } else if (setView === "audio" && hasAudio()) {
-    body.innerHTML = hls.audioTracks.map(function(t, i){
-      return '<button class="srow" data-au="' + i + '"><span class="ic">' + ico(ICONS.audio) + '</span><span class="lb">' + (t.name || ("Audio " + (i + 1))) + "</span>" + (hls.audioTrack === i ? '<span class="vl">✓</span>' : "") + "</button>";
-    }).join("");
-  } else if (setView === "subs" && hasSubs()) {
-    var hs = '<button class="srow" data-sub="-1"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">Off</span></button>';
-    for (var i = 0; i < video.textTracks.length; i++) {
-      hs += '<button class="srow" data-sub="' + i + '"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">' + (video.textTracks[i].label || ("Subtitle " + (i + 1))) + "</span></button>";
+  } else if (setView === "audio") {
+    var al = audioTracks();
+    body.innerHTML = al.length ? al.map(function(t, i){
+      return '<button class="srow" data-au="' + i + '"><span class="ic">' + ico(ICONS.audio) + '</span><span class="lb">' + (t.label || ("Audio " + (i + 1))) + "</span>" + (audioSelIdx() === i ? '<span class="vl">✓</span>' : "") + "</button>";
+    }).join("") : '<p class="cardnote">Is stream me koi audio language nahi hai.</p>';
+  } else if (setView === "subs") {
+    var sl = subTracks();
+    var hs = '<button class="srow" data-sub="-1"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">Off</span>' + (selectedSubIdx < 0 ? '<span class="vl">✓</span>' : "") + "</button>";
+    for (var i = 0; i < sl.length; i++) {
+      hs += '<button class="srow" data-sub="' + i + '"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">' + (sl[i].label || ("Subtitle " + (i + 1))) + "</span>" + (selectedSubIdx === i ? '<span class="vl">✓</span>' : "") + "</button>";
     }
-    body.innerHTML = hs;
+    body.innerHTML = sl.length ? hs : '<p class="cardnote">Is stream me koi subtitle track nahi hai.</p>';
   } else if (setView === "aspect") {
     body.innerHTML = [["contain", "Fit"], ["cover", "Crop"], ["fill", "Fill"]].map(function(o){
       return '<button class="srow" data-aspect="' + o[0] + '"><span class="ic">' + ico(ICONS.ratio) + '</span><span class="lb">' + o[1] + "</span>" + (aspectMode === o[0] ? '<span class="vl">✓</span>' : "") + "</button>";
@@ -1770,7 +1946,7 @@ $("setBody").addEventListener("click", function(e){
     setView = "main"; renderSettings(); return;
   }
   var au = e.target.closest("[data-au]");
-  if (au) { if (hls) hls.audioTrack = parseInt(au.getAttribute("data-au"), 10); setView = "main"; renderSettings(); return; }
+  if (au) { selectAudio(parseInt(au.getAttribute("data-au"), 10)); setView = "main"; renderSettings(); return; }
   var sb = e.target.closest("[data-sub]");
   if (sb) { selectSub(parseInt(sb.getAttribute("data-sub"), 10)); setView = "main"; renderSettings(); return; }
   var as = e.target.closest("[data-aspect]");
@@ -1783,7 +1959,7 @@ $("setBody").addEventListener("click", function(e){
   if (act) {
     var a = act.getAttribute("data-act");
     if (a === "close") { closeDrawers(); }
-    else if (a === "servers" || a === "quality" || a === "subs" || a === "audio" || a === "aspect" || a === "brightness" || a === "speed") { setView = a; renderSettings(); }
+    else if (a === "servers") { closeDrawers(); renderSrvPanel(); openPop("srvPanel"); } else if (a === "quality" || a === "subs" || a === "audio" || a === "aspect" || a === "brightness" || a === "speed") { setView = a; renderSettings(); }
     else if (a === "autonext") { setAutoNext = !setAutoNext; renderSettings(); }
     else if (a === "doubletap") { setDoubleTap = !setDoubleTap; renderSettings(); }
     else if (a === "loop") { setLoop = !setLoop; applyVideoPrefs(); renderSettings(); }
