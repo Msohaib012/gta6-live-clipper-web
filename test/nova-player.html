@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v5</title>
+<title>Nova Player — Test Preview v6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&display=swap" rel="stylesheet">
@@ -130,6 +130,8 @@ svg{display:block;fill:currentColor}
 /* seek */
 #seekRow{display:flex;align-items:center;gap:12px;padding:0 4px;width:100%}
 #seekTrack{position:relative;height:24px;flex:1;cursor:pointer;touch-action:none}
+.deskTime{display:none;white-space:nowrap}
+@media (min-width:768px){.deskTime{display:block;font-size:14px;line-height:20px;color:rgba(250,250,250,.8);font-variant-numeric:tabular-nums}}
 #seekBar{position:absolute;left:0;right:0;top:50%;height:6px;transform:translateY(-50%);display:flex;gap:2px;
   border-radius:3px;overflow:hidden;background:rgba(255,255,255,.2);transition:transform .15s}
 #skBuf{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.3)}
@@ -298,7 +300,8 @@ svg{display:block;fill:currentColor}
 .kid .ks.failed{color:var(--red400)}
 .kid .ks.queue{opacity:.4}
 .popFoot{border-top:1px solid var(--bd);padding:8px}
-.popFoot p{padding:4px 12px;text-align:center;font-size:12px;line-height:16px;color:var(--mut)}
+.popFoot p{display:flex;justify-content:space-between;gap:12px;padding:4px 12px;font-size:12px;line-height:16px;color:var(--mut)}
+.popFoot p span:last-child{text-align:right}
 .opt{display:flex;width:100%;align-items:center;justify-content:space-between;border-radius:8px;
   padding:10px 12px;font-size:16px;line-height:24px;text-align:left;transition:background-color .15s;
   animation:rowIn .3s ease-out both}
@@ -445,11 +448,13 @@ svg{display:block;fill:currentColor}
       <div class="pills" id="deskPills"></div>
     </div>
     <div id="seekRow">
+      <span class="deskTime" id="tCurD">0:00</span>
       <div id="seekTrack" role="slider" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" tabindex="0">
         <div id="seekBar"><div id="skBuf"></div><div id="skPlay"></div></div>
         <div id="skThumb"></div>
         <div id="seekHover">0:00</div>
       </div>
+      <span class="deskTime" id="tTotD">0:00</span>
     </div>
     <div id="timesRow"><span id="tCur">0:00</span><span id="tTot">0:00</span></div>
     <div id="ctlRow">
@@ -507,7 +512,7 @@ svg{display:block;fill:currentColor}
   <div class="popover hidden" id="srvPanel" role="dialog" aria-label="Servers">
     <div class="popHead"><svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg><span>Servers</span></div>
     <div class="popScroll" id="srvPanelBody"></div>
-    <div class="popFoot"><p>Choose a server or playback quality</p></div>
+    <div class="popFoot"><p><span id="srvCount">8 servers available</span><span>Switched servers automatically if a source fails.</span></p></div>
   </div>
 
   <!-- audio popover -->
@@ -551,7 +556,8 @@ svg{display:block;fill:currentColor}
   <div id="toast" class="hidden"><span id="toastTxt"></span><button id="toastX" aria-label="Dismiss">×</button></div>
 </div>
 <script>
-/* ============ v5: phone-first rebuild from the real Vidstuck code study.
+/* ============ v6: v5 + side-by-side fix round (D1 logo/backdrop URLs, D2 desktop
+   time labels, D3 demo genres, D4 hidden-bars first interaction, D5 servers footer).
    Own implementation; style values (colors/sizes/spacing/fonts) follow the
    extracted Vidstuck rules. No Vidstuck code, logo, or brand assets copied.
    No TMDB key anywhere in this file. ============ */
@@ -566,15 +572,15 @@ var DEMO = {
   550: { title: "Fight Club", kind: "Movie", year: "1999", runtime: "2h 19m", rate: "8.4",
     tagline: "Mischief. Mayhem. Soap.",
     ov: "A ticking-time-bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy. Their concept catches on, with underground \"fight clubs\" forming in every town, until an eccentric gets in the way and ignites an out-of-control spiral toward oblivion.",
-    genres: ["Drama", "Crime", "Thriller"],
-    logo: "https://image.tmdb.org/t/p/original/hTlhXySBOxDvQzXj6mA5u2lKzXv.png",
+    genres: ["Drama", "Thriller"],
+    logo: "https://image.tmdb.org/t/p/original/7Uqhv24pGJs4Ns31NoOPWFJGWNG.png",
     bg: "https://image.tmdb.org/t/p/w780/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg", seasons: null, epNames: null },
   66732: { title: "Stranger Things", kind: "Series", year: "2016", runtime: "4 Seasons", rate: "8.6",
     tagline: "Every ending has a beginning.",
     ov: "When a young boy vanishes, a small town uncovers a mystery involving secret experiments, supernatural forces—and one strange little girl.",
     genres: ["Drama", "Sci-Fi & Fantasy", "Mystery"],
-    logo: "https://image.tmdb.org/t/p/original/uOOtwY7vQ5q4Fy9uG8k8r6h8Z0a.png",
-    bg: "https://image.tmdb.org/t/p/w780/56v2KjBlU4XaOv9rVYEQypROv-H.jpg",
+    logo: "https://image.tmdb.org/t/p/original/uyVM5qGksUzCgwo6UU0UrHex8Oj.png",
+    bg: "https://image.tmdb.org/t/p/w780/9P4IIMYY3HifqeruZq0ZZ9g7YUi.jpg",
     seasons: { 1: 8, 2: 9, 3: 8, 4: 9, 5: 8 },
     epNames: { 1: ["Chapter One: The Vanishing of Will Byers", "Chapter Two: The Weirdo on Maple Street", "Chapter Three: Holly, Jolly", "Chapter Four: The Body", "Chapter Five: The Flea and the Acrobat", "Chapter Six: The Monster", "Chapter Seven: The Bathtub", "Chapter Eight: The Upside Down"] } }
 };
@@ -918,6 +924,7 @@ function renderSrvPanel(){
   var sc = body.scrollTop;
   body.innerHTML = srvListsHtml();
   body.scrollTop = sc;
+  var sc2 = $("srvCount"); if (sc2) sc2.textContent = SERVERS.length + " servers available";
 }
 /* ONE delegated listener for the whole panel: re-renders can never orphan it. */
 $("srvPanelBody").addEventListener("click", function(e){
@@ -1243,12 +1250,14 @@ video.addEventListener("error", function(){
 video.addEventListener("ended", function(){ if (setLoop) return; if (setAutoNext && MEDIA_TYPE === "tv") stepEpisode(1); });
 video.addEventListener("loadedmetadata", function(){
   $("tTot").textContent = fmt(video.duration);
+  $("tTotD").textContent = $("tTot").textContent;
   bindTextTracks();
 });
 video.addEventListener("progress", updateBuffered);
 video.addEventListener("timeupdate", function(){
   if (!isFinite(video.duration) || !video.duration) return;
   $("tCur").textContent = fmt(video.currentTime);
+  $("tCurD").textContent = $("tCur").textContent;
   var pct = 100 * video.currentTime / video.duration;
   if (!seekDragging) { setSeekUI(pct); }
   $("seekTrack").setAttribute("aria-valuenow", String(Math.round(pct)));
@@ -1301,6 +1310,7 @@ var lastTap = 0, lastTapSide = "";
 $("vw").addEventListener("touchstart", function(e){
   if (!setDoubleTap || !isNativeLane()) return;
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast")) return;
+  if (barsHidden) { pokeBars(); lastTap = 0; return; }
   var t = e.touches[0], r = $("vw").getBoundingClientRect();
   var side = (t.clientX - r.left) > r.width / 2 ? "R" : "L";
   var now = Date.now();
