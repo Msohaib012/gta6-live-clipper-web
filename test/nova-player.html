@@ -1591,6 +1591,16 @@ $("btnFs").addEventListener("click", function(){
 /* double-tap: touch (always when enabled) + mouse dblclick, ±15s */
 var lastTap = 0, lastTapSide = "";
 $("vw").addEventListener("touchstart", function(e){
+  /* v6.5 fixup 4: resume at touchstart, BEFORE any synthesized mousemove can
+     pokeBars() and hide the overlay (that race made the click handler's
+     overlay check miss, so real taps never resumed). Chrome above already
+     returned; a shown overlay covers everything else. Not gated on the
+     double-tap setting: resume must work even with double-tap off. */
+  if (isNativeLane() && $("pausedOv").classList.contains("show") &&
+      !e.target.closest("#topbar") && !e.target.closest("#botblock") &&
+      !e.target.closest(".popover") && !e.target.closest(".drawer") && !e.target.closest("#toast")) {
+    hidePausedOv(); attemptPlay(); touchShowed = true; lastTap = 0; return;
+  }
   if (!setDoubleTap || !isNativeLane()) return;
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#pausedOv")) return; /* v6.5 fixup: overlay taps resume, never pokeBars */
   if (barsHidden) { pokeBars(); touchShowed = true; lastTap = 0; return; }
