@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.3</title>
+<title>Nova Player — Test Preview v6.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&display=swap" rel="stylesheet">
@@ -585,7 +585,10 @@ svg{display:block;fill:currentColor}
   <div id="toast" class="hidden"><span id="toastTxt"></span><button id="toastX" aria-label="Dismiss">×</button></div>
 </div>
 <script>
-/* ============ v6.3: v6.2 + real-phone defects (topbar labels clipped off-screen,
+/* ============ v6.4: v6.3 + metadata enrichment for non-DEMO ids (real title,
+   genres, and artwork from the public FlickAtlas SEO chunks; DEMO ids keep
+   their hardcoded logo/backdrop; failures keep the "Title <id>" fallback).
+   v6.3: v6.2 + real-phone defects (topbar labels clipped off-screen,
    no tap-to-hide, stale embed bar timer trapping chrome, stale settings values,
    cramped server card, bottom-sheet settings -> centered sheet on phones).
    Own implementation; style values follow the extracted Vidstuck rules.
@@ -619,6 +622,56 @@ var META = DEMO[MEDIA_TMDB] || {
   year: "", runtime: "", rate: "", tagline: "", ov: "", genres: [],
   logo: "", bg: "", seasons: MEDIA_TYPE === "tv" ? { 1: 8 } : null, epNames: null
 };
+
+/* ============ v6.4: metadata enrichment for non-DEMO ids ============
+   DEMO ids (550/66732) keep their hardcoded logo/backdrop/title and never
+   fetch. Any other id loads its real title/genres/art from the public
+   FlickAtlas SEO chunks (keyless, CORS-open raw.githubusercontent.com).
+   A failed/slow/missing fetch keeps the "Title <id>" fallback and never
+   touches playback, failover, or timers. An explicit &title= param wins
+   over the chunk name. Stale responses (id/type changed meanwhile) are
+   ignored. */
+var META_HAS_DEMO = !!DEMO[MEDIA_TMDB];
+var META_TITLE_IS_FALLBACK = !META_HAS_DEMO && !qp.get("title");
+function paintMetaTitles(){
+  var suf = MEDIA_TYPE === "tv" ? "  S" + MEDIA_SEASON + " E" + MEDIA_EPISODE : "";
+  var lt = $("lauTitle"); if (lt) lt.textContent = META.title;
+  var lg = $("lauGenre"); if (lg) lg.textContent = (META.genres || []).slice(0, 2).join(" / ");
+  var wt = $("watchTitle"); if (wt) wt.textContent = META.title + suf;
+  var dh = $("deskH1"); if (dh) dh.textContent = META.title + suf;
+  var pt = $("pTitle"); if (pt) pt.textContent = META.title;
+  var dp = $("deskPills");
+  if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
+  var pp = $("pPills");
+  if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
+  try { document.title = META.title + " — Nova Player Test v6.4"; } catch(e){}
+}
+function loadChunkMeta(){
+  if (META_HAS_DEMO) return;
+  if (typeof fetch !== "function") return;
+  var wantId = MEDIA_TMDB, wantType = MEDIA_TYPE, ctl = null;
+  try { ctl = new AbortController(); } catch(e){ ctl = null; }
+  var to = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch(e){} }, 8000);
+  fetch("https://raw.githubusercontent.com/Msohaib012/flickatlas-site/main/js/seo/" + (MEDIA_TMDB % 100) + ".json", ctl ? { signal: ctl.signal } : undefined).then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
+    clearTimeout(to);
+    if (!j || MEDIA_TMDB !== wantId || MEDIA_TYPE !== wantType) return;
+    var e = (j.titles || {})[wantType + ":" + wantId];
+    if (!e || !e.ld) return;
+    if (e.ld.name && META_TITLE_IS_FALLBACK) META.title = e.ld.name;
+    if (e.ld.genre && e.ld.genre.length) META.genres = e.ld.genre.slice();
+    var art = e.img || e.ld.image || "";
+    if (art && !META.bg){
+      META.bg = art;
+      var lb = $("lauBg");
+      if (lb && !$("launcher").classList.contains("hidden")){
+        lb.src = META.bg;
+        lb.addEventListener("load", function(){ lb.classList.add("loaded"); $("lauCenter").classList.add("in"); });
+      }
+    }
+    paintMetaTitles();
+  }).catch(function(){ clearTimeout(to); });
+}
+loadChunkMeta();
 
 /* ============ servers — same 8 as the live player, same embed URLs, two lists ============ */
 var SERVERS = [
