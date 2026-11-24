@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.15</title>
+<title>Nova Player — Test Preview v6.16</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -362,9 +362,12 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 @media (orientation:landscape) and (max-height:500px){.drawer{max-height:100dvh}}
 /* v6.13: mobile landscape ONLY (short viewports) — PC + portrait untouched.
    Controls sit slightly inside the edges (safe-area + minimal inset) so edge
-   buttons show fully; servers/settings sheets stay compact, never fullscreen. */
+   buttons show fully; servers/settings sheets stay compact, never fullscreen.
+   v6.16: back-button (left) side of #topbar capped at 16px — his 2026-11-24
+   order, the left space was far too big on his phone (cutout-side inset);
+   server (right) side untouched. */
 @media (orientation:landscape) and (max-height:500px){
-  #topbar{padding:calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) 10px calc(14px + env(safe-area-inset-left, 0px))}
+  #topbar{padding:calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) 10px min(16px, calc(2px + env(safe-area-inset-left, 0px)))}
   #botblock{padding:14px calc(14px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px))}
   #srvPanel{width:min(252px,calc(100vw - 24px));right:10px;top:54px;max-height:calc(100dvh - 92px)}
   #srvPanel .popScroll{max-height:170px}
@@ -724,7 +727,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.15"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.16"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
