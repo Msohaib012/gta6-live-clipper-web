@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.9</title>
+<title>Nova Player — Test Preview v6.10</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&family=Inter:wght@800&display=swap" rel="stylesheet">
@@ -31,6 +31,8 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 
 /* ===== stage ===== */
 #vw{position:relative;height:100dvh;width:100%;overflow:hidden;background:#000}
+#vw:fullscreen{background:#000}
+#vw:fullscreen video{width:100%;height:100%}
 #vid,#frm{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
 #vid{object-fit:contain}
 #grad{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;
@@ -703,7 +705,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.9"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.10"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -908,7 +910,7 @@ function probeRW(srv){
     d = stripPreviews(d);
     var list = [];
     if (d.streams && d.streams.length) list = d.streams;
-    else if (d.url) list = [{ url: d.url, name: d.name || "", quality: d.quality || "" }];
+    else if (d.url) list = [{ url: d.url, name: d.name || "", quality: d.quality || "", format: d.format || "", subtitles: d.subtitles || d.subs || [] }];
     else if (Array.isArray(d)) list = d;
     return { ok: list.length > 0, streams: list, raw: d };
   }).catch(function(){ return { ok: false, streams: [] }; });
@@ -1138,6 +1140,29 @@ $("btnCloudL").addEventListener("click", function(){ renderSrvPanel(); openPop("
 <script>
 /* ============ server panel (popover) — DELEGATED clicks ============ */
 var curServer = null;
+/* v6.10: Roman language labels — ported verbatim from the live player
+   (prettyLang): ISO codes + native-script names -> Roman display names. */
+function prettyLang(name, lang) {
+  var l = (lang || '').toLowerCase().split('-')[0];
+  var map = { hi:'Hindi', hin:'Hindi', en:'English', eng:'English', ta:'Tamil', tam:'Tamil', te:'Telugu', tel:'Telugu', ml:'Malayalam', mal:'Malayalam', kn:'Kannada', kan:'Kannada', bn:'Bengali', ben:'Bengali', mr:'Marathi', mar:'Marathi', pa:'Punjabi', pan:'Punjabi', gu:'Gujarati', guj:'Gujarati', ur:'Urdu', urd:'Urdu', es:'Spanish', spa:'Spanish', fr:'French', fra:'French', de:'German', deu:'German', ger:'German', it:'Italian', ita:'Italian', ja:'Japanese', jpn:'Japanese', pt:'Portuguese', por:'Portuguese', tr:'Turkish', tur:'Turkish', cs:'Czech', ces:'Czech', cze:'Czech', hu:'Hungarian', hun:'Hungarian', pl:'Polish', pol:'Polish', ar:'Arabic', ara:'Arabic', ru:'Russian', rus:'Russian', ko:'Korean', kor:'Korean', zh:'Chinese', zho:'Chinese', da:'Danish', dan:'Danish', nl:'Dutch', nld:'Dutch', sv:'Swedish', swe:'Swedish', no:'Norwegian', nor:'Norwegian', fi:'Finnish', fin:'Finnish', el:'Greek', ell:'Greek', th:'Thai', tha:'Thai', id:'Indonesian', ind:'Indonesian', ms:'Malay', msa:'Malay', vi:'Vietnamese', vie:'Vietnamese', fil:'Filipino', uk:'Ukrainian', ukr:'Ukrainian', he:'Hebrew', heb:'Hebrew', fa:'Persian', fas:'Persian' };
+  if (map[l]) return map[l];
+  if (name) {
+    var clean = name.replace(/^\s*\[\d+\]\s*/, '').trim();
+    var n = clean.toLowerCase();
+    var nativeMap = {
+      'हिन्दी': 'Hindi', 'हिंदी': 'Hindi',
+      'தமிழ்': 'Tamil', 'తెలుగు': 'Telugu',
+      'മലയാളം': 'Malayalam', 'ಕನ್ನಡ': 'Kannada',
+      'বাংলা': 'Bengali', 'मराठी': 'Marathi',
+      'ਪੰਜਾਬੀ': 'Punjabi', 'ગુજરાતી': 'Gujarati',
+      'اردو': 'Urdu'
+    };
+    for (var nk in nativeMap) { if (n.indexOf(nk) !== -1) return nativeMap[nk]; }
+    if (/[^\x00-\x7F]/.test(clean)) return 'Audio';
+    return clean.length > 14 ? clean.substring(0, 14) : clean;
+  }
+  return 'Audio';
+}
 function parseStream(s){
   var name = s.name || "", url = s.url || "", lang = "Unknown";
   try { var bi = name.indexOf("["), ei = name.indexOf("]"); if (bi >= 0 && ei > bi) lang = name.substring(bi + 1, ei); } catch (e) {}
@@ -1147,7 +1172,7 @@ function parseStream(s){
   else if (url.indexOf("/720/") > 0) qual = "720p";
   else if (url.indexOf("/480/") > 0) qual = "480p";
   else if (url.indexOf("/360/") > 0) qual = "360p";
-  return { url: url, lang: lang, qual: qual, name: name, force: !!s.forceHls };
+  return { url: url, lang: prettyLang(lang, lang), qual: qual, name: name, force: !!s.forceHls, format: s.format || "", subs: s.subtitles || s.subs || [] };
 }
 
 /* v6.5: server rows are name-only (user order) — no quality kid-rows, no
@@ -1348,6 +1373,26 @@ function attemptPlay(){
     });
   });
 }
+var appliedSubsKey = "";
+function applySubsFor(st){
+  var subs = (st && st.subs) || [];
+  var key = subs.map(function(x){ return x.url || ""; }).join("|");
+  if (key === appliedSubsKey) return;
+  appliedSubsKey = key;
+  var olds = video.querySelectorAll("track");
+  for (var i = 0; i < olds.length; i++) olds[i].remove();
+  for (var j = 0; j < subs.length; j++) {
+    var tr = document.createElement("track");
+    tr.kind = "subtitles";
+    tr.label = prettyLang(subs[j].label || subs[j].lang || "", subs[j].lang || "");
+    tr.srclang = subs[j].lang || "";
+    tr.src = subs[j].url;
+    tr.addEventListener("load", function(){ bindTextTracks(); refreshSettingsIfOpen(); });
+    video.appendChild(tr);
+  }
+  selectedSubIdx = -1;
+  syncCue();
+}
 function playPickedStream(st, pos, autoplay){
   showSpin(true);
   hlsFailed = false;
@@ -1360,8 +1405,9 @@ function playPickedStream(st, pos, autoplay){
   cancelWatchdog();
   try { frame.src = "about:blank"; } catch(e){}
   if (hls) { try { hls.destroy(); } catch(e){} hls = null; }
+  applySubsFor(st);
   var decUrl = st.url; try { decUrl = decodeURIComponent(st.url); } catch(e){}
-  if (window.Hls && Hls.isSupported() && (st.force || /\.m3u8/i.test(decUrl))) {
+  if (window.Hls && Hls.isSupported() && (st.force || st.format === "hls" || /\.m3u8/i.test(decUrl))) {
     hls = new Hls({ maxBufferLength: 30 });
     hls.loadSource(st.url);
     hls.attachMedia(video);
@@ -1706,6 +1752,22 @@ $("btnFs").addEventListener("click", function(){
   if (document.fullscreenElement) document.exitFullscreen();
   else if (el.requestFullscreen) el.requestFullscreen();
 });
+/* v6.10: fullscreen locks landscape + fills edge-to-edge (live player pattern:
+   lock on enter, unlock on exit, Fill in landscape / user Fit otherwise). */
+var fsFill = false;
+function lockLandscape(){ try { if (screen.orientation && screen.orientation.lock) screen.orientation.lock("landscape").catch(function(){}); } catch (e) {} }
+function unlockOrient(){ try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }
+function syncFsFill(){
+  fsFill = !!document.fullscreenElement && window.innerWidth > window.innerHeight;
+  applyVideoPrefs();
+}
+document.addEventListener("fullscreenchange", function(){
+  var fs = !!document.fullscreenElement;
+  if (fs) lockLandscape(); else unlockOrient();
+  syncFsFill();
+});
+document.addEventListener("webkitfullscreenchange", function(){ syncFsFill(); });
+window.addEventListener("orientationchange", function(){ if (document.fullscreenElement) setTimeout(syncFsFill, 350); });
 /* double-tap: touch (always when enabled) + mouse dblclick, ±15s */
 var lastTap = 0, lastTapSide = "";
 $("vw").addEventListener("touchstart", function(e){
@@ -1815,7 +1877,7 @@ video.addEventListener("volumechange", syncVolIcon);
 function applyVideoPrefs(){
   video.playbackRate = speedVal;
   video.loop = setLoop;
-  video.style.objectFit = aspectMode;
+  video.style.objectFit = fsFill ? "cover" : aspectMode;
   video.style.filter = brightnessVal === 100 ? "" : "brightness(" + brightnessVal + "%)";
   video.style.transform = setMirror ? "scaleX(-1)" : "";
 }
@@ -1836,7 +1898,7 @@ function audioTracks(){
   if (langs.length) return langs;
   if (hls && hls.audioTracks) {
     return hls.audioTracks.map(function(t, i){
-      return { label: t.name || t.lang || ("Audio " + (i + 1)), lang: t.lang || "", kind: "hls", si: -1, hi: i };
+      return { label: (t.name || t.lang) ? prettyLang(t.name || "", t.lang || "") : ("Audio " + (i + 1)), lang: t.lang || "", kind: "hls", si: -1, hi: i };
     });
   }
   return [];
@@ -1898,7 +1960,7 @@ function subTracks(){
     var key = (tt[i].label || "") + "|" + (tt[i].language || "");
     if (seen[key]) continue;
     seen[key] = 1;
-    out.push({ label: tt[i].label || "", lang: tt[i].language || "", kind: "text", ti: i, hi: -1, track: tt[i] });
+    out.push({ label: tt[i].label ? prettyLang(tt[i].label, tt[i].language || "") : "", lang: tt[i].language || "", kind: "text", ti: i, hi: -1, track: tt[i] });
   }
   if (hls && hls.subtitleTracks) {
     for (var j = 0; j < hls.subtitleTracks.length; j++) {
@@ -1906,7 +1968,7 @@ function subTracks(){
       var k2 = (st.name || "") + "|" + (st.lang || "");
       if (seen[k2]) continue;
       seen[k2] = 1;
-      out.push({ label: st.name || "", lang: st.lang || "", kind: "hls", ti: -1, hi: j, track: null });
+      out.push({ label: st.name ? prettyLang(st.name, st.lang || "") : "", lang: st.lang || "", kind: "hls", ti: -1, hi: j, track: null });
     }
   }
   return out;
@@ -1951,8 +2013,15 @@ $("subsSheetBody").addEventListener("click", function(e){
 function selectSub(idx){
   selectedSubIdx = idx;
   var list = subTracks();
-  for (var j = 0; j < list.length; j++) {
-    if (list[j].track) list[j].track.mode = (j === idx) ? "hidden" : "disabled";
+  var want = idx >= 0 ? list[idx] : null;
+  var tt = video.textTracks || [];
+  for (var k = 0; k < tt.length; k++) {
+    var match = false;
+    if (want) {
+      if (want.track) match = (want.track === tt[k]);
+      else match = ((tt[k].label || "") === (want.label || "") && (tt[k].language || "") === (want.lang || ""));
+    }
+    try { tt[k].mode = match ? "hidden" : "disabled"; } catch (e) {}
   }
   if (hls && hls.subtitleTracks && hls.subtitleTracks.length) {
     try {
@@ -1972,15 +2041,14 @@ function bindTextTracks(){
     if (tr.__cueBound) continue;
     tr.__cueBound = true;
     tr.oncuechange = function(){ syncCue(); };
-    if (selectedSubIdx === i) tr.mode = "hidden";
   }
   cueBound = video.textTracks.length > 0;
 }
 function syncCue(){
   var box = $("cueBox");
-  var list = subTracks();
-  for (var i = 0; i < list.length; i++) {
-    var tr = list[i];
+  var tt = video.textTracks || [];
+  for (var i = 0; i < tt.length; i++) {
+    var tr = tt[i];
     if ((tr.mode === "hidden" || tr.mode === "showing") && tr.activeCues && tr.activeCues.length) {
       var txt = tr.activeCues[0].text || "";
       box.textContent = txt.replace(/<[^>]*>/g, "");
