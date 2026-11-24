@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.8</title>
+<title>Nova Player — Test Preview v6.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&family=Inter:wght@800&display=swap" rel="stylesheet">
@@ -96,12 +96,12 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 #centerCtl.hide{opacity:0;pointer-events:none}
 
 /* ===== double-tap indicators ===== */
-.dtap{position:absolute;top:50%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;
+.dtap{position:absolute;top:30%;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;
   align-items:center;justify-content:center;width:80px;height:80px;border-radius:50%;
   background:rgba(0,0,0,.5);color:#fff;backdrop-filter:blur(4px);pointer-events:none;
   font-size:18px;line-height:24px;font-weight:600;opacity:0;transition:opacity .2s}
 .dtap small{font-size:10px;line-height:14px;color:rgba(255,255,255,.6);font-weight:400}
-#dtL{left:15%}#dtR{right:15%}
+#dtL{left:20%}#dtR{right:20%}
 .dtap.show{opacity:1}
 
 /* ===== buffering spinner (ring) ===== */
@@ -293,10 +293,12 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 /* v6.3: this phone override must come AFTER the base 200px rule above
    (same specificity — later wins). First placement lost to source order. */
 @media (max-width:767px){#srvPanel .popScroll{max-height:320px}}
-.srvsec{padding:10px 12px 2px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;
-  letter-spacing:.08em;color:var(--mut)}
+.srvsec{padding:20px 12px 8px;font-size:11px;line-height:16px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.16em;color:rgba(255,255,255,.45)}
+.srvsec:first-child{padding-top:2px}
+.srvsec ~ .srvsec{border-top:1px solid rgba(255,255,255,.09);margin-top:12px}
 .srv{display:flex;width:100%;flex-direction:column;align-items:stretch;text-align:left;border-radius:8px;
-  padding:12px 12px;font-size:14px;line-height:20px;transition:background-color .15s,color .15s;color:var(--mut)}
+  padding:12px 12px;font-size:14px;line-height:20px;transition:background-color .15s,color .15s;color:var(--fg)}
 .srv:hover{background:rgba(38,38,38,.6);color:var(--fg)}
 .srv.sel{background:var(--acc);color:var(--fg)}
 @media (min-width:768px){.srv{font-size:16px;line-height:24px}}
@@ -374,13 +376,13 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 .acc-head{display:flex;width:100%;align-items:center;justify-content:space-between;border-radius:8px;
   padding:12px 14px;font-size:14px;line-height:20px;font-weight:600;text-align:left;transition:background-color .15s}
 .acc-head>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.acc-head:hover{background:rgba(38,38,38,.7)}
+
 @media (min-width:768px){.acc-head{font-size:16px;line-height:24px}}
 .acc-head .chev{transition:transform .2s;color:var(--mut)}
 .acc-head .acc-val{margin-left:auto;margin-right:10px;min-width:0;max-width:58%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;line-height:16px;font-weight:400;color:var(--mut)}
 .acc-head .chev svg{width:18px;height:18px}
 .acc.open .acc-head .chev{transform:rotate(90deg)}
-.acc.open .acc-head{background:rgba(38,38,38,.45)}
+.acc.open .acc-head{background:transparent;border-bottom:1px solid var(--bd)}
 .acc-body{display:none;padding:4px 0 10px}
 .acc.open .acc-body{display:block}
 #setBody.sub .acc{display:none}
@@ -456,15 +458,15 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 
 /* ===== v6.5 revision: Vidstuck settings form (code-extracted), servers refine ===== */
 #settings .tt h3 svg{display:none}
-#settings .tt h3{font-size:14px;line-height:20px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+#settings .tt h3{font-size:16px;line-height:22px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--fg)}
 #settings .bkbtn span{display:none}
 @media (max-width:767px){#btnCloseSet{display:none}}
 .drFoot{flex:none;padding:12px 8px 16px;background:var(--bg)}
 .setClose{display:flex;width:100%;align-items:center;justify-content:center;border-radius:8px;padding:10px 12px;font-size:14px;line-height:20px;font-weight:500;background:var(--acc);margin-top:0}
-.acc-head{font-size:12px;line-height:16px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--mut);padding:8px 12px;border-radius:8px}
-.acc-head .acc-val{font-size:14px;line-height:20px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--mut)}
+.acc-head{font-size:12px;line-height:16px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--mut);padding:16px 12px 8px;border-radius:0;background:transparent}
+.acc-head .acc-val{font-size:12px;line-height:16px;font-weight:400;text-transform:none;letter-spacing:0;color:var(--mut)}
 .acc-head .chev svg{width:20px;height:20px;opacity:.5}
-.acc-body{padding:0 0 2px}
+.acc{margin:2px 0 10px}.acc-body{padding:6px 0 2px}
 .srow{gap:12px;border-radius:12px;padding:8px;font-size:14px;line-height:20px}
 .srow .ic{flex:none;width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;color:var(--mut)}
 .srow .lb{font-weight:500;color:var(--fg)}
@@ -478,6 +480,7 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 .drBody .srow[data-q] .ic,.drBody .srow[data-au] .ic,.drBody .srow[data-sub] .ic,.drBody .srow[data-aspect] .ic,.drBody .srow[data-bright] .ic,.drBody .srow[data-speed] .ic{display:none}
 .drBody .srow[data-q]:has(.vl),.drBody .srow[data-au]:has(.vl),.drBody .srow[data-sub]:has(.vl),.drBody .srow[data-aspect]:has(.vl),.drBody .srow[data-bright]:has(.vl),.drBody .srow[data-speed]:has(.vl){background:var(--acc);color:var(--fg)}
 .drBody .srow[data-q]:has(.vl) .lb,.drBody .srow[data-au]:has(.vl) .lb,.drBody .srow[data-sub]:has(.vl) .lb,.drBody .srow[data-aspect]:has(.vl) .lb,.drBody .srow[data-bright]:has(.vl) .lb,.drBody .srow[data-speed]:has(.vl) .lb{color:var(--fg)}
+.drBody .srow:has(.tgl){background:var(--acc)}
 .tgl{position:relative;flex:none;width:44px;height:24px;border-radius:999px;background:rgba(255,255,255,.18);padding:0}
 .tgl i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s}
 .tgl.on{background:#e5e5e5}
@@ -700,7 +703,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.8"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.9"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -804,14 +807,13 @@ function scheduleLogoRetry(){
 }
 loadLogoMeta();
 
-/* ============ servers — same 8 as the live player, same embed URLs, two lists ============ */
+/* ============ servers — 7 (Vidstuck embed removed v6.9: looked identical to our own player) ============ */
 var SERVERS = [
   { id: "arenahls", name: "Arenaflix", lane: "native", rw: "thugtv", ds: "Native stream" },
   { id: "bolt",     name: "Bolt",     lane: "native", rw: "vidbolt", ds: "Native stream" },
   { id: "velvet",   name: "Velvet",   lane: "native", rw: "moviebox", ds: "Native stream" },
   { id: "castle",   name: "Prime",    lane: "native", rw: "castletv", ds: "Native stream" },
   { id: "hindi",    name: "Vega", lane: "embed", ds: "Embed player" },
-  { id: "vidstuck", name: "Nova", lane: "embed", ds: "Multi Audio Support" },
   { id: "cinesrc",  name: "Apex", lane: "embed", ds: "Alternative" },
   { id: "vidcore",  name: "Onyx", lane: "embed", ds: "Alternative" }
 ];
@@ -827,10 +829,6 @@ function embedUrl(srv){
     var u = "https://screenscape.me/embed?tmdb=" + MEDIA_TMDB + "&type=" + MEDIA_TYPE + "&lan=hindi";
     if (MEDIA_TYPE === "tv") u += "&s=" + MEDIA_SEASON + "&e=" + MEDIA_EPISODE;
     return u;
-  }
-  if (srv === "vidstuck") {
-    if (MEDIA_TYPE === "tv") return "https://vidstuck.cc/embed/tv/" + MEDIA_TMDB + "/" + MEDIA_SEASON + "/" + MEDIA_EPISODE;
-    return "https://vidstuck.cc/embed/movie/" + MEDIA_TMDB;
   }
   if (srv === "vidcore") {
     if (MEDIA_TYPE === "tv") return "https://vidcore.net/tv/" + MEDIA_TMDB + "/" + MEDIA_SEASON + "/" + MEDIA_EPISODE + "?theme=E50914";
@@ -1125,7 +1123,7 @@ var probeDone = 0, probeTotal = 0;
     for (var i = 0; i < SERVERS.length; i++) {
       if (SERVERS[i].lane === "native" && PROBE[SERVERS[i].id].ok) { bestIdx = i; break; }
     }
-    if (bestIdx < 0) bestIdx = 5; /* Nova, first embed server */
+    if (bestIdx < 0) bestIdx = 4; /* Vega, first embed server */
     setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
     renderSrvPanel();
     setTimeout(function(){
@@ -1268,7 +1266,7 @@ function switchEpisode(s, e){
   q.set("type", "tv"); q.set("tmdb", MEDIA_TMDB); q.set("s", String(s)); q.set("e", String(e));
   history.replaceState(null, "", location.pathname + "?" + q.toString());
   closeAllSheets();
-  openPlayer(curServer || "vidstuck", true);
+  openPlayer(curServer || "arenahls", true);
 }
 function stepEpisode(dir){
   var n = epCount(MEDIA_SEASON);
