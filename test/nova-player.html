@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.41</title>
+<title>Nova Player — Test Preview v6.42</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -776,7 +776,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.41"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.42"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2000,7 +2000,7 @@ $("btnBack").addEventListener("click", backToLauncher);
 /* ============ video events ============ */
 video.addEventListener("play", function(){ showSpin(false); updatePlayIco(); pokeBars(); });
 video.addEventListener("pause", function(){ updatePlayIco(); if (video.readyState >= 2) showSpin(false); pokeBars(); });
-video.addEventListener("playing", function(){ showSpin(false); });
+video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; });
   video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
 video.addEventListener("error", function(){
@@ -2037,9 +2037,27 @@ function updatePlayIco(){
   $("playIco").innerHTML = ic; $("playIcoC").innerHTML = ic;
   $("btnPlay").querySelector(".tip").textContent = video.paused ? "Play" : "Pause";
 }
+var playWatchdog = null; /* v6.42: resume watchdog — a Play press that never reaches 'playing' (idle loader after a paused settings switch + backgrounding) gets re-kicked, max 2 attempts */
+function armPlayWatchdog(attempt){
+  clearTimeout(playWatchdog); playWatchdog = null;
+  if (!isNativeLane() || !hls) return;
+  playWatchdog = setTimeout(function(){
+    playWatchdog = null;
+    /* Genuine stuck resume only: play was requested (not paused again),
+       and the element still has no playable data. Normal slow loads
+       that already reached playable state are left alone. */
+    if (video.paused || video.readyState >= 3 || attempt >= 2) return;
+    try { if (typeof hls.startLoad === "function") hls.startLoad(); } catch (e) {}
+    /* Second attempt: the 1-microsecond seek is hls.js's own pipeline
+       flush trick — it forces the loaders to refill at the playhead. */
+    if (attempt === 1) { try { video.currentTime += 0.000001; } catch (e) {} }
+    try { var p = video.play(); if (p && typeof p.catch === "function") p.catch(function(){}); } catch (e) {}
+    armPlayWatchdog(attempt + 1);
+  }, 2500);
+}
 function togglePlay(){
   if (video.classList.contains("hidden")) return;
-  if (video.paused) { video.play().catch(function(){}); }
+  if (video.paused) { video.play().catch(function(){}); armPlayWatchdog(0); }
   else video.pause();
 }
 function skipBy(sec, quiet){
@@ -2254,6 +2272,13 @@ function selectAudio(idx){
     else if (curStreams[t.si] && curStreams[t.si].qual) { qualityLabel = curStreams[t.si].qual; }
   } else if (hls) {
     try { hls.audioTrack = t.hi; } catch (e) {}
+    /* v6.42: re-kick the loaders after the switch — the switch aborts the
+       in-flight fragment and flushes buffers, and a loader left idle
+       (e.g. timers suspended while the page was backgrounded) never
+       refills the playhead on its own. startLoad fans out to the main +
+       audio controllers. Without this, Play after a paused switch can
+       sit on the spinner forever. */
+    try { if (typeof hls.startLoad === "function") hls.startLoad(); } catch (e) {}
   }
   refreshSettingsIfOpen();
 }
@@ -2559,7 +2584,7 @@ function onSettingsClick(e){
   if (q) {
     var qi = parseInt(q.getAttribute("data-q"), 10);
     /* v6.33: immediate switch — nextLevel alone only queues the level until the buffer drains (old quality kept playing until a seek). currentLevel forces the switch at once, from the same position. Auto (-1) stays nextLevel-only (ABR). */
-    if (hls) { hls.nextLevel = qi; if (qi >= 0) { try { hls.currentLevel = qi; } catch(e){} } qualityLabel = qi < 0 ? "Auto" : ((hls.levels[qi] && hls.levels[qi].height ? hls.levels[qi].height + "p" : "Level " + (qi + 1))); }
+    if (hls) { hls.nextLevel = qi; if (qi >= 0) { try { hls.currentLevel = qi; } catch(e){} } qualityLabel = qi < 0 ? "Auto" : ((hls.levels[qi] && hls.levels[qi].height ? hls.levels[qi].height + "p" : "Level " + (qi + 1))); try { if (typeof hls.startLoad === "function") hls.startLoad(); } catch (e) {} /* v6.42: same re-kick as the audio switch — currentLevel flushes the whole buffer, an idle loader never refills it */ }
     renderSettings(); return;
   }
   var au = e.target.closest("[data-au]");
@@ -2627,3 +2652,5 @@ updatePlayIco();
 <!-- pages-rebuild 2026-11-25 01:22 PKT -->
 
 <!-- pages-rebuild 2026-11-25 01:25 PKT -->
+
+<!-- pages-rebuild 2026-11-25 02:02 PKT -->
