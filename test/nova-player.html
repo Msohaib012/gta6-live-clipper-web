@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.20</title>
+<title>Nova Player — Test Preview v6.21</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -746,7 +746,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.20"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.21"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1222,10 +1222,10 @@ var curServer = null;
    (prettyLang): ISO codes + native-script names -> Roman display names. */
 function prettyLang(name, lang) {
   var l = (lang || '').toLowerCase().split('-')[0];
-  var map = { hi:'Hindi', hin:'Hindi', en:'English', eng:'English', ta:'Tamil', tam:'Tamil', te:'Telugu', tel:'Telugu', ml:'Malayalam', mal:'Malayalam', kn:'Kannada', kan:'Kannada', bn:'Bengali', ben:'Bengali', mr:'Marathi', mar:'Marathi', pa:'Punjabi', pan:'Punjabi', gu:'Gujarati', guj:'Gujarati', ur:'Urdu', urd:'Urdu', es:'Spanish', spa:'Spanish', fr:'French', fra:'French', de:'German', deu:'German', ger:'German', it:'Italian', ita:'Italian', ja:'Japanese', jpn:'Japanese', pt:'Portuguese', por:'Portuguese', tr:'Turkish', tur:'Turkish', cs:'Czech', ces:'Czech', cze:'Czech', hu:'Hungarian', hun:'Hungarian', pl:'Polish', pol:'Polish', ar:'Arabic', ara:'Arabic', ru:'Russian', rus:'Russian', ko:'Korean', kor:'Korean', zh:'Chinese', zho:'Chinese', da:'Danish', dan:'Danish', nl:'Dutch', nld:'Dutch', sv:'Swedish', swe:'Swedish', no:'Norwegian', nor:'Norwegian', fi:'Finnish', fin:'Finnish', el:'Greek', ell:'Greek', th:'Thai', tha:'Thai', id:'Indonesian', ind:'Indonesian', ms:'Malay', msa:'Malay', vi:'Vietnamese', vie:'Vietnamese', fil:'Filipino', uk:'Ukrainian', ukr:'Ukrainian', he:'Hebrew', heb:'Hebrew', fa:'Persian', fas:'Persian' };
+  var map = { hi:'Hindi', hin:'Hindi', en:'English', eng:'English', ta:'Tamil', tam:'Tamil', te:'Telugu', tel:'Telugu', ml:'Malayalam', mal:'Malayalam', kn:'Kannada', kan:'Kannada', bn:'Bengali', ben:'Bengali', mr:'Marathi', mar:'Marathi', pa:'Punjabi', pan:'Punjabi', gu:'Gujarati', guj:'Gujarati', ur:'Urdu', urd:'Urdu', es:'Spanish', spa:'Spanish', fr:'French', fra:'French', de:'German', deu:'German', ger:'German', it:'Italian', ita:'Italian', ja:'Japanese', jpn:'Japanese', pt:'Portuguese', por:'Portuguese', tr:'Turkish', tur:'Turkish', cs:'Czech', ces:'Czech', cze:'Czech', hu:'Hungarian', hun:'Hungarian', pl:'Polish', pol:'Polish', ar:'Arabic', ara:'Arabic', ru:'Russian', rus:'Russian', ko:'Korean', kor:'Korean', zh:'Chinese', zho:'Chinese', da:'Danish', dan:'Danish', nl:'Dutch', nld:'Dutch', sv:'Swedish', swe:'Swedish', no:'Norwegian', nor:'Norwegian', fi:'Finnish', fin:'Finnish', el:'Greek', ell:'Greek', th:'Thai', tha:'Thai', id:'Indonesian', ind:'Indonesian', ms:'Malay', msa:'Malay', vi:'Vietnamese', vie:'Vietnamese', fil:'Filipino', uk:'Ukrainian', ukr:'Ukrainian', he:'Hebrew', heb:'Hebrew', fa:'Persian', fas:'Persian', hrv:'Croatian', scr:'Croatian', nob:'Norwegian', nb:'Norwegian', ron:'Romanian', rum:'Romanian' };
   if (map[l]) return map[l];
   if (name) {
-    var clean = name.replace(/^\s*\[\d+\]\s*/, '').trim();
+    var clean = name.replace(/^\s*(\[\d+\]|\d+\.)\s*/, '').trim();
     var n = clean.toLowerCase();
     var nativeMap = {
       'हिन्दी': 'Hindi', 'हिंदी': 'Hindi',
@@ -1244,6 +1244,10 @@ function prettyLang(name, lang) {
 function parseStream(s){
   var name = s.name || "", url = s.url || "", lang = "Unknown";
   try { var bi = name.indexOf("["), ei = name.indexOf("]"); if (bi >= 0 && ei > bi) lang = name.substring(bi + 1, ei); } catch (e) {}
+  /* v6.21: umbrella labels ("[Multi-Audio]", "[Dual Audio]") name no language —
+     treat as Unknown so the per-language tracks inside the HLS master
+     (hls.audioTracks) are listed instead of one dead "Multi-Audio" row. */
+  if (/^\s*(multi|dual)([\s\-_]|$)/i.test(lang)) lang = "Unknown";
   var qual = "Auto";
   if (s.quality) qual = s.quality;
   else if (url.indexOf("/1080/") > 0) qual = "1080p";
@@ -1973,8 +1977,12 @@ function audioTracks(){
   });
   if (langs.length) return langs;
   if (hls && hls.audioTracks) {
+    var seenLb = {};
     return hls.audioTracks.map(function(t, i){
-      return { label: (t.name || t.lang) ? prettyLang(t.name || "", t.lang || "") : ("Audio " + (i + 1)), lang: t.lang || "", kind: "hls", si: -1, hi: i };
+      var lb = (t.name || t.lang) ? prettyLang(t.name || "", t.lang || "") : ("Audio " + (i + 1));
+      /* v6.21: duplicate names (e.g. two Spanish dubs) get a suffix so every row stays distinct. */
+      if (seenLb[lb]) { seenLb[lb]++; lb = lb + " " + seenLb[lb]; } else seenLb[lb] = 1;
+      return { label: lb, lang: t.lang || "", kind: "hls", si: -1, hi: i };
     });
   }
   return [];
