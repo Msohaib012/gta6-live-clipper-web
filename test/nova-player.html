@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-24 19:37 PKT: v6.25 content, force Pages deploy -->
-<title>Nova Player — Test Preview v6.26</title>
+<!-- pages-rebuild 2026-11-24 19:40 PKT: v6.25 content, force Pages deploy -->
+<title>Nova Player — Test Preview v6.27</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -135,6 +135,10 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
    inert (modes are "hidden"/"disabled", never natively rendered). */
 #cueWrap{display:none}
 #btnSubs{display:none}
+/* v6.27: subtitles stay OFF — kill native cue rendering from EVERY source
+   (hls.js native rendering, default tracks, embedded tracks). */
+video::cue{display:none !important}
+video::-webkit-media-text-track-display{display:none !important}
 
 /* ===== bottom bar ===== */
 #botblock{position:absolute;inset-inline:0;bottom:0;z-index:30;display:flex;flex-direction:column;gap:12px;
@@ -758,7 +762,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.26"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.27"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1507,7 +1511,7 @@ function playPickedStream(st, pos, autoplay){
   applySubsFor(st);
   var decUrl = st.url; try { decUrl = decodeURIComponent(st.url); } catch(e){}
   if (window.Hls && Hls.isSupported() && (st.force || st.format === "hls" || /\.m3u8/i.test(decUrl))) {
-    hls = new Hls({ maxBufferLength: 30 });
+    hls = new Hls({ maxBufferLength: 30, renderTextTracksNatively: false }); /* v6.27: subtitles OFF — hls.js must never render cues natively (a DEFAULT=YES rendition was showing). */
     hls.loadSource(st.url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, function(){
@@ -2183,6 +2187,7 @@ function bindTextTracks(){
     var tr = video.textTracks[i];
     if (tr.__cueBound) continue;
     tr.__cueBound = true;
+    try { if (tr.mode === "showing") tr.mode = "disabled"; } catch (e) {} /* v6.27: no track ever renders. */
     tr.oncuechange = function(){ syncCue(); };
   }
   cueBound = video.textTracks.length > 0;
