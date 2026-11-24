@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.33</title>
+<title>Nova Player — Test Preview v6.34</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -766,7 +766,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.33"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.34"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1208,6 +1208,20 @@ var probeDone = 0, probeTotal = 0;
     else { seqDone = true; clearInterval(cycTimer); maybeFinish(); }
   }, SEQ_DWELL) : null;
   var finished = false, probesDone = false;
+  /* v6.34: index of the first native server certainly usable (every earlier
+     native server resolved, this one ok with streams), or -1. Mirrors the
+     maybePreload scan — the launcher may finish on this without waiting
+     for hung later lanes (Velvet's streams route hangs: 8s + 8s fallback). */
+  function firstUsableCertain(){
+    for (var i = 0; i < SERVERS.length; i++) {
+      var s = SERVERS[i];
+      if (s.lane !== "native") continue;
+      var pr = PROBE[s.id];
+      if (pr === undefined) return -1;
+      if (pr.ok && pr.streams && pr.streams.length) return i;
+    }
+    return -1;
+  }
   function maybeFinish(){
     if (finished || !probesDone || !seqDone) return;
     finishProbe();
@@ -1218,18 +1232,24 @@ var probeDone = 0, probeTotal = 0;
       renderSrvPanel();
       refreshSettingsIfOpen();
       maybePreload();
-      if (probeDone >= probeTotal) { probesDone = true; maybeFinish(); }
+      /* v6.34: a hung lane must not hold the launcher to the 14s cap — once
+         the first usable server is certain, the probes are done for
+         launcher purposes; late probes still land in PROBE/panel. */
+      if (probeDone >= probeTotal || firstUsableCertain() >= 0) { probesDone = true; maybeFinish(); }
     });
   });
   setTimeout(function(){ if (probeDone < probeTotal) { probesDone = true; maybeFinish(); } }, 14000);
   function finishProbe(){
     if (finished) return; finished = true;
     if (cycTimer) clearInterval(cycTimer);
-    SERVERS.forEach(function(srv){ if (srv.lane === "native" && PROBE[srv.id] === undefined) PROBE[srv.id] = { ok: false, streams: [] }; });
-    maybePreload(); /* timeout path: all servers now resolved/marked, so the first usable one can still preload during the 650ms Ready delay */
+    /* v6.34: unresolved natives stay unresolved — late probes still land
+       (panel + manual retry + failover re-probe). Only the PICK treats
+       them as unusable, so a slow first server is never wrongly marked dead. */
+    maybePreload(); /* the first usable server can still preload during the 650ms Ready delay */
     bestIdx = -1;
     for (var i = 0; i < SERVERS.length; i++) {
-      if (SERVERS[i].lane === "native" && PROBE[SERVERS[i].id].ok) { bestIdx = i; break; }
+      var pr0 = PROBE[SERVERS[i].id];
+      if (SERVERS[i].lane === "native" && pr0 && pr0.ok) { bestIdx = i; break; }
     }
     if (bestIdx < 0) bestIdx = 4; /* Vega, first embed server */
     setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
@@ -2524,3 +2544,5 @@ updatePlayIco();
 <!-- pages-rebuild 2026-11-24 23:03 PKT -->
 
 <!-- pages-rebuild 2026-11-24 23:24 PKT -->
+
+<!-- pages-rebuild 2026-11-24 23:43 PKT -->
