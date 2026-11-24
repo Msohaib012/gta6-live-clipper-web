@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.32</title>
+<title>Nova Player — Test Preview v6.33</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -766,7 +766,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.32"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.33"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1217,6 +1217,7 @@ var probeDone = 0, probeTotal = 0;
       PROBE[srv.id] = r; probeDone++;
       renderSrvPanel();
       refreshSettingsIfOpen();
+      maybePreload();
       if (probeDone >= probeTotal) { probesDone = true; maybeFinish(); }
     });
   });
@@ -1225,6 +1226,7 @@ var probeDone = 0, probeTotal = 0;
     if (finished) return; finished = true;
     if (cycTimer) clearInterval(cycTimer);
     SERVERS.forEach(function(srv){ if (srv.lane === "native" && PROBE[srv.id] === undefined) PROBE[srv.id] = { ok: false, streams: [] }; });
+    maybePreload(); /* timeout path: all servers now resolved/marked, so the first usable one can still preload during the 650ms Ready delay */
     bestIdx = -1;
     for (var i = 0; i < SERVERS.length; i++) {
       if (SERVERS[i].lane === "native" && PROBE[SERVERS[i].id].ok) { bestIdx = i; break; }
@@ -1429,15 +1431,19 @@ var barsHidden = false, barTimer = null, cueBound = false, selectedSubIdx = -1;
    so a second tap can still double-tap-seek); dtFired = a double-tap seek just
    fired on touchstart; touchShowed = this tap's touchstart already showed the
    bars, so the click that follows must not hide them again. */
-var hideTimer2 = null, dtFired = false, touchShowed = false;
+var hideTimer2 = null, dtFired = false, touchShowed = false, tapTimer = null; /* v6.33: tapTimer = pending single-tap toggle (300ms, double-tap disambiguation) */
 
 function showSpin(on){ $("bigSpin").classList.toggle("hidden", !on); }
 function isNativeLane(){ return curServer && laneOf(curServer) === "native" && !video.classList.contains("hidden"); }
 function isEmbedLane(){ return curServer && laneOf(curServer) === "embed" && !frame.classList.contains("hidden"); }
-function stopAll(){
+function stopAll(keepMedia){
   cancelWatchdog();
-  try { if (hls) { hls.destroy(); hls = null; } } catch (e) {}
-  try { video.pause(); video.removeAttribute("src"); video.load(); } catch (e) {}
+  /* v6.33: keepMedia (launcher preload adopt) — the preloaded Hls + video
+     element survive; everything else resets as before. */
+  if (!keepMedia) {
+    try { if (hls) { hls.destroy(); hls = null; } } catch (e) {}
+    try { video.pause(); video.removeAttribute("src"); video.load(); } catch (e) {}
+  }
   try { frame.src = "about:blank"; } catch (e) {}
   $("pausedOv").classList.add("hidden"); $("pausedOv").classList.remove("show");
   cueBound = false; selectedSubIdx = -1; $("cueBox").textContent = "";
@@ -1539,6 +1545,86 @@ function playPickedStream(st, pos, autoplay){
       refreshSettingsIfOpen();
     };
     video.addEventListener("loadedmetadata", h);
+  }
+}
+/* ============ v6.33: launcher preload ============
+   Checking + loading run TOGETHER (parallel) inside the SAME launcher
+   window — the launcher duration is unchanged (probes + status sequence +
+   650ms Ready delay, exactly as before). As soon as the first usable native
+   server is certain (every earlier native server resolved), its stream
+   starts loading behind the launcher; openPlayer adopts the buffered load
+   instead of starting a second load, so playback is instant when the
+   launcher hides. If the preload dies, or another server is picked, the
+   normal load path runs unchanged. */
+var preload = null; /* {srvId, key, hls} — hls null for MP4 preloads */
+function destroyPreload(){
+  if (!preload) return;
+  try { if (preload.hls) preload.hls.destroy(); } catch(e){}
+  preload = null;
+}
+function preloadNative(srvId, streams){
+  if (preload || hls) return;
+  if ($("launcher").classList.contains("hidden")) return;
+  var list = streams.map(parseStream).filter(function(x){ return x.url; });
+  if (!list.length) return;
+  var pick = list[0], hi = -1;
+  for (var i = 0; i < list.length; i++) if (/hindi/i.test(list[i].lang)) { hi = i; break; }
+  if (hi >= 0) pick = list[hi];
+  curStreams = list;
+  curStreamIdx = list.indexOf(pick);
+  if (pick.qual && !pick.force) qualityLabel = pick.qual;
+  applyVideoPrefs();
+  applySubsFor(pick);
+  var decUrl = pick.url; try { decUrl = decodeURIComponent(pick.url); } catch(e){}
+  preload = { srvId: srvId, key: pick.url, hls: null };
+  if (window.Hls && Hls.isSupported() && (pick.force || pick.format === "hls" || /\.m3u8/i.test(decUrl))) {
+    var ph = new Hls({ maxBufferLength: 30, renderTextTracksNatively: false });
+    preload.hls = ph;
+    ph.loadSource(pick.url);
+    ph.attachMedia(video);
+    ph.on(Hls.Events.MANIFEST_PARSED, function(){
+      try { video.currentTime = 0; } catch(e){}
+      /* Play only once the launcher is gone: the adopt path plays at once,
+         and a late manifest plays here. Never autoplay behind the launcher. */
+      if ($("launcher").classList.contains("hidden")) attemptPlay();
+      qualityLabel = "Auto";
+      bindTextTracks(); refreshSettingsIfOpen();
+    });
+    ph.on(Hls.Events.AUDIO_TRACKS_UPDATED, refreshSettingsIfOpen);
+    ph.on(Hls.Events.LEVEL_SWITCHED, function(ev, data){
+      try {
+        if (ph.autoLevelEnabled) qualityLabel = "Auto";
+        else if (ph.levels && ph.levels[data.level] && ph.levels[data.level].height) qualityLabel = ph.levels[data.level].height + "p";
+      } catch(e){}
+      refreshSettingsIfOpen();
+    });
+    ph.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(){ bindTextTracks(); refreshSettingsIfOpen(); });
+    ph.on(Hls.Events.ERROR, function(ev, data){
+      if (data && data.fatal) {
+        if (!$("launcher").classList.contains("hidden") && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " stream failed"); }
+        else destroyPreload();
+      }
+    });
+  } else {
+    video.src = pick.url;
+    var mh = function(){
+      video.removeEventListener("loadedmetadata", mh);
+      try { video.currentTime = 0; } catch(e){}
+      if ($("launcher").classList.contains("hidden")) attemptPlay();
+      refreshSettingsIfOpen();
+    };
+    video.addEventListener("loadedmetadata", mh);
+  }
+}
+function maybePreload(){
+  if (preload || hls) return;
+  if ($("launcher").classList.contains("hidden")) return;
+  for (var i = 0; i < SERVERS.length; i++) {
+    var s = SERVERS[i];
+    if (s.lane !== "native") continue;
+    var pr = PROBE[s.id];
+    if (pr === undefined) return; /* an earlier server is still checking — wait */
+    if (pr.ok && pr.streams && pr.streams.length) { preloadNative(s.id, pr.streams); return; }
   }
 }
 function playNative(streams){
@@ -1648,7 +1734,11 @@ function failoverFrom(failedId, why){
   openPlayer(next, false);
 }
 function openPlayer(srvId, manual){
-  stopAll();
+  /* v6.33: adopt a launcher preload for this server when present — the
+     stream is already loading/buffered, so no second load happens. */
+  var usePre = preload && preload.srvId === srvId && !hlsFailed;
+  if (preload && !usePre) destroyPreload();
+  stopAll(!!usePre);
   curServer = srvId;
   if (manual) failChain = [srvId];
   else if (failChain.indexOf(srvId) < 0) failChain.push(srvId);
@@ -1667,7 +1757,14 @@ function openPlayer(srvId, manual){
   var srv = serverById(srvId);
   if (srv && srv.lane === "native") {
     var p = PROBE[srvId];
-    if (p && p.streams && p.streams.length) playNative(p.streams);
+    if (usePre) {
+      hls = preload.hls; preload = null;
+      video.classList.remove("hidden");
+      frame.classList.add("hidden");
+      applyLaneChrome();
+      attemptPlay();
+    }
+    else if (p && p.streams && p.streams.length) playNative(p.streams);
     else {
       showSpin(true);
       probeRW(srv).then(function(r){
@@ -1684,6 +1781,7 @@ function openPlayer(srvId, manual){
   pokeBars();
 }
 function backToLauncher(){
+  destroyPreload();
   stopAll();
   disarmWatchdog();
   closeAllSheets();
@@ -1754,6 +1852,7 @@ function pausedOvShouldShow(){
 $("pausedOv").addEventListener("click", function(){ pokeBars(); });
 function setBars(visible, force){
   hideTips();
+  clearTimeout(tapTimer); tapTimer = null; /* v6.33: a stale single-tap toggle must never fire after the bars moved another way. */
   clearTimeout(pausedOvTimer); pausedOvTimer = null; /* v6.24: a pending delayed overlay must never appear once the bars are back. */
   /* v6.3: on embed lanes our slim topbar is the ONLY way back to servers —
      taps land inside the cross-origin iframe and never reach this document,
@@ -1793,19 +1892,23 @@ $("vw").addEventListener("click", function(e){
   /* v6.7: overlay up — a tap only reveals the controls, never resumes. */
   if ($("pausedOv").classList.contains("show")) { pokeBars(); return; }
   if (!$("launcher").classList.contains("hidden")) return;
-  /* v6.3: a tap on empty video area TOGGLES the bars (Vidstuck behavior).
-     The old code only ever showed them — a tap could never hide them. */
-  if (dtFired) { dtFired = false; pokeBars(); return; }
+  /* v6.33: a tap on empty video area TOGGLES the bars (Vidstuck behavior) —
+     but only once it is known to be a SINGLE tap. The toggle waits 300ms:
+     a second tap's touchstart cancels the pending toggle, seeks, and sets
+     dtFired, so the click that follows returns without touching the bars
+     (v6.26 design, re-applied after the rollback). Double-tap seek NEVER
+     shows the bars; single tap shows/hides them. */
+  if (dtFired) { dtFired = false; return; }
   if (touchShowed) { touchShowed = false; return; }
-  if (barsHidden) { pokeBars(); return; }
   if (isEmbedLane()) { pokeBars(); return; }
-  /* v6.23: hide AT ONCE on a single tap. The old 300ms delayed hide was
-     defeated by every later pokeBars (emulated mousemove, play/pause),
-     so a tap showed the bars but never hid them. Double-tap seek is
-     already decided at touchstart (dtFired), so no delay is needed here. */
-  clearTimeout(barTimer); barTimer = null;
-  clearTimeout(hideTimer2); hideTimer2 = null;
-  setBars(false);
+  clearTimeout(tapTimer); tapTimer = null;
+  tapTimer = setTimeout(function(){
+    tapTimer = null;
+    if (openPopId || openDrawerId) return;
+    if ($("pausedOv").classList.contains("show")) { pokeBars(); return; }
+    if (barsHidden) pokeBars();
+    else { clearTimeout(barTimer); barTimer = null; clearTimeout(hideTimer2); hideTimer2 = null; setBars(false); }
+  }, 300);
 });
 ["topbar", "botblock"].forEach(function(id){ $(id).addEventListener("pointermove", pokeBars); });
 $("vw").addEventListener("mousemove", function(){ if (openPopId || openDrawerId) return; if ($("launcher").classList.contains("hidden")) pokeBars(); });
@@ -1911,15 +2014,18 @@ $("vw").addEventListener("touchstart", function(e){
   }
   if (!setDoubleTap || !isNativeLane()) return;
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls, never resume */
-  if (barsHidden) { pokeBars(); touchShowed = true; lastTap = 0; return; }
+  /* v6.33: NEVER show the bars here — a first tap may be half of a
+     double-tap. The tap joins double-tap detection whatever the bar state;
+     the deferred click toggle shows the bars if it stays a single tap. */
   var t = e.touches[0], r = $("vw").getBoundingClientRect();
   var side = (t.clientX - r.left) > r.width / 2 ? "R" : "L";
   var now = Date.now();
-  if (now - lastTap < 300 && side === lastTapSide) { lastTap = 0; clearTimeout(hideTimer2); hideTimer2 = null; dtFired = true; skipBy(side === "R" ? 15 : -15); }
+  if (now - lastTap < 300 && side === lastTapSide) { lastTap = 0; clearTimeout(hideTimer2); hideTimer2 = null; clearTimeout(tapTimer); tapTimer = null; dtFired = true; skipBy(side === "R" ? 15 : -15); }
   else { lastTap = now; lastTapSide = side; }
 }, { passive: true });
 video.addEventListener("dblclick", function(e){
   if (!setDoubleTap) return;
+  clearTimeout(tapTimer); tapTimer = null; /* v6.33: the two clicks armed a deferred toggle — a double-click seek must not toggle the bars. */
   var r = video.getBoundingClientRect();
   skipBy((e.clientX - r.left) > r.width / 2 ? 15 : -15);
 });
@@ -2365,7 +2471,8 @@ function onSettingsClick(e){
   var q = e.target.closest("[data-q]");
   if (q) {
     var qi = parseInt(q.getAttribute("data-q"), 10);
-    if (hls) { hls.nextLevel = qi; qualityLabel = qi < 0 ? "Auto" : ((hls.levels[qi] && hls.levels[qi].height ? hls.levels[qi].height + "p" : "Level " + (qi + 1))); }
+    /* v6.33: immediate switch — nextLevel alone only queues the level until the buffer drains (old quality kept playing until a seek). currentLevel forces the switch at once, from the same position. Auto (-1) stays nextLevel-only (ABR). */
+    if (hls) { hls.nextLevel = qi; if (qi >= 0) { try { hls.currentLevel = qi; } catch(e){} } qualityLabel = qi < 0 ? "Auto" : ((hls.levels[qi] && hls.levels[qi].height ? hls.levels[qi].height + "p" : "Level " + (qi + 1))); }
     renderSettings(); return;
   }
   var au = e.target.closest("[data-au]");
@@ -2415,3 +2522,5 @@ updatePlayIco();
 <!-- pages-rebuild 2026-11-24 22:38 PKT -->
 
 <!-- pages-rebuild 2026-11-24 23:03 PKT -->
+
+<!-- pages-rebuild 2026-11-24 23:24 PKT -->
