@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.37</title>
+<title>Nova Player — Test Preview v6.38</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -146,6 +146,9 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
   padding:24px 16px;transition:opacity .3s ease-out,transform .3s ease-out}
 @media (min-width:768px){#botblock{padding:32px 24px;gap:20px}}
 @media (orientation:landscape) and (max-height:500px){#botblock{padding:12px 12px;gap:4px}}
+/* v6.38 (his order): in portrait the bottom bar sat flush with the bottom
+   edge — lift it a touch, portrait phones only. Landscape + desktop untouched. */
+@media (orientation:portrait) and (max-width:767px){#botblock{padding-bottom:calc(32px + env(safe-area-inset-bottom, 0px))}}
 #botblock.hide{opacity:0;transform:translateY(30px);pointer-events:none}
 #deskTitle{display:none}
 @media (min-width:768px){
@@ -305,18 +308,18 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
 #setPopBack{display:flex;align-items:center;color:var(--fg);flex:none;margin-left:-6px}
 #setPopBack svg{width:20px;height:20px;stroke:currentColor;stroke-width:1.4px}
 .popScroll{overflow-y:auto;padding:0 8px 8px;scrollbar-width:thin}
-#srvPanel .popScroll{max-height:200px}
+#srvPanel .popScroll{max-height:240px} /* v6.38: compact rows — 4 servers visible at once */
 @media (min-width:768px){#srvPanel .popScroll{max-height:320px}}
 .pop2 .popScroll{max-height:320px}
 /* v6.3: this phone override must come AFTER the base 200px rule above
    (same specificity — later wins). First placement lost to source order. */
 @media (max-width:767px){#srvPanel .popScroll{max-height:320px}}
-.srvsec{padding:20px 12px 8px;font-size:13px;line-height:20px;font-weight:700;text-transform:uppercase;
+.srvsec{padding:12px 12px 6px;font-size:13px;line-height:20px;font-weight:700;text-transform:uppercase;
   letter-spacing:.16em;color:rgba(255,255,255,.45)}
 .srvsec:first-child{padding-top:2px}
-.srvsec ~ .srvsec{border-top:1px solid rgba(255,255,255,.09);margin-top:12px}
+.srvsec ~ .srvsec{border-top:1px solid rgba(255,255,255,.09);margin-top:8px}
 .srv{display:flex;width:100%;flex-direction:column;align-items:stretch;text-align:left;border-radius:8px;
-  padding:12px 12px;font-size:14px;line-height:20px;transition:background-color .15s,color .15s;color:var(--fg)}
+  padding:8px 12px;font-size:14px;line-height:20px;transition:background-color .15s,color .15s;color:var(--fg)}
 .srv:hover{background:rgba(38,38,38,.6);color:var(--fg)}
 .srv.sel{background:var(--acc);color:var(--fg)}
 @media (min-width:768px){.srv{font-size:16px;line-height:24px}}
@@ -385,7 +388,7 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
   /* v6.19: center play/pause + 15s buttons show in landscape too (were phone-portrait only). */
   #centerCtl{display:flex}
   #srvPanel{width:min(252px,calc(100vw - 24px));right:10px;top:54px;max-height:calc(100dvh - 92px)}
-  #srvPanel .popScroll{max-height:170px}
+  #srvPanel .popScroll{max-height:190px} /* v6.38: compact rows — 4 servers fit even in short landscape */
   /* v6.22: popups + settings card FILL the space from just below the
      header to just above the progress bar (his order — "header se leke
      progress bar ke theek upar tak", less scrolling, 5 languages at
@@ -767,7 +770,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.37"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.38"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2611,3 +2614,5 @@ updatePlayIco();
 <!-- pages-rebuild 2026-11-25 00:20 PKT -->
 
 <!-- pages-rebuild 2026-11-25 00:30 PKT -->
+
+<!-- pages-rebuild 2026-11-25 00:38 PKT -->
