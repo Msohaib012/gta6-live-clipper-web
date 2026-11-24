@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 18:24 PKT: v6.21 content, force Pages deploy -->
-<title>Nova Player — Test Preview v6.22</title>
+<title>Nova Player — Test Preview v6.23</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -758,7 +758,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.22"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.23"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1032,6 +1032,7 @@ function closePops(){
   if (wasSetPop) { setView = "main"; openSec = null; renderSettings(); }
   hideTips();
   maybeRearmWatchdog();
+  barsAfterSheets(); /* v6.23: closing the last sheet brings the bars back */
 }
 function closeDrawers(){
   ["settings", "epDrawer"].forEach(function(id){
@@ -1047,6 +1048,7 @@ function closeDrawers(){
   openDrawerId = null;
   hideTips();
   maybeRearmWatchdog();
+  barsAfterSheets(); /* v6.23: closing the last sheet brings the bars back */
 }
 function closeAllSheets(){ closePops(); closeDrawers(); }
 /* v6.3: settings values/previews used to freeze at whatever was true when the
@@ -1074,6 +1076,8 @@ function openPop(id){
   void bk.offsetWidth;
   bk.classList.add("open");
   openPopId = id;
+  clearTimeout(barTimer); barTimer = null; /* v6.23: no stale auto-hide re-showing bars behind the sheet */
+  setBars(false, true); /* v6.23: bars hide behind an open sheet */
 }
 function openDrawer(id){
   closePops();
@@ -1089,6 +1093,8 @@ function openDrawer(id){
   void bk.offsetWidth;
   bk.classList.add("open");
   openDrawerId = id;
+  clearTimeout(barTimer); barTimer = null; /* v6.23: no stale auto-hide re-showing bars behind the sheet */
+  setBars(false, true); /* v6.23: bars hide behind an open sheet */
 }
 $("popBk").addEventListener("click", closePops);
 $("drawerBk").addEventListener("click", closeDrawers);
@@ -1735,13 +1741,16 @@ function syncPausedOv(){
 }
 /* v6.7: taps on the paused overlay only reveal the controls — resume happens ONLY on the play button. */
 $("pausedOv").addEventListener("click", function(){ pokeBars(); });
-function setBars(visible){
+function setBars(visible, force){
   hideTips();
   /* v6.3: on embed lanes our slim topbar is the ONLY way back to servers —
      taps land inside the cross-origin iframe and never reach this document,
      so a hidden bar can never be re-shown. Force it visible here, so no
-     stale timer or stray call can ever trap the user without chrome. */
-  if (isEmbedLane()) visible = true;
+     stale timer or stray call can ever trap the user without chrome.
+     v6.23: force=true (sheet open/close paths only) skips the override —
+     a sheet's own close controls always reach this document, so hiding
+     the bars behind an open sheet is recoverable. */
+  if (isEmbedLane() && !force) visible = true;
   if (visible) { clearTimeout(hideTimer2); hideTimer2 = null; }
   barsHidden = !visible;
   ["topbar", "botblock", "centerCtl"].forEach(function(id){ $(id).classList.toggle("hide", !visible); });
@@ -1758,8 +1767,17 @@ function pokeBars(){
   setBars(true);
   barTimer = setTimeout(function(){ setBars(false); }, 3500);
 }
+/* v6.23: bars follow the sheets — an open sheet hides them, closing the
+   last sheet brings them back ("close karne par dikhe"). */
+function barsAfterSheets(){
+  if (openPopId || openDrawerId) return;
+  if ($("launcher").classList.contains("hidden")) pokeBars();
+}
 $("vw").addEventListener("click", function(e){
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls via the overlay handler */
+  /* v6.23: a sheet open swallows screen taps — the bars stay hidden until
+     the sheet closes (barsAfterSheets brings them back). */
+  if (openPopId || openDrawerId) return;
   /* v6.7: overlay up — a tap only reveals the controls, never resumes. */
   if ($("pausedOv").classList.contains("show")) { pokeBars(); return; }
   if (!$("launcher").classList.contains("hidden")) return;
@@ -1769,11 +1787,16 @@ $("vw").addEventListener("click", function(e){
   if (touchShowed) { touchShowed = false; return; }
   if (barsHidden) { pokeBars(); return; }
   if (isEmbedLane()) { pokeBars(); return; }
-  clearTimeout(hideTimer2);
-  hideTimer2 = setTimeout(function(){ hideTimer2 = null; setBars(false); }, 300);
+  /* v6.23: hide AT ONCE on a single tap. The old 300ms delayed hide was
+     defeated by every later pokeBars (emulated mousemove, play/pause),
+     so a tap showed the bars but never hid them. Double-tap seek is
+     already decided at touchstart (dtFired), so no delay is needed here. */
+  clearTimeout(barTimer); barTimer = null;
+  clearTimeout(hideTimer2); hideTimer2 = null;
+  setBars(false);
 });
 ["topbar", "botblock"].forEach(function(id){ $(id).addEventListener("pointermove", pokeBars); });
-$("vw").addEventListener("mousemove", function(){ if ($("launcher").classList.contains("hidden")) pokeBars(); });
+$("vw").addEventListener("mousemove", function(){ if (openPopId || openDrawerId) return; if ($("launcher").classList.contains("hidden")) pokeBars(); });
 $("btnBack").addEventListener("click", backToLauncher);
 
 /* ============ video events ============ */
@@ -1863,6 +1886,8 @@ window.addEventListener("orientationchange", function(){ if (document.fullscreen
 /* double-tap: touch (always when enabled) + mouse dblclick, ±15s */
 var lastTap = 0, lastTapSide = "";
 $("vw").addEventListener("touchstart", function(e){
+  /* v6.23: taps do nothing to the bars while a sheet is open. */
+  if (openPopId || openDrawerId) return;
   /* v6.7: overlay up — reveal the controls at touchstart (before any
      synthesized mousemove), but NEVER resume: only the play button
      resumes. Not gated on the double-tap setting. */
