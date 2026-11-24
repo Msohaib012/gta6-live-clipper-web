@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.40</title>
+<title>Nova Player — Test Preview v6.41</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -398,6 +398,9 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
      viewport. Portrait + PC untouched. */
   .pop2{bottom:calc(80px + env(safe-area-inset-bottom, 0px));max-height:calc(100dvh - 136px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))}
   .pop2 .popScroll{max-height:calc(100dvh - 192px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))}
+  /* v6.41: AUDIO sheet only, landscape — slightly taller (+16px, his order "minor sa barha do"). Subtitles + settings untouched (ID-scoped). */
+  #audioSheet{max-height:calc(100dvh - 120px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))}
+  #audioSheet .popScroll{max-height:calc(100dvh - 176px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))}
   .pop2 .popHead{padding:8px 16px}
   .pop2 .opt{padding:7px 12px}
   #settings{left:auto;right:12px;bottom:calc(80px + env(safe-area-inset-bottom, 0px));top:auto;width:min(356px,calc(100vw - 24px));max-width:none;max-height:calc(100dvh - 136px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));border-radius:6.4px}
@@ -773,7 +776,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.40"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.41"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2622,3 +2625,5 @@ updatePlayIco();
 <!-- pages-rebuild 2026-11-25 01:05 PKT -->
 
 <!-- pages-rebuild 2026-11-25 01:22 PKT -->
+
+<!-- pages-rebuild 2026-11-25 01:25 PKT -->
