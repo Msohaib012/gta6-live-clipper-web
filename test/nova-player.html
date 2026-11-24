@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-24 19:56 PKT: v6.25 content, force Pages deploy -->
-<title>Nova Player — Test Preview v6.29</title>
+<!-- pages-rebuild 2026-11-24 20:37 PKT: rollback to v6.25 content -->
+<title>Nova Player — Test Preview v6.25</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -75,10 +75,8 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 /* ===== top bar ===== */
 #topbar{position:absolute;inset-inline:0;top:0;z-index:30;display:flex;align-items:center;gap:24px;
   padding:24px 16px;transition:opacity .3s ease-out,transform .3s ease-out}
-#topbar .topdiv{align-self:stretch;height:auto;min-height:36px;width:1px;border-radius:999px;background:var(--red);flex:none}
+#topbar .topdiv{height:36px;width:1px;border-radius:999px;background:var(--red);flex:none}
 #topbar .ttblock{min-width:0}
-#topbar .ttblock .brand{display:flex;align-items:center;gap:6px;font-size:13px;line-height:18px;font-weight:700;letter-spacing:.02em;color:#fff;white-space:nowrap}
-#topbar .ttblock .brand svg{width:18px;height:18px;flex:none}
 #topbar .ttblock h3{font-size:12px;line-height:16px;color:var(--mut);font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #topbar .ttblock h1{font-size:16px;line-height:22px;font-weight:600;text-shadow:0 1px 2px rgba(0,0,0,.5);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #topbar .sp{flex:1}
@@ -88,10 +86,7 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
   #topbar .ttblock{display:none}
 }
 @media (orientation:landscape) and (max-height:500px){
-  #toast{top:68px}
   #topbar{padding:8px 8px;gap:8px}
-  #topbar .ttblock .brand{font-size:11px;line-height:14px}
-  #topbar .ttblock .brand svg{width:14px;height:14px}
   #topbar .ttblock h3{font-size:9.6px;line-height:12px}
   #topbar .ttblock h1{font-size:14px;line-height:18px}
 }
@@ -140,10 +135,6 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
    inert (modes are "hidden"/"disabled", never natively rendered). */
 #cueWrap{display:none}
 #btnSubs{display:none}
-/* v6.27: subtitles stay OFF — kill native cue rendering from EVERY source
-   (hls.js native rendering, default tracks, embedded tracks). */
-video::cue{display:none !important}
-video::-webkit-media-text-track-display{display:none !important}
 
 /* ===== bottom bar ===== */
 #botblock{position:absolute;inset-inline:0;bottom:0;z-index:30;display:flex;flex-direction:column;gap:12px;
@@ -509,7 +500,7 @@ video::-webkit-media-text-track-display{display:none !important}
 .epEmpty p{margin-top:8px;font-size:14px;line-height:20px;color:var(--mut);max-width:320px;margin-inline:auto}
 
 /* ===== toast ===== */
-#toast{position:absolute;left:50%;top:112px;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;
+#toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:80;display:flex;align-items:center;gap:10px;
   max-width:min(92vw,560px);background:rgba(10,10,10,.92);border:1px solid var(--bd2);border-radius:10px;
   backdrop-filter:blur(20px);padding:10px 12px;font-size:13px;line-height:19px;box-shadow:0 12px 32px rgba(0,0,0,.5)}
 #toastTxt{flex:1}
@@ -562,7 +553,7 @@ video::-webkit-media-text-track-display{display:none !important}
   <div id="topbar">
     <button class="cbtn" id="btnBack" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span class="tip">Back</span></button>
     <div class="topdiv"></div>
-    <div class="ttblock"><div class="brand"><svg viewBox="0 0 64 64" aria-hidden="true"><path d="M32 5 L11 59 L21 59 L32 22 L43 59 L53 59 Z" fill="#95FF50"/><path d="M32 5 L53 59 L43 59 L32 22 Z" fill="#3a8f1e"/><path d="M22 20 L52 32 L22 44 Z" fill="#fff" stroke="#fff" stroke-width="3" stroke-linejoin="round"/><circle cx="31" cy="29.5" r="2.2" fill="#0b0b0d"/><circle cx="37.5" cy="29.5" r="2.2" fill="#0b0b0d"/><path d="M31 34.5 Q34.5 38 38.5 34" stroke="#0b0b0d" stroke-width="2" fill="none" stroke-linecap="round"/></svg><span>ArenaFlix</span></div><h3>You're Watching</h3><h1 id="watchTitle"></h1></div>
+    <div class="ttblock"><h3>You're Watching</h3><h1 id="watchTitle"></h1></div>
     <div class="sp"></div>
     <button class="cbtn hidden" id="btnEpsTop" aria-label="Episodes"><svg viewBox="0 0 24 24"><path d="M18 4l2 4h-3l-2-4h-2l2 4h-3l-2-4H8l2 4H7L5 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4z"/></svg><span class="tip">Episodes</span></button>
     <button class="cbtn" id="btnCloudTop" aria-label="Servers"><svg viewBox="0 0 24 24"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/></svg><span class="tip">Servers</span></button>
@@ -767,7 +758,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.29"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.25"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1516,7 +1507,7 @@ function playPickedStream(st, pos, autoplay){
   applySubsFor(st);
   var decUrl = st.url; try { decUrl = decodeURIComponent(st.url); } catch(e){}
   if (window.Hls && Hls.isSupported() && (st.force || st.format === "hls" || /\.m3u8/i.test(decUrl))) {
-    hls = new Hls({ maxBufferLength: 30, renderTextTracksNatively: false }); /* v6.27: subtitles OFF — hls.js must never render cues natively (a DEFAULT=YES rendition was showing). */
+    hls = new Hls({ maxBufferLength: 30 });
     hls.loadSource(st.url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, function(){
@@ -1761,7 +1752,6 @@ function pausedOvShouldShow(){
 $("pausedOv").addEventListener("click", function(){ pokeBars(); });
 function setBars(visible, force){
   hideTips();
-  clearTimeout(tapTimer); tapTimer = null; /* v6.26: a deferred single-tap toggle must never fire after the bars already changed. */
   clearTimeout(pausedOvTimer); pausedOvTimer = null; /* v6.24: a pending delayed overlay must never appear once the bars are back. */
   /* v6.3: on embed lanes our slim topbar is the ONLY way back to servers —
      taps land inside the cross-origin iframe and never reach this document,
@@ -1793,13 +1783,6 @@ function barsAfterSheets(){
   if (openPopId || openDrawerId) return;
   if ($("launcher").classList.contains("hidden")) pokeBars();
 }
-/* v6.29: volume stays ON — the FIRST tap anywhere on the player (screen or any
-   button) restores sound after a muted autoplay. Auto-mute itself stays ON
-   (autoplay still starts muted, as browsers require); an explicit mute is
-   never undone here — mutedByAutoplay is set only by the autoplay retry. */
-$("vw").addEventListener("pointerdown", function(){
-  if (mutedByAutoplay) { try { video.muted = false; } catch(e){} mutedByAutoplay = false; syncVolIcon(); }
-});
 $("vw").addEventListener("click", function(e){
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls via the overlay handler */
   /* v6.23: a sheet open swallows screen taps — the bars stay hidden until
@@ -1810,22 +1793,17 @@ $("vw").addEventListener("click", function(e){
   if (!$("launcher").classList.contains("hidden")) return;
   /* v6.3: a tap on empty video area TOGGLES the bars (Vidstuck behavior).
      The old code only ever showed them — a tap could never hide them. */
-  /* v6.26: double-tap seeks ONLY — the bars stay exactly as they were. */
-  if (dtFired) { dtFired = false; return; }
+  if (dtFired) { dtFired = false; pokeBars(); return; }
   if (touchShowed) { touchShowed = false; return; }
-  /* v6.26: show the bars only after the double-tap window — a second tap
-     means a seek, and the pending show is cancelled in touchstart. */
-  if (barsHidden) { clearTimeout(tapTimer); tapTimer = setTimeout(function(){ tapTimer = null; pokeBars(); }, 300); return; }
+  if (barsHidden) { pokeBars(); return; }
   if (isEmbedLane()) { pokeBars(); return; }
-  /* v6.23: a single tap on empty video area hides the bars (the old
-     300ms delayed hide was defeated by later pokeBars, so a tap showed
-     the bars but never hid them). v6.26: the hide below is deferred
-     300ms so a double-tap can cancel it and seek with bars unchanged. */
+  /* v6.23: hide AT ONCE on a single tap. The old 300ms delayed hide was
+     defeated by every later pokeBars (emulated mousemove, play/pause),
+     so a tap showed the bars but never hid them. Double-tap seek is
+     already decided at touchstart (dtFired), so no delay is needed here. */
   clearTimeout(barTimer); barTimer = null;
   clearTimeout(hideTimer2); hideTimer2 = null;
-  /* v6.26: hide deferred past the double-tap window too — a double-tap
-     seeks and leaves the bars visible; a lone tap hides them 300ms later. */
-  clearTimeout(tapTimer); tapTimer = setTimeout(function(){ tapTimer = null; setBars(false); }, 300);
+  setBars(false);
 });
 ["topbar", "botblock"].forEach(function(id){ $(id).addEventListener("pointermove", pokeBars); });
 $("vw").addEventListener("mousemove", function(){ if (openPopId || openDrawerId) return; if ($("launcher").classList.contains("hidden")) pokeBars(); });
@@ -1919,7 +1897,7 @@ document.addEventListener("fullscreenchange", function(){
 document.addEventListener("webkitfullscreenchange", function(){ syncFsFill(); });
 window.addEventListener("orientationchange", function(){ if (document.fullscreenElement) setTimeout(syncFsFill, 350); });
 /* double-tap: touch (always when enabled) + mouse dblclick, ±15s */
-var lastTap = 0, lastTapSide = "", tapTimer = null; /* v6.26: deferred single-tap bar toggle — cancelled by a double-tap. */
+var lastTap = 0, lastTapSide = "";
 $("vw").addEventListener("touchstart", function(e){
   /* v6.23: taps do nothing to the bars while a sheet is open. */
   if (openPopId || openDrawerId) return;
@@ -1933,13 +1911,11 @@ $("vw").addEventListener("touchstart", function(e){
   }
   if (!setDoubleTap || !isNativeLane()) return;
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls, never resume */
-  /* v6.26: NO immediate show at touchstart — it would flash the controller
-     on every double-tap seek. Fall through to the double-tap detection;
-     the click handler shows the bars after the double-tap window. */
+  if (barsHidden) { pokeBars(); touchShowed = true; lastTap = 0; return; }
   var t = e.touches[0], r = $("vw").getBoundingClientRect();
   var side = (t.clientX - r.left) > r.width / 2 ? "R" : "L";
   var now = Date.now();
-  if (now - lastTap < 300 && side === lastTapSide) { lastTap = 0; clearTimeout(hideTimer2); hideTimer2 = null; clearTimeout(tapTimer); tapTimer = null; dtFired = true; skipBy(side === "R" ? 15 : -15); }
+  if (now - lastTap < 300 && side === lastTapSide) { lastTap = 0; clearTimeout(hideTimer2); hideTimer2 = null; dtFired = true; skipBy(side === "R" ? 15 : -15); }
   else { lastTap = now; lastTapSide = side; }
 }, { passive: true });
 video.addEventListener("dblclick", function(e){
@@ -2199,7 +2175,6 @@ function bindTextTracks(){
     var tr = video.textTracks[i];
     if (tr.__cueBound) continue;
     tr.__cueBound = true;
-    try { if (tr.mode === "showing") tr.mode = "disabled"; } catch (e) {} /* v6.27: no track ever renders. */
     tr.oncuechange = function(){ syncCue(); };
   }
   cueBound = video.textTracks.length > 0;
@@ -2273,47 +2248,54 @@ function currentAudioLabel(){
   return list[i].label || ("Audio " + (i + 1));
 }
 var SET_TITLES = { main: "Player Settings", servers: "Server", quality: "Video Quality", audio: "Audio", subs: "Subtitles", aspect: "Aspect Ratio", brightness: "Brightness", speed: "Playback Speed" };
-var SET_SEC_TITLES = { source: "Servers", media: "Media", playback: "Playback" };
+var SET_SEC_TITLES = { source: "Source", media: "Media", video: "Video", playback: "Playback" };
 /* v6.18: mobile-landscape short viewports — settings sub-pages open as a popup like the other panels. */
 function isLandShort(){ try { return window.matchMedia("(orientation:landscape) and (max-height:500px)").matches; } catch(e){ return false; } }
 function markSel(container){ try { var srows = container.querySelectorAll(".srow"); for (var sri = 0; sri < srows.length; sri++) if (srows[sri].querySelector(".vl")) srows[sri].classList.add("sel"); } catch(e){} }
 function sectionBodies(){
   var native = isNativeLane();
   /* SOURCE: server summary only — switching opens the server sheet. */
-  var srcBody = srow("server", "Servers", serverName(curServer), "servers");
+  var srcBody = srow("server", "Server", serverName(curServer), "servers");
   var srcPrev = serverName(curServer);
   /* MEDIA: track selection ONLY (quality / subtitles / audio). */
   var mediaBody = "";
   var mi = 0;
   if (hasQuality()) mediaBody += srow("quality", "Quality", qualityLabel, "quality", mi++);
   if (hasAudio()) mediaBody += srow("audio", "Audio", currentAudioLabel(), "audio", mi++);
-  if (native) {
-    mediaBody += srow("ratio", "Aspect Ratio", aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill", "aspect", mi++);
-    mediaBody += srow("pip", "Picture-in-Picture", "", "pip", mi++);
-  }
   if (!mediaBody) mediaBody = '<p class="cardnote">This stream has no quality or audio tracks.</p>';
   var mediaParts = [];
   if (hasQuality()) mediaParts.push(qualityLabel);
   if (hasAudio()) mediaParts.push(currentAudioLabel() || "Audio");
-  if (native) mediaParts.push(aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill");
   var mediaPrev = mediaParts.length ? mediaParts.join(" · ") : "No tracks";
+  /* VIDEO: picture settings only. */
+  var videoBody = "";
+  if (native) {
+    var vi = 0;
+    videoBody += srow("ratio", "Aspect Ratio", aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill", "aspect", vi++);
+    videoBody += srow("bright", "Brightness", brightnessVal + "%", "brightness", vi++);
+    videoBody += trow("mirror", "Mirror", setMirror, "mirror", vi++);
+    videoBody += srow("pip", "Picture-in-Picture", "", "pip", vi++);
+  }
+  var videoPrev = native ? (aspectMode === "contain" ? "Fit" : aspectMode === "cover" ? "Crop" : "Fill") + " · " + brightnessVal + "%" : "Embed controls";
   /* PLAYBACK: speed + loop + auto-next + double-tap. */
   var playBody = "";
   var pi = 0;
   playBody += srow("speed", "Playback Speed", (speedVal + "x").replace(".0x", "x"), "speed", pi++);
+  playBody += trow("loop", "Loop", setLoop, "loop", pi++);
   if (MEDIA_TYPE === "tv") playBody += trow("play", "Auto Play Next Episode", setAutoNext, "autonext", pi++);
   playBody += trow("tap", "Double-tap to Seek", setDoubleTap, "doubletap", pi++);
-  var playPrev = [(speedVal + "x").replace(".0x", "x")];
+  var playPrev = [(speedVal + "x").replace(".0x", "x"), "Loop " + (setLoop ? "On" : "Off")];
   if (MEDIA_TYPE === "tv") playPrev.push("Auto Next " + (setAutoNext ? "On" : "Off"));
-  return { source: srcBody, media: mediaBody, playback: playBody, srcPrev: srcPrev, mediaPrev: mediaPrev, playPrev: playPrev };
+  return { source: srcBody, media: mediaBody, video: videoBody, playback: playBody, srcPrev: srcPrev, mediaPrev: mediaPrev, videoPrev: videoPrev, playPrev: playPrev };
 }
 function buildSettingsHtml(forPop){
   if (setView === "main") {
     var b = sectionBodies();
     if (forPop) return openSec ? b[openSec] : "";
-    return accSection("source", "Servers", b.source, b.srcPrev, 0) +
+    return accSection("source", "Source", b.source, b.srcPrev, 0) +
       '<hr class="sep">' + accSection("media", "Media", b.media, b.mediaPrev, 1) +
-      '<hr class="sep">' + accSection("playback", "Playback", b.playback, b.playPrev.join(" · "), 2) +
+      '<hr class="sep">' + accSection("video", "Video", b.video, b.videoPrev, 2) +
+      '<hr class="sep">' + accSection("playback", "Playback", b.playback, b.playPrev.join(" · "), 3) +
       '';
   }
   var html = "";
