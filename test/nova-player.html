@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-24 18:52 PKT: v6.21 content, force Pages deploy -->
-<title>Nova Player — Test Preview v6.24</title>
+<!-- pages-rebuild 2026-11-24 19:05 PKT: v6.25 content, force Pages deploy -->
+<title>Nova Player — Test Preview v6.25</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -758,7 +758,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.24"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.25"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2361,6 +2361,10 @@ function setPopTitle(){ return setView !== "main" ? (SET_TITLES[setView] || "Set
 function openSetPop(){
   $("setPopTitle").textContent = setPopTitle();
   var pb = $("setPopBody"); pb.innerHTML = buildSettingsHtml(true); markSel(pb);
+  /* v6.25: openPop TOGGLES — calling it while setPop is already open CLOSES
+     the popup (the landscape bug: tapping Quality/Audio inside the open
+     category popup closed the whole settings page). Refresh in place. */
+  if (openPopId === "setPop") { clearTimeout(barTimer); barTimer = null; setBars(false, true); return; }
   openPop("setPop");
 }
 /* ONE delegated listener for the settings body + the landscape popup body (v6.18). */
@@ -2370,7 +2374,7 @@ function onSettingsClick(e){
   var ab = e.target.closest("[data-acc-back]");
   if (ab) { openSec = null; renderSettings(); return; }
   var ah = e.target.closest("[data-acc-head]");
-  if (ah) { var key = ah.getAttribute("data-acc-head"); openSec = key; renderSettings(); if (isLandShort()) { openSetPop(); } else { var h = document.querySelector('[data-acc-head="' + key + '"]'); if (h) h.scrollIntoView({block:"nearest"}); } return; }
+  if (ah) { var key = ah.getAttribute("data-acc-head"); if (!isLandShort() && openSec === key) { openSec = null; setView = "main"; } else { openSec = key; } renderSettings(); if (isLandShort()) { openSetPop(); } else { var h = document.querySelector('[data-acc-head="' + key + '"]'); if (h) h.scrollIntoView({block:"nearest"}); } return; }
   var qm = e.target.closest("[data-qm]");
   if (qm) { selectMp4Quality(qm.getAttribute("data-qm")); renderSettings(); return; }
   var q = e.target.closest("[data-q]");
