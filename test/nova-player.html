@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.5</title>
+<title>Nova Player — Test Preview v6.6</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&family=Inter:wght@800&display=swap" rel="stylesheet">
@@ -29,7 +29,7 @@ svg{display:block;fill:currentColor}
 #vid{object-fit:contain}
 #grad{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;
   background:linear-gradient(to top,rgba(0,0,0,.8),transparent,rgba(0,0,0,.4));z-index:30}
-/* v6.5 (Item 6): on embed lanes ONLY back + server buttons overlay the
+/* v6.6: on embed lanes ONLY the server button overlays the
    embed's own player — no title block, no divider, no episodes button,
    no opaque bar; the embed fills the screen. */
 #vw.embed #grad{display:none}
@@ -290,12 +290,13 @@ svg{display:block;fill:currentColor}
 .srvsec{padding:10px 12px 2px;font-size:11px;line-height:16px;font-weight:600;text-transform:uppercase;
   letter-spacing:.08em;color:var(--mut)}
 .srv{display:flex;width:100%;flex-direction:column;align-items:stretch;text-align:left;border-radius:8px;
-  padding:10px 12px;font-size:14px;line-height:20px;transition:background-color .15s,color .15s;color:var(--mut)}
+  padding:12px 12px;font-size:14px;line-height:20px;transition:background-color .15s,color .15s;color:var(--mut)}
 .srv:hover{background:rgba(38,38,38,.6);color:var(--fg)}
 .srv.sel{background:var(--acc);color:var(--fg)}
 @media (min-width:768px){.srv{font-size:16px;line-height:24px}}
 .srv .r1{display:flex;width:100%;align-items:center;justify-content:space-between;gap:8px}
 .srv .nm{font-weight:500;color:inherit}
+.srv.sel .nm{font-weight:600}
 .srv.fail .nm{text-decoration:line-through;opacity:.5}
 .srv .ds{margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   font-size:12px;line-height:16px;color:var(--mut);text-align:left}
@@ -386,6 +387,9 @@ svg{display:block;fill:currentColor}
 .srow .ic svg{width:20px;height:20px}
 .srow .lb{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .srow .vl{color:var(--mut);font-size:13px;line-height:18px;flex:none}
+.srow.sel{background:var(--acc)}
+.srow .vl{display:flex;align-items:center}
+.srow .vl svg{width:16px;height:16px;color:var(--primary)}
 .srow .chev{color:var(--mut);flex:none}
 .srow .chev svg{width:18px;height:18px}
 .srow .tgl{flex:none;border-radius:999px;padding:2px 10px;font-size:12px;line-height:18px;font-weight:600}
@@ -685,7 +689,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.5"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.6"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -713,6 +717,7 @@ function applyChunkMeta(e){
       lb.addEventListener("load", function(){ lb.classList.add("loaded"); $("lauCenter").classList.add("in"); });
     }
   }
+  if (e.logo && !META.logo) { META.logo = e.logo; paintLogo(); }
   paintMetaTitles();
   buildPausedOv();
 }
@@ -742,6 +747,51 @@ function scheduleMetaRetry(){
   setTimeout(function(){ if (!metaDone) loadChunkMeta(); }, delay);
 }
 loadChunkMeta();
+/* v6.6: official title art (logo) — the hero banner renders the movie's
+   own logo image when one exists and falls back to styled text. The
+   test page fetches the same logo the same way (en -> no-language ->
+   first), from a sharded logo file next to this page; the chunk entry's
+   own `logo` field wins when present. No key is ever embedded here. */
+var logoTried = 0, logoDone = false;
+function paintLogo(){
+  var li = $("logoImg"); if (!li) return;
+  if (META.logo) {
+    if (li.getAttribute("src") !== META.logo) { li.src = META.logo; li.alt = META.title || ""; }
+    li.classList.remove("hidden");
+    var lt = $("lauTitle"); if (lt) lt.classList.add("hidden");
+    if (!li._logoBound) { li._logoBound = true;
+      li.addEventListener("error", function(){ li.classList.add("hidden"); var t = $("lauTitle"); if (t) { t.textContent = META.title; t.classList.remove("hidden"); } });
+    }
+  } else {
+    li.classList.add("hidden"); li.removeAttribute("src");
+    var lt2 = $("lauTitle"); if (lt2) { lt2.textContent = META.title; lt2.classList.remove("hidden"); }
+  }
+}
+function loadLogoMeta(){
+  if (META_HAS_DEMO || logoDone) return;
+  if (typeof fetch !== "function") return;
+  var wantId = MEDIA_TMDB, wantType = MEDIA_TYPE, ctl = null;
+  try { ctl = new AbortController(); } catch(e){ ctl = null; }
+  logoTried++;
+  var settled = false;
+  var to = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch(e){} }, 30000);
+  fetch("https://raw.githubusercontent.com/Msohaib012/gta6-live-clipper-web/main/test/seo-logos/" + (MEDIA_TMDB % 100) + ".json", ctl ? { signal: ctl.signal } : undefined)
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){
+      if (settled) return; settled = true; clearTimeout(to);
+      if (!j || MEDIA_TMDB !== wantId || MEDIA_TYPE !== wantType) { scheduleLogoRetry(); return; }
+      var u = (j.logos || {})[wantType + ":" + wantId];
+      if (!u) { logoDone = true; return; }
+      logoDone = true; META.logo = u; paintLogo(); buildPausedOv();
+    })
+    .catch(function(){ if (settled) return; settled = true; clearTimeout(to); scheduleLogoRetry(); });
+}
+function scheduleLogoRetry(){
+  if (logoDone || logoTried >= 6) return;
+  var delay = logoTried < 2 ? 5000 : 30000;
+  setTimeout(function(){ if (!logoDone) loadLogoMeta(); }, delay);
+}
+loadLogoMeta();
 
 /* ============ servers — same 8 as the live player, same embed URLs, two lists ============ */
 var SERVERS = [
@@ -787,9 +837,41 @@ function streamsUrl(base, provider){
   if (MEDIA_TYPE === "tv") u += "?season=" + MEDIA_SEASON + "&episode=" + MEDIA_EPISODE;
   return u;
 }
-function thugtvApiUrl(){
-  if (MEDIA_TYPE === "tv") return "https://thugtv.online/api/stream/tv/" + MEDIA_TMDB + "/" + MEDIA_SEASON + "/" + MEDIA_EPISODE;
-  return "https://thugtv.online/api/stream/movie/" + MEDIA_TMDB;
+/* v6.6: the Arenaflix lane uses the SAME chain as the live player
+   (Watchout raw URL -> thugtv-proxy /proxy -> hls.js). The old
+   thugtv.online API 301-redirects to thugtv.st, answers a different
+   shape ({sources}, not {streams}) and fails CORS from github.io, so
+   the lane always probed dead while the live site played. */
+var WATCHOUT_BASE = "https://raw.githubusercontent.com/Watchout2025/api/refs/heads/main/hls/";
+var ARENA_PROXY = "https://thugtv-proxy.virtualsipra01.workers.dev/proxy?url=";
+var ARENA_OWN = "https://thugtv-proxy.virtualsipra01.workers.dev/r/";
+function arenaHlsText(urls, idx){
+  if (idx >= urls.length) return Promise.resolve(null);
+  var ctl = null;
+  try { ctl = new AbortController(); } catch(e){}
+  var to = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch(e){} }, 5000);
+  return fetch(urls[idx], ctl ? { signal: ctl.signal } : undefined).then(function(r){
+    clearTimeout(to);
+    if (!r.ok) throw new Error("http " + r.status);
+    return r.text();
+  }).then(function(t){
+    t = (t || "").trim();
+    if (MEDIA_TYPE === "tv") {
+      try { var j = JSON.parse(t); t = j[MEDIA_EPISODE] || j["E" + MEDIA_EPISODE] || ""; } catch(e){ t = ""; }
+    }
+    if (!t || t.indexOf("http") !== 0) throw new Error("no url");
+    return t;
+  }).catch(function(){ return arenaHlsText(urls, idx + 1); });
+}
+function arenaUrls(base){
+  if (MEDIA_TYPE === "tv") return [base + "tv/" + MEDIA_TMDB + "/S" + MEDIA_SEASON + ".json"];
+  return [base + "movie/" + MEDIA_TMDB];
+}
+function probeArenaHls(){
+  return arenaHlsText(arenaUrls(WATCHOUT_BASE).concat(arenaUrls(ARENA_OWN)), 0).then(function(hlsUrl){
+    if (!hlsUrl) return { ok: false, streams: [], unreachable: false };
+    return { ok: true, streams: [{ url: ARENA_PROXY + encodeURIComponent(hlsUrl), name: "Arenaflix", quality: "", forceHls: true }] };
+  }).catch(function(){ return { ok: false, streams: [] }; });
 }
 function stripPreviews(d){
   if (d && d.streams) d.streams = d.streams.filter(function(s){ return !/preview/i.test(s.url || ""); });
@@ -804,9 +886,10 @@ function fetchJSON(url, ms){
 }
 function fetchJSONProxy(url, ms){ return fetchJSON(WORKER + encodeURIComponent(url), ms); }
 function probeRW(srv){
-  var provider = srv.rw, url;
-  if (provider === "thugtv") url = thugtvApiUrl();
-  else if (provider === "moviebox") url = streamsUrl(VELVET_API, provider);
+  var provider = srv.rw;
+  if (provider === "thugtv") return probeArenaHls();
+  var url;
+  if (provider === "moviebox") url = streamsUrl(VELVET_API, provider);
   else url = streamsUrl(CASTLE_API, provider);
   return fetchJSON(url, 8000).then(function(d){
     if (d) return d;
@@ -1055,7 +1138,7 @@ function parseStream(s){
   else if (url.indexOf("/720/") > 0) qual = "720p";
   else if (url.indexOf("/480/") > 0) qual = "480p";
   else if (url.indexOf("/360/") > 0) qual = "360p";
-  return { url: url, lang: lang, qual: qual, name: name };
+  return { url: url, lang: lang, qual: qual, name: name, force: !!s.forceHls };
 }
 
 /* v6.5: server rows are name-only (user order) — no quality kid-rows, no
@@ -1072,9 +1155,11 @@ function ckSvg(){ return '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.
 function xSvg(){ return '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'; }
 function clockSvg(){ return '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 10.59l4.24 2.49-.75 1.23L11 13V7h2v5.59z"/></svg>'; }
 function srvListsHtml(){
-  var h = '<div class="srvsec">Our servers</div>';
+  var nn = 0, ne = 0, si;
+  for (si = 0; si < SERVERS.length; si++) { if (SERVERS[si].lane === "native") nn++; else ne++; }
+  var h = '<div class="srvsec">Our servers \u00b7 ' + nn + '</div>';
   SERVERS.forEach(function(srv){ if (srv.lane === "native") h += srvRowHtml(srv); });
-  h += '<div class="srvsec">Embed servers</div>';
+  h += '<div class="srvsec">Embed servers \u00b7 ' + ne + '</div>';
   SERVERS.forEach(function(srv){ if (srv.lane === "embed") h += srvRowHtml(srv); });
   return h;
 }
@@ -1223,11 +1308,14 @@ function applyLaneChrome(){
   if (emb) {
     $("botblock").classList.add("hidden");
     $("centerCtl").classList.add("hidden");
+    $("btnBack").classList.add("hidden");
+    $("btnCloudTop").classList.remove("hidden");
     $("topbar").classList.remove("hide");
     barsHidden = false;
   } else {
     $("botblock").classList.remove("hidden");
     $("centerCtl").classList.remove("hidden");
+    $("btnBack").classList.remove("hidden");
   }
   pokeBars();
 }
@@ -1258,13 +1346,15 @@ function playPickedStream(st, pos, autoplay){
   frame.classList.add("hidden");
   applyVideoPrefs();
   if (hls) { try { hls.destroy(); } catch(e){} hls = null; }
-  if (window.Hls && Hls.isSupported() && /\.m3u8/i.test(st.url)) {
+  var decUrl = st.url; try { decUrl = decodeURIComponent(st.url); } catch(e){}
+  if (window.Hls && Hls.isSupported() && (st.force || /\.m3u8/i.test(decUrl))) {
     hls = new Hls({ maxBufferLength: 30 });
     hls.loadSource(st.url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, function(){
       try { video.currentTime = pos; } catch(e){}
       if (autoplay) attemptPlay(); else if (video.readyState >= 2) showSpin(false);
+      qualityLabel = "Auto";
       bindTextTracks(); refreshSettingsIfOpen();
     });
     hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, refreshSettingsIfOpen);
@@ -1278,6 +1368,7 @@ function playPickedStream(st, pos, autoplay){
       video.removeEventListener("loadedmetadata", h);
       try { video.currentTime = pos; } catch(e){}
       if (autoplay) attemptPlay(); else if (video.readyState >= 2) showSpin(false);
+      refreshSettingsIfOpen();
     };
     video.addEventListener("loadedmetadata", h);
   }
@@ -1289,6 +1380,8 @@ function playNative(streams){
   for (var i = 0; i < curStreams.length; i++) if (/hindi/i.test(curStreams[i].lang)) { hi = i; break; }
   if (hi >= 0) pick = curStreams[hi];
   curStreamIdx = curStreams.indexOf(pick);
+  /* v6.6: MP4 lanes have no HLS levels; show the picked stream's quality. */
+  if (pick.qual && !pick.force) qualityLabel = pick.qual;
   playPickedStream(pick, 0, true);
   applyLaneChrome();
 }
@@ -1745,9 +1838,27 @@ function selectAudio(idx){
     var wasPaused = video.paused, pos = video.currentTime;
     curStreamIdx = t.si;
     playPickedStream(curStreams[t.si], pos, !wasPaused);
+    if (hls) { qualityLabel = "Auto"; }
+    else if (curStreams[t.si] && curStreams[t.si].qual) { qualityLabel = curStreams[t.si].qual; }
   } else if (hls) {
     try { hls.audioTrack = t.hi; } catch (e) {}
   }
+  refreshSettingsIfOpen();
+}
+function selectMp4Quality(q){
+  var lang = (curStreams[curStreamIdx] || {}).lang || "";
+  var cands = [];
+  curStreams.forEach(function(st, i){ if (st.lang === lang && st.qual) cands.push({ st: st, i: i }); });
+  if (!cands.length) return;
+  cands.sort(function(a, b){ return parseInt(b.st.qual, 10) - parseInt(a.st.qual, 10); });
+  var pick = cands[0];
+  if (q !== "auto") {
+    for (var i = 0; i < cands.length; i++) if (cands[i].st.qual === q) { pick = cands[i]; break; }
+  }
+  var wasPaused = video.paused, pos = video.currentTime;
+  curStreamIdx = pick.i;
+  qualityLabel = (q === "auto") ? "Auto" : pick.st.qual;
+  playPickedStream(curStreams[pick.i], pos, !wasPaused);
   refreshSettingsIfOpen();
 }
 function subTracks(){
@@ -1877,7 +1988,25 @@ function srow(iconKey, label, value, action){
 function trow(iconKey, label, on, action){
   return '<button class="srow" data-act="' + action + '"><span class="ic">' + ico(ICONS[iconKey]) + '</span><span class="lb">' + label + '</span><span class="tgl ' + (on ? "on" : "off") + '"><i></i></span></button>';
 }
-function hasQuality(){ return !!(isNativeLane() && hls && hls.levels && hls.levels.length); }
+function hlsLevels(){ return (isNativeLane() && hls && hls.levels && hls.levels.length) ? hls.levels : null; }
+/* v6.6: MP4 lanes (Velvet etc.) carry several quality variants as
+   separate probe streams; their qualities come from the probe list,
+   scoped to the current audio language so a quality switch never
+   changes the dub. */
+function mp4Qualities(){
+  if (!isNativeLane() || hls || !curStreams || !curStreams.length) return [];
+  var lang = (curStreams[curStreamIdx] || {}).lang || "";
+  var out = [];
+  curStreams.forEach(function(st){
+    if (st.lang !== lang || !st.qual) return;
+    for (var i = 0; i < out.length; i++) if (out[i].qual === st.qual) return;
+    var q = parseInt(st.qual, 10);
+    out.push({ qual: st.qual, h: isNaN(q) ? 0 : q });
+  });
+  out.sort(function(a, b){ return b.h - a.h; });
+  return out;
+}
+function hasQuality(){ return !!(hlsLevels() || mp4Qualities().length >= 2); }
 function hasAudio(){ return audioTracks().length > 0; }
 function hasSubs(){ return subTracks().length > 0; }
 function accSection(key, title, bodyHtml, preview){
@@ -1941,38 +2070,50 @@ function renderSettings(){
       '<hr class="sep">' + accSection("playback", "Playback", playBody, playPrev.join(" · ")) +
       '';
   } else if (setView === "quality" && hasQuality()) {
-    var hq = '<button class="srow" data-q="-1"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span>' + (qualityLabel === "Auto" ? '<span class="vl">✓</span>' : "") + '</button>';
-    hls.levels.forEach(function(lv, i){
-      hq += '<button class="srow" data-q="' + i + '"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">' + (lv.height ? lv.height + "p" : "Level " + (i + 1)) + "</span>" + (qualityLabel === (lv.height + "p") ? '<span class="vl">✓</span>' : "") + "</button>";
-    });
-    body.innerHTML = hq;
+    var lvls = hlsLevels();
+    if (lvls) {
+      var hq = '<button class="srow" data-q="-1"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span>' + (qualityLabel === "Auto" ? '<span class="vl">' + ckSvg() + '</span>' : "") + '</button>';
+      lvls.forEach(function(lv, i){
+        hq += '<button class="srow" data-q="' + i + '"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">' + (lv.height ? lv.height + "p" : "Level " + (i + 1)) + "</span>" + (qualityLabel === (lv.height + "p") ? '<span class="vl">' + ckSvg() + '</span>' : "") + "</button>";
+      });
+      body.innerHTML = hq;
+    } else {
+      var mq = mp4Qualities();
+      var hq2 = '<button class="srow" data-qm="auto"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">Auto</span>' + (qualityLabel === "Auto" ? '<span class="vl">' + ckSvg() + '</span>' : "") + '</button>';
+      mq.forEach(function(o){
+        hq2 += '<button class="srow" data-qm="' + o.qual + '"><span class="ic">' + ico(ICONS.quality) + '</span><span class="lb">' + o.qual + '</span>' + (qualityLabel === o.qual ? '<span class="vl">' + ckSvg() + '</span>' : "") + '</button>';
+      });
+      body.innerHTML = hq2;
+    }
   } else if (setView === "audio") {
     var al = audioTracks();
     body.innerHTML = al.length ? al.map(function(t, i){
-      return '<button class="srow" data-au="' + i + '"><span class="ic">' + ico(ICONS.audio) + '</span><span class="lb">' + (t.label || ("Audio " + (i + 1))) + "</span>" + (audioSelIdx() === i ? '<span class="vl">✓</span>' : "") + "</button>";
+      return '<button class="srow" data-au="' + i + '"><span class="ic">' + ico(ICONS.audio) + '</span><span class="lb">' + (t.label || ("Audio " + (i + 1))) + "</span>" + (audioSelIdx() === i ? '<span class="vl">' + ckSvg() + '</span>' : "") + "</button>";
     }).join("") : '<p class="cardnote">Is stream me koi audio language nahi hai.</p>';
   } else if (setView === "subs") {
     var sl = subTracks();
-    var hs = '<button class="srow" data-sub="-1"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">Off</span>' + (selectedSubIdx < 0 ? '<span class="vl">✓</span>' : "") + "</button>";
+    var hs = '<button class="srow" data-sub="-1"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">Off</span>' + (selectedSubIdx < 0 ? '<span class="vl">' + ckSvg() + '</span>' : "") + "</button>";
     for (var i = 0; i < sl.length; i++) {
-      hs += '<button class="srow" data-sub="' + i + '"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">' + (sl[i].label || ("Subtitle " + (i + 1))) + "</span>" + (selectedSubIdx === i ? '<span class="vl">✓</span>' : "") + "</button>";
+      hs += '<button class="srow" data-sub="' + i + '"><span class="ic">' + ico(ICONS.subs) + '</span><span class="lb">' + (sl[i].label || ("Subtitle " + (i + 1))) + "</span>" + (selectedSubIdx === i ? '<span class="vl">' + ckSvg() + '</span>' : "") + "</button>";
     }
     body.innerHTML = sl.length ? hs : '<p class="cardnote">Is stream me koi subtitle track nahi hai.</p>';
   } else if (setView === "aspect") {
     body.innerHTML = [["contain", "Fit"], ["cover", "Crop"], ["fill", "Fill"]].map(function(o){
-      return '<button class="srow" data-aspect="' + o[0] + '"><span class="ic">' + ico(ICONS.ratio) + '</span><span class="lb">' + o[1] + "</span>" + (aspectMode === o[0] ? '<span class="vl">✓</span>' : "") + "</button>";
+      return '<button class="srow" data-aspect="' + o[0] + '"><span class="ic">' + ico(ICONS.ratio) + '</span><span class="lb">' + o[1] + "</span>" + (aspectMode === o[0] ? '<span class="vl">' + ckSvg() + '</span>' : "") + "</button>";
     }).join("");
   } else if (setView === "brightness") {
     body.innerHTML = [50, 75, 100, 125, 150].map(function(v){
-      return '<button class="srow" data-bright="' + v + '"><span class="ic">' + ico(ICONS.bright) + '</span><span class="lb">' + v + "%</span>" + (brightnessVal === v ? '<span class="vl">✓</span>' : "") + "</button>";
+      return '<button class="srow" data-bright="' + v + '"><span class="ic">' + ico(ICONS.bright) + '</span><span class="lb">' + v + "%</span>" + (brightnessVal === v ? '<span class="vl">' + ckSvg() + '</span>' : "") + "</button>";
     }).join("");
   } else if (setView === "speed") {
     body.innerHTML = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(function(v){
-      return '<button class="srow" data-speed="' + v + '"><span class="ic">' + ico(ICONS.speed) + '</span><span class="lb">' + v + "x</span>" + (speedVal === v ? '<span class="vl">✓</span>' : "") + "</button>";
+      return '<button class="srow" data-speed="' + v + '"><span class="ic">' + ico(ICONS.speed) + '</span><span class="lb">' + v + "x</span>" + (speedVal === v ? '<span class="vl">' + ckSvg() + '</span>' : "") + "</button>";
     }).join("");
   } else {
     body.innerHTML = '<p class="cardnote">Is stream me is ki koi track nahi hai.</p>';
   }
+  /* v6.6: highlight the active option row in sub-views. */
+  try { var srows = body.querySelectorAll(".srow"); for (var sri = 0; sri < srows.length; sri++) if (srows[sri].querySelector(".vl")) srows[sri].classList.add("sel"); } catch(e){}
 }
 /* ONE delegated listener for the whole settings body. */
 $("setBody").addEventListener("click", function(e){
@@ -1982,6 +2123,8 @@ $("setBody").addEventListener("click", function(e){
   if (ab) { openSec = null; renderSettings(); return; }
   var ah = e.target.closest("[data-acc-head]");
   if (ah) { var key = ah.getAttribute("data-acc-head"); openSec = (openSec === key) ? null : key; renderSettings(); return; }
+  var qm = e.target.closest("[data-qm]");
+  if (qm) { selectMp4Quality(qm.getAttribute("data-qm")); setView = "main"; renderSettings(); return; }
   var q = e.target.closest("[data-q]");
   if (q) {
     var qi = parseInt(q.getAttribute("data-q"), 10);
