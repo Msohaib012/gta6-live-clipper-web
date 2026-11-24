@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.6</title>
+<title>Nova Player — Test Preview v6.7</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&family=Inter:wght@800&display=swap" rel="stylesheet">
@@ -22,6 +22,12 @@ body{font-family:Geist,Arial,sans-serif;color:var(--fg);overflow:hidden}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 svg{display:block;fill:currentColor}
 .hidden{display:none!important}
+/* v6.7: Android Chrome paints a blue tap highlight on every tap — kill it
+   everywhere; keyboard focus keeps a visible ring via :focus-visible. */
+*,*::before,*::after{-webkit-tap-highlight-color:transparent}
+button{outline:none;touch-action:manipulation}
+button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255,.65);outline-offset:2px}
+#seekTrack{outline:none}
 
 /* ===== stage ===== */
 #vw{position:relative;height:100dvh;width:100%;overflow:hidden;background:#000}
@@ -341,7 +347,7 @@ svg{display:block;fill:currentColor}
   border-radius:6.4px 6.4px 0 0;max-height:90dvh;font-size:14px;line-height:20px;
   translate:0 26px;opacity:0;transition:translate .3s cubic-bezier(.22,1,.36,1),opacity .3s ease,transform 450ms cubic-bezier(.22,1,.36,1);will-change:transform;overflow:hidden}
 .drawer.open{translate:0 0;opacity:1}
-#settings{max-width:576px}
+#settings{max-width:576px;background:rgba(10,10,10,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1)}
 #epDrawer{max-width:1024px;max-height:90vh}
 /* v6.3: settings is a CENTERED sheet on phones (Vidstuck's form), not a
    bottom sheet. Episodes stay a bottom sheet. Drag-close is episodes-only
@@ -350,6 +356,7 @@ svg{display:block;fill:currentColor}
 .handle{width:100px;height:5px;border-radius:999px;background:rgba(255,255,255,.25);margin:8px auto 0;flex:none;cursor:grab}
 .drHead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;
   padding:12px 16px;background:var(--bg)}
+#settings .drHead{background:rgba(10,10,10,.55)}
 .drHead .bkbtn{display:flex;align-items:center;gap:2px;margin-left:-8px;color:var(--fg);flex:none}
 .drHead .bkbtn svg{width:20px;height:20px}
 .drHead .bkbtn span{font-size:13px;line-height:18px}
@@ -375,6 +382,9 @@ svg{display:block;fill:currentColor}
 .acc.open .acc-head .chev{transform:rotate(90deg)}
 .acc-body{display:none;padding:2px 0 6px}
 .acc.open .acc-body{display:block}
+#setBody.sub .acc{display:none}
+#setBody.sub .acc.open{display:block}
+#setBody.sub .sep{display:none}
 .bkrow{display:flex;align-items:center;gap:8px;width:100%;border-radius:8px;padding:8px 12px;
   font-size:13px;line-height:18px;color:var(--mut);text-align:left}
 .bkrow:hover{background:rgba(38,38,38,.6);color:var(--fg)}
@@ -689,7 +699,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.6"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.7"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1109,7 +1119,7 @@ var probeDone = 0, probeTotal = 0;
   function finishProbe(){
     if (finished) return; finished = true;
     if (cycTimer) clearInterval(cycTimer);
-    SERVERS.forEach(function(srv){ if (PROBE[srv.id] === undefined) PROBE[srv.id] = { ok: false, streams: [] }; });
+    SERVERS.forEach(function(srv){ if (srv.lane === "native" && PROBE[srv.id] === undefined) PROBE[srv.id] = { ok: false, streams: [] }; });
     bestIdx = -1;
     for (var i = 0; i < SERVERS.length; i++) {
       if (SERVERS[i].lane === "native" && PROBE[SERVERS[i].id].ok) { bestIdx = i; break; }
@@ -1148,7 +1158,7 @@ function parseStream(s){
 function srvRowHtml(srv){
   var p = PROBE[srv.id];
   var sel = srv.id === curServer;
-  var fail = !!(p && !p.ok && !p.unreachable);
+  var fail = !!(srv.lane === "native" && p && !p.ok && !p.unreachable);
   return '<button class="srv' + (fail ? " fail" : "") + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + "</span>" + (sel ? '<span class="st ok">' + ckSvg() + "</span>" : "") + "</span></button>";
 }
 function ckSvg(){ return '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'; }
@@ -1570,8 +1580,8 @@ function syncPausedOv(){
   ov.classList.toggle("hidden", !show);
   ov.classList.toggle("show", show);
 }
-/* v6.5: tap anywhere on the paused detail overlay resumes playback. */
-$("pausedOv").addEventListener("click", function(){ hidePausedOv(); attemptPlay(); });
+/* v6.7: taps on the paused overlay only reveal the controls — resume happens ONLY on the play button. */
+$("pausedOv").addEventListener("click", function(){ pokeBars(); });
 function setBars(visible){
   hideTips();
   /* v6.3: on embed lanes our slim topbar is the ONLY way back to servers —
@@ -1596,9 +1606,9 @@ function pokeBars(){
   barTimer = setTimeout(function(){ setBars(false); }, 3500);
 }
 $("vw").addEventListener("click", function(e){
-  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop") || e.target.closest("#pausedOv")) return; /* v6.5 fixup: overlay taps resume */
-  /* v6.5 fixup 3: touch taps retarget to #vid, so resume here whenever the overlay is up. */
-  if ($("pausedOv").classList.contains("show")) { hidePausedOv(); attemptPlay(); return; }
+  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls via the overlay handler */
+  /* v6.7: overlay up — a tap only reveals the controls, never resumes. */
+  if ($("pausedOv").classList.contains("show")) { pokeBars(); return; }
   if (!$("launcher").classList.contains("hidden")) return;
   /* v6.3: a tap on empty video area TOGGLES the bars (Vidstuck behavior).
      The old code only ever showed them — a tap could never hide them. */
@@ -1684,18 +1694,16 @@ $("btnFs").addEventListener("click", function(){
 /* double-tap: touch (always when enabled) + mouse dblclick, ±15s */
 var lastTap = 0, lastTapSide = "";
 $("vw").addEventListener("touchstart", function(e){
-  /* v6.5 fixup 4: resume at touchstart, BEFORE any synthesized mousemove can
-     pokeBars() and hide the overlay (that race made the click handler's
-     overlay check miss, so real taps never resumed). Chrome above already
-     returned; a shown overlay covers everything else. Not gated on the
-     double-tap setting: resume must work even with double-tap off. */
+  /* v6.7: overlay up — reveal the controls at touchstart (before any
+     synthesized mousemove), but NEVER resume: only the play button
+     resumes. Not gated on the double-tap setting. */
   if (isNativeLane() && $("pausedOv").classList.contains("show") &&
       !e.target.closest("#topbar") && !e.target.closest("#botblock") &&
       !e.target.closest(".popover") && !e.target.closest(".drawer") && !e.target.closest("#toast")) {
-    hidePausedOv(); attemptPlay(); touchShowed = true; lastTap = 0; return;
+    pokeBars(); touchShowed = true; lastTap = 0; return;
   }
   if (!setDoubleTap || !isNativeLane()) return;
-  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#pausedOv")) return; /* v6.5 fixup: overlay taps resume, never pokeBars */
+  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls, never resume */
   if (barsHidden) { pokeBars(); touchShowed = true; lastTap = 0; return; }
   var t = e.touches[0], r = $("vw").getBoundingClientRect();
   var side = (t.clientX - r.left) > r.width / 2 ? "R" : "L";
@@ -2114,6 +2122,8 @@ function renderSettings(){
   }
   /* v6.6: highlight the active option row in sub-views. */
   try { var srows = body.querySelectorAll(".srow"); for (var sri = 0; sri < srows.length; sri++) if (srows[sri].querySelector(".vl")) srows[sri].classList.add("sel"); } catch(e){}
+  /* v6.7: one open section at a time — hide the rest, no mixing. */
+  body.classList.toggle("sub", !!openSec);
 }
 /* ONE delegated listener for the whole settings body. */
 $("setBody").addEventListener("click", function(e){
