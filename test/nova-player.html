@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.35</title>
+<title>Nova Player — Test Preview v6.36</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -767,7 +767,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.35"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.36"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1953,7 +1953,18 @@ $("vw").addEventListener("click", function(e){
   }, 300);
 });
 ["topbar", "botblock"].forEach(function(id){ $(id).addEventListener("pointermove", pokeBars); });
-$("vw").addEventListener("mousemove", function(){ if (openPopId || openDrawerId) return; if ($("launcher").classList.contains("hidden")) pokeBars(); });
+/* v6.36: a tap on touch screens fires a SYNTHESIZED mousemove right before
+   the click — without this guard it pokeBars (shows the bars) and the
+   deferred single-tap toggle then hides them 300ms later: the "show hokar
+   instant hide" flash. Real mouse moves only. */
+var lastTouchAt = 0;
+$("vw").addEventListener("touchstart", function(){ lastTouchAt = Date.now(); }, { passive: true });
+$("vw").addEventListener("mousemove", function(e){
+  if (openPopId || openDrawerId) return;
+  if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+  if (Date.now() - lastTouchAt < 500) return;
+  if ($("launcher").classList.contains("hidden")) pokeBars();
+});
 $("btnBack").addEventListener("click", backToLauncher);
 
 /* ============ video events ============ */
@@ -2570,3 +2581,5 @@ updatePlayIco();
 <!-- pages-rebuild 2026-11-24 23:43 PKT -->
 
 <!-- pages-rebuild 2026-11-25 00:16 PKT -->
+
+<!-- pages-rebuild 2026-11-25 00:20 PKT -->
