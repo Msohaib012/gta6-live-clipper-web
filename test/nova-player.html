@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.43</title>
+<title>Nova Player — Test Preview v6.44</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -83,6 +83,8 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
 /* v6.43: ARENAFLIX lockup — exact copy of the official player's watermark spec (#wm/.play in static.html): 11px/800/.22em/uppercase, rgba(255,255,255,.78), #e50914 CSS triangle. Replaces the "You're Watching" eyebrow in the top bar and the desktop bottom-bar kick. */
 #topbar .ttblock .wmLock,#deskTitle .kick .wmLock{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.78);padding:6px 2px;user-select:none;-webkit-user-select:none;text-shadow:0 1px 4px rgba(0,0,0,.65);white-space:nowrap}
 #topbar .ttblock .wmLock .play,#deskTitle .kick .wmLock .play{width:0;height:0;border-left:8px solid #e50914;border-top:5px solid transparent;border-bottom:5px solid transparent;flex:none}
+/* v6.44: topbar lockup-to-title gap tightened (padding-bottom 6px -> 2px) — logo aur movie name ke darmiyan space thora zyada tha. */
+#topbar .ttblock .wmLock{padding-bottom:2px}
 #topbar .sp{flex:1}
 @media (min-width:768px){
   #topbar{padding:32px 24px;gap:32px}
@@ -159,7 +161,7 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
   #deskTitle .kick{display:flex;align-items:center;gap:8px}
   #deskTitle .tick{height:16px;width:2px;border-radius:999px;background:var(--red);flex:none}
   #deskTitle .kick span{font-size:12px;line-height:16px;color:#9ca3af}
-  #deskTitle h1{margin-top:8px;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.02em;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+  #deskTitle h1{margin-top:4px;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.02em;text-shadow:0 1px 2px rgba(0,0,0,.5)}
   #deskTitle .pills{margin-top:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   #deskTitle .pills span{border-radius:999px;background:rgba(255,255,255,.1);padding:4px 10px;font-size:12px;line-height:16px;font-weight:500;color:#d1d5db}
 }
@@ -779,7 +781,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.43"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.44"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2658,3 +2660,4 @@ updatePlayIco();
 
 <!-- pages-rebuild 2026-11-25 02:02 PKT -->
 <!-- pages-rebuild 2026-11-25 02:12 PKT -->
+<!-- pages-rebuild 2026-11-25 02:24 PKT -->
