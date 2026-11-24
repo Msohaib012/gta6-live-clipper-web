@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Nova Player — Test Preview v6.12</title>
+<title>Nova Player — Test Preview v6.13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
 <link rel="preconnect" href="https://image.tmdb.org">
+<script>!function(){try{var q=new URLSearchParams(location.search);var ty=q.get("type")==="tv"?"tv":"movie";var id=parseInt(q.get("tmdb")||(ty==="tv"?"66732":"550"),10)||550;var b=((id%100)+100)%100;var u1="https://cdn.jsdelivr.net/gh/Msohaib012/gta6-live-clipper-web@main/test/seo-logos/"+b+".json";var u2="https://raw.githubusercontent.com/Msohaib012/gta6-live-clipper-web/main/test/seo-logos/"+b+".json";function get(u){return fetch(u).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}window.__logoBucketP=Promise.race([get(u1),get(u2)]).then(function(j){if(j)window.__logoBucketData=j;return j;}).catch(function(){return null;});}catch(e){}}();</script>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&family=Inter:wght@800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
 <style>
@@ -359,11 +360,22 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
    bottom sheet. Episodes stay a bottom sheet. Drag-close is episodes-only
    now: a drag transform would fight the centering translate. */
 @media (orientation:landscape) and (max-height:500px){.drawer{max-height:100dvh}}
+/* v6.13: mobile landscape ONLY (short viewports) — PC + portrait untouched.
+   Controls sit slightly inside the edges (safe-area + minimal inset) so edge
+   buttons show fully; servers/settings sheets stay compact, never fullscreen. */
+@media (orientation:landscape) and (max-height:500px){
+  #topbar{padding:calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) 10px calc(14px + env(safe-area-inset-left, 0px))}
+  #botblock{padding:14px calc(14px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) calc(14px + env(safe-area-inset-left, 0px))}
+  #srvPanel{width:min(252px,calc(100vw - 24px));right:10px;top:54px;max-height:calc(100dvh - 92px)}
+  #srvPanel .popScroll{max-height:170px}
+  #settings{max-width:520px;max-height:84dvh}
+}
 .handle{width:100px;height:5px;border-radius:999px;background:rgba(255,255,255,.25);margin:8px auto 0;flex:none;cursor:grab}
 .drHead{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:8px;
   padding:12px 16px;background:var(--bg)}
 #settings .drHead{background:rgba(10,10,10,.55)}
 .drHead .bkbtn{display:flex;align-items:center;gap:2px;margin-left:-8px;color:var(--fg);flex:none}
+#setBackTop{margin-left:auto}#setBackTop svg{width:22px;height:22px}
 .drHead .bkbtn svg{width:20px;height:20px}
 .drHead .bkbtn span{font-size:13px;line-height:18px}
 .drHead .tt{flex:1;min-width:0}
@@ -631,6 +643,7 @@ button:focus-visible,#seekTrack:focus-visible{outline:2px solid rgba(255,255,255
     <div class="drHead">
       <button class="bkbtn hidden" id="setBack"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg><span>Back</span></button>
       <div class="tt"><h3><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg><span id="setTitle">Settings</span></h3><p id="setSub">Customize your playback experience.</p></div>
+      <button class="bkbtn hidden" id="setBackTop" aria-label="Back"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></button>
       <button class="xbtn" id="btnCloseSet" aria-label="Close settings"><svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
     </div>
     <div class="drBody" id="setBody"></div>
@@ -702,7 +715,7 @@ var META_HAS_DEMO = !!DEMO[MEDIA_TMDB];
 var META_TITLE_IS_FALLBACK = !META_HAS_DEMO && !qp.get("title");
 function paintMetaTitles(){
   var suf = MEDIA_TYPE === "tv" ? "  S" + MEDIA_SEASON + " E" + MEDIA_EPISODE : "";
-  var lt = $("lauTitle"); if (lt) lt.textContent = META.title;
+  var lt = $("lauTitle"); if (lt && (META.logo || META_HAS_DEMO || logoDone || metaDone)) lt.textContent = META.title;
   var lg = $("lauGenre"); if (lg) lg.textContent = (META.genres || []).slice(0, 2).join(" / ");
   var wt = $("watchTitle"); if (wt) wt.textContent = META.title + suf;
   var dh = $("deskH1"); if (dh) dh.textContent = META.title + suf;
@@ -711,7 +724,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.12"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.13"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -789,45 +802,60 @@ function paintLogo(){
     }
   } else {
     li.classList.add("hidden"); li.removeAttribute("src");
-    var lt2 = $("lauTitle"); if (lt2) { lt2.textContent = META.title; lt2.classList.remove("hidden"); }
+    var lt2 = $("lauTitle"); if (lt2) { if (META_HAS_DEMO || logoDone || metaDone) { lt2.textContent = META.title; lt2.classList.remove("hidden"); } else { lt2.classList.add("hidden"); } }
   }
+}
+function applyLogoBucket(j, wantId, wantType){
+  if (!j || MEDIA_TMDB !== wantId || MEDIA_TYPE !== wantType) { scheduleLogoRetry(); return; }
+  var u = (j.logos || {})[wantType + ":" + wantId];
+  if (!u) { logoDone = true; paintLogo(); paintMetaTitles(); buildPausedOv(); return; }
+  logoDone = true;
+  if (typeof u === "string") { META.logo = u; }
+  else {
+    if (u.u) META.logo = u.u;
+    if (u.n && META_TITLE_IS_FALLBACK) META.title = u.n;
+    if (u.g && u.g.length) META.genres = u.g.slice();
+    if (u.b && !META.bg) {
+      META.bg = u.b;
+      var lb = $("lauBg");
+      if (lb && !$("launcher").classList.contains("hidden")) {
+        lb.src = META.bg;
+        lb.addEventListener("load", function(){ lb.classList.add("loaded"); $("lauCenter").classList.add("in"); });
+      }
+    }
+  }
+  paintLogo(); paintMetaTitles(); buildPausedOv();
 }
 function loadLogoMeta(){
   if (META_HAS_DEMO || logoDone) return;
   if (typeof fetch !== "function") return;
+  if (window.__logoBucketData) { logoDone = true; applyLogoBucket(window.__logoBucketData, MEDIA_TMDB, MEDIA_TYPE); return; }
+  if (window.__logoBucketP && !logoTried) {
+    logoTried++;
+    var hpSettled = false;
+    var hpTo = setTimeout(function(){ if (!hpSettled) { hpSettled = true; normalLogoFetch(); } }, 30000);
+    window.__logoBucketP.then(function(j){ if (hpSettled) return; hpSettled = true; clearTimeout(hpTo); if (j) { logoDone = true; applyLogoBucket(j, MEDIA_TMDB, MEDIA_TYPE); } else { normalLogoFetch(); } }).catch(function(){ if (hpSettled) return; hpSettled = true; clearTimeout(hpTo); normalLogoFetch(); });
+    return;
+  }
+  normalLogoFetch();
+}
+function normalLogoFetch(){
   var wantId = MEDIA_TMDB, wantType = MEDIA_TYPE, ctl = null;
   try { ctl = new AbortController(); } catch(e){ ctl = null; }
   logoTried++;
   var settled = false;
   var to = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch(e){} }, 30000);
   fetch("https://raw.githubusercontent.com/Msohaib012/gta6-live-clipper-web/main/test/seo-logos/" + (MEDIA_TMDB % 100) + ".json", ctl ? { signal: ctl.signal } : undefined)
-    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(r){ if (!r.ok && r.status === 404) { logoDone = true; paintLogo(); paintMetaTitles(); buildPausedOv(); return null; } return r.ok ? r.json() : null; })
     .then(function(j){
       if (settled) return; settled = true; clearTimeout(to);
-      if (!j || MEDIA_TMDB !== wantId || MEDIA_TYPE !== wantType) { scheduleLogoRetry(); return; }
-      var u = (j.logos || {})[wantType + ":" + wantId];
-      if (!u) { logoDone = true; return; }
-      logoDone = true;
-      if (typeof u === "string") { META.logo = u; }
-      else {
-        if (u.u) META.logo = u.u;
-        if (u.n && META_TITLE_IS_FALLBACK) META.title = u.n;
-        if (u.g && u.g.length) META.genres = u.g.slice();
-        if (u.b && !META.bg) {
-          META.bg = u.b;
-          var lb = $("lauBg");
-          if (lb && !$("launcher").classList.contains("hidden")) {
-            lb.src = META.bg;
-            lb.addEventListener("load", function(){ lb.classList.add("loaded"); $("lauCenter").classList.add("in"); });
-          }
-        }
-      }
-      paintLogo(); paintMetaTitles(); buildPausedOv();
+      applyLogoBucket(j, wantId, wantType);
     })
     .catch(function(){ if (settled) return; settled = true; clearTimeout(to); scheduleLogoRetry(); });
 }
 function scheduleLogoRetry(){
-  if (logoDone || logoTried >= 6) return;
+  if (logoDone) return;
+  if (logoTried >= 6) { logoDone = true; paintLogo(); paintMetaTitles(); buildPausedOv(); return; }
   var delay = logoTried < 2 ? 5000 : 30000;
   setTimeout(function(){ if (!logoDone) loadLogoMeta(); }, delay);
 }
@@ -1631,10 +1659,10 @@ function fmtRuntime(rt){
 function buildPausedOv(){
   var logo = $("pLogo");
   if (logo) {
-    if (META.logo) { logo.src = META.logo; logo.classList.remove("hidden"); }
+    if (META.logo) { logo.src = META.logo; logo.classList.remove("hidden"); if (!logo._pErr) { logo._pErr = true; logo.addEventListener("error", function(){ logo.classList.add("hidden"); var tt = $("pTitle"); if (tt) tt.style.display = ""; }); } }
     else { logo.classList.add("hidden"); logo.removeAttribute("src"); }
   }
-  var t = $("pTitle"); if (t) t.textContent = META.title || "";
+  var t = $("pTitle"); if (t) { t.textContent = META.title || ""; t.style.display = META.logo ? "none" : ""; }
   var tag = $("pTag");
   if (tag) { tag.textContent = META.tagline || ""; tag.style.display = META.tagline ? "" : "none"; }
   var meta = $("pMeta");
@@ -2152,6 +2180,7 @@ function renderSettings(){
   $("setTitle").textContent = titles[setView] || "Settings";
   $("setSub").textContent = setView === "main" ? "Customize your playback experience." : "";
   $("setBack").classList.toggle("hidden", setView === "main");
+  $("setBackTop").classList.toggle("hidden", setView === "main" && !openSec);
   if (setView === "main") {
     var native = isNativeLane();
     /* SOURCE: server summary only — switching opens the server sheet. */
@@ -2281,6 +2310,7 @@ $("setBody").addEventListener("click", function(e){
   }
 });
 $("setBack").addEventListener("click", function(){ setView = "main"; renderSettings(); });
+$("setBackTop").addEventListener("click", function(){ openSec = null; setView = "main"; renderSettings(); });
 $("btnSet").addEventListener("click", function(){ setView = "main"; openSec = null; renderSettings(); openDrawer("settings"); });
 $("btnCloseSet").addEventListener("click", closeDrawers); $("btnCloseSetFoot").addEventListener("click", closeDrawers);
 
