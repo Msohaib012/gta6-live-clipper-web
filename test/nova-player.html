@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.36</title>
+<title>Nova Player — Test Preview v6.37</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -767,7 +767,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.36"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.37"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1041,7 +1041,7 @@ function closePops(){
   if (wasSetPop) { setView = "main"; openSec = null; renderSettings(); }
   hideTips();
   maybeRearmWatchdog();
-  barsAfterSheets(); /* v6.23: closing the last sheet brings the bars back */
+  barsAfterSheets(); /* v6.37: native lanes stay hidden until a manual tap */
 }
 function closeDrawers(){
   ["settings", "epDrawer"].forEach(function(id){
@@ -1057,7 +1057,7 @@ function closeDrawers(){
   openDrawerId = null;
   hideTips();
   maybeRearmWatchdog();
-  barsAfterSheets(); /* v6.23: closing the last sheet brings the bars back */
+  barsAfterSheets(); /* v6.37: native lanes stay hidden until a manual tap */
 }
 function closeAllSheets(){ closePops(); closeDrawers(); }
 /* v6.3: settings values/previews used to freeze at whatever was true when the
@@ -1491,14 +1491,35 @@ function applyLaneChrome(){
    paused state; the user presses play and gets sound. No auto-mute. */
 var curStreams = [];
 var curStreamIdx = 0;
+var autoUnmuteTimer = null; /* v6.37: pending sound-restore after muted autoplay */
 function attemptPlay(){
   if (!isNativeLane()) return;
   var p = null;
   try { p = video.play(); } catch (e) { p = null; }
   if (p && typeof p.catch === "function") p.catch(function(){
     if (!isNativeLane()) return;
-    if (video.readyState >= 2) showSpin(false);
-    updatePlayIco();
+    /* v6.37: Vidstuck-style autoplay — the browser blocks sound autoplay
+       before any tap, so start muted and try to open the sound once the
+       video is playing. If the browser keeps it silent, the video still
+       plays and one tap on Play gives sound (never a stuck silent start). */
+    clearTimeout(autoUnmuteTimer); autoUnmuteTimer = null;
+    try { video.muted = true; } catch(e){}
+    syncVolIcon();
+    var p2 = null;
+    try { p2 = video.play(); } catch (e) { p2 = null; }
+    var done = function(){
+      if (!isNativeLane()) return;
+      if (video.readyState >= 2) showSpin(false);
+      updatePlayIco();
+    };
+    if (p2 && typeof p2.then === "function") {
+      p2.then(function(){
+        autoUnmuteTimer = setTimeout(function(){
+          autoUnmuteTimer = null;
+          if (!video.paused && video.muted) { try { video.muted = false; } catch(e){} syncVolIcon(); }
+        }, 600);
+      }).catch(done);
+    } else done();
   });
 }
 var appliedSubsKey = "";
@@ -1924,12 +1945,17 @@ function pokeBars(){
    last sheet brings them back ("close karne par dikhe"). */
 function barsAfterSheets(){
   if (openPopId || openDrawerId) return;
+  /* v6.37 (his order): closing a sheet NO LONGER brings the bars back on
+     native lanes — they stay hidden until a manual tap. Embed lanes keep
+     the restore: taps land in the cross-origin iframe, so hidden bars
+     there could never be re-shown and the user would be trapped. */
+  if (!isEmbedLane()) return;
   if ($("launcher").classList.contains("hidden")) pokeBars();
 }
 $("vw").addEventListener("click", function(e){
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls via the overlay handler */
   /* v6.23: a sheet open swallows screen taps — the bars stay hidden until
-     the sheet closes (barsAfterSheets brings them back). */
+     a manual tap (v6.37: closing a sheet no longer brings them back). */
   if (openPopId || openDrawerId) return;
   /* v6.7: overlay up — a tap only reveals the controls, never resumes. */
   if ($("pausedOv").classList.contains("show")) { pokeBars(); return; }
@@ -2012,11 +2038,11 @@ function togglePlay(){
   if (video.paused) { video.play().catch(function(){}); }
   else video.pause();
 }
-function skipBy(sec){
+function skipBy(sec, quiet){
   if (!isFinite(video.duration) || !video.duration) return;
   video.currentTime = Math.max(0, Math.min(video.duration, video.currentTime + sec));
   showDtap(sec > 0 ? "R" : "L");
-  pokeBars();
+  if (!quiet) pokeBars(); /* v6.37: double-tap seek shows ONLY the ±15s animation, never the bars */
 }
 var dtapTimer = null;
 function showDtap(side){
@@ -2073,14 +2099,14 @@ $("vw").addEventListener("touchstart", function(e){
   var t = e.touches[0], r = $("vw").getBoundingClientRect();
   var side = (t.clientX - r.left) > r.width / 2 ? "R" : "L";
   var now = Date.now();
-  if (now - lastTap < 300 && side === lastTapSide) { lastTap = 0; clearTimeout(hideTimer2); hideTimer2 = null; clearTimeout(tapTimer); tapTimer = null; dtFired = true; skipBy(side === "R" ? 15 : -15); }
+  if (now - lastTap < 300 && side === lastTapSide) { lastTap = 0; clearTimeout(hideTimer2); hideTimer2 = null; clearTimeout(tapTimer); tapTimer = null; dtFired = true; skipBy(side === "R" ? 15 : -15, true); }
   else { lastTap = now; lastTapSide = side; }
 }, { passive: true });
 video.addEventListener("dblclick", function(e){
   if (!setDoubleTap) return;
   clearTimeout(tapTimer); tapTimer = null; /* v6.33: the two clicks armed a deferred toggle — a double-click seek must not toggle the bars. */
   var r = video.getBoundingClientRect();
-  skipBy((e.clientX - r.left) > r.width / 2 ? 15 : -15);
+  skipBy((e.clientX - r.left) > r.width / 2 ? 15 : -15, true); /* v6.37: double-click seek shows only the ±15s animation */
 });
 document.addEventListener("keydown", function(e){
   if ($("launcher").classList.contains("hidden") === false) return;
@@ -2135,7 +2161,7 @@ $("seekTrack").addEventListener("keydown", function(e){
 var VOL_ON = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
 var VOL_OFF = '<svg viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06A7 7 0 0 1 19 12zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>';
 function syncVolIcon(){ $("btnMute").querySelector("svg").outerHTML = video.muted || video.volume === 0 ? VOL_OFF : VOL_ON; }
-function toggleMute(){ video.muted = !video.muted; if (!video.muted && video.volume === 0) video.volume = 0.5; syncVolIcon(); }
+function toggleMute(){ clearTimeout(autoUnmuteTimer); autoUnmuteTimer = null; /* v6.37: a manual mute choice wins over the autoplay sound-restore */ video.muted = !video.muted; if (!video.muted && video.volume === 0) video.volume = 0.5; syncVolIcon(); }
 /* ============ control-button tooltips: transient on touch, never stuck ============
    Tips used to show on :hover only, which sticks after a tap on touch screens
    (there is no mouseleave). Hover tips are gated to (hover:hover) devices in
@@ -2583,3 +2609,5 @@ updatePlayIco();
 <!-- pages-rebuild 2026-11-25 00:16 PKT -->
 
 <!-- pages-rebuild 2026-11-25 00:20 PKT -->
+
+<!-- pages-rebuild 2026-11-25 00:30 PKT -->
