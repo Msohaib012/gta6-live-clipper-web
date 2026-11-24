@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.38</title>
+<title>Nova Player — Test Preview v6.39</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -770,7 +770,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.38"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.39"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1494,19 +1494,20 @@ function applyLaneChrome(){
    paused state; the user presses play and gets sound. No auto-mute. */
 var curStreams = [];
 var curStreamIdx = 0;
-var autoUnmuteTimer = null; /* v6.37: pending sound-restore after muted autoplay */
+var autoMuted = false; /* v6.39: muted by the autoplay fallback (official-player parity) — a tap on the video opens the sound */
 function attemptPlay(){
   if (!isNativeLane()) return;
   var p = null;
   try { p = video.play(); } catch (e) { p = null; }
   if (p && typeof p.catch === "function") p.catch(function(){
     if (!isNativeLane()) return;
-    /* v6.37: Vidstuck-style autoplay — the browser blocks sound autoplay
-       before any tap, so start muted and try to open the sound once the
-       video is playing. If the browser keeps it silent, the video still
-       plays and one tap on Play gives sound (never a stuck silent start). */
-    clearTimeout(autoUnmuteTimer); autoUnmuteTimer = null;
+    /* v6.39: browser blocks sound autoplay before any tap, and a scripted
+       unmute does NOT open the sound (proven on his phone) — so start
+       muted and let the first tap open the sound, exactly like the
+       official player ("Unmute on video tap"). The video moves; the
+       mute icon honestly shows muted until that tap. */
     try { video.muted = true; } catch(e){}
+    autoMuted = true;
     syncVolIcon();
     var p2 = null;
     try { p2 = video.play(); } catch (e) { p2 = null; }
@@ -1515,14 +1516,8 @@ function attemptPlay(){
       if (video.readyState >= 2) showSpin(false);
       updatePlayIco();
     };
-    if (p2 && typeof p2.then === "function") {
-      p2.then(function(){
-        autoUnmuteTimer = setTimeout(function(){
-          autoUnmuteTimer = null;
-          if (!video.paused && video.muted) { try { video.muted = false; } catch(e){} syncVolIcon(); }
-        }, 600);
-      }).catch(done);
-    } else done();
+    if (p2 && typeof p2.catch === "function") p2.catch(done);
+    else done();
   });
 }
 var appliedSubsKey = "";
@@ -2164,7 +2159,11 @@ $("seekTrack").addEventListener("keydown", function(e){
 var VOL_ON = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/></svg>';
 var VOL_OFF = '<svg viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.8 8.8 0 0 0 21 12c0-4.28-2.99-7.86-7-8.77v2.06A7 7 0 0 1 19 12zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>';
 function syncVolIcon(){ $("btnMute").querySelector("svg").outerHTML = video.muted || video.volume === 0 ? VOL_OFF : VOL_ON; }
-function toggleMute(){ clearTimeout(autoUnmuteTimer); autoUnmuteTimer = null; /* v6.37: a manual mute choice wins over the autoplay sound-restore */ video.muted = !video.muted; if (!video.muted && video.volume === 0) video.volume = 0.5; syncVolIcon(); }
+function toggleMute(){ autoMuted = false; /* v6.39: a manual mute choice ends the autoplay-muted state */ video.muted = !video.muted; if (!video.muted && video.volume === 0) video.volume = 0.5; syncVolIcon(); }
+/* v6.39: unmute on video tap (official-player parity) — a tap is a real
+   user gesture, so the browser opens the sound. Manual mutes are
+   respected: only the autoplay-muted state is lifted by a tap. */
+video.addEventListener("click", function(){ if (autoMuted && video.muted) { video.muted = false; autoMuted = false; syncVolIcon(); } });
 /* ============ control-button tooltips: transient on touch, never stuck ============
    Tips used to show on :hover only, which sticks after a tap on touch screens
    (there is no mouseleave). Hover tips are gated to (hover:hover) devices in
@@ -2616,3 +2615,5 @@ updatePlayIco();
 <!-- pages-rebuild 2026-11-25 00:30 PKT -->
 
 <!-- pages-rebuild 2026-11-25 00:38 PKT -->
+
+<!-- pages-rebuild 2026-11-25 01:05 PKT -->
