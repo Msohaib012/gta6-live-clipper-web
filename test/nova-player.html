@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 14:28 PKT: v6.56 -->
-<title>Nova Player — Test Preview v6.56</title>
+<!-- pages-rebuild 2026-11-25 14:31 PKT: v6.57 -->
+<title>Nova Player — Test Preview v6.57</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -782,7 +782,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.56"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.57"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1197,18 +1197,7 @@ function setSrcLine(name, idx){
    opens the player as soon as it is Ready. Manual server picks in the
    panel still open directly. */
 var lauTapped = false, lauReadyIdx = -1;
-/* v6.54: AUTO-OPEN — his order: after the launcher sequence the player
-   opens by itself, loading happens in the player, no tap needed to get
-   in. Sound: Chrome mutes a no-gesture open; the existing attemptPlay
-   starts muted with "Tap to unmute", and a tap unmutes without pausing
-   (v6.47/v6.48). The tap gate (tryOpenFromLauncher) stays for taps made
-   after Back-to-launcher. Guarded on launcher visibility so a second
-   call (late probe + finishProbe race) cannot re-open over a player. */
-function autoOpenPicked(){
-  if ($("launcher").classList.contains("hidden")) return;
-  if (lauReadyIdx < 0) return;
-  openPlayer(SERVERS[lauReadyIdx].id, false);
-}
+/* v6.57: auto-open removed on his order ("Direct na chala") — the tap gate below is the only opener. */
 function tryOpenFromLauncher(){
   if (lauTapped && lauReadyIdx >= 0 && !$("launcher").classList.contains("hidden")) {
     $("lauPlay").classList.add("hidden");
@@ -1277,11 +1266,11 @@ var probeDone = 0, probeTotal = 0;
     return -1;
   }
   function maybeFinish(){
-    /* v6.53: READY no longer waits for the 2.8s Checking/Connecting
-       sequence (seqDone) — the sequence is cosmetic; once a usable
-       server is certain, finish at once. The no-pick path still waits
-       on probes / the 14s cap as before. */
-    if (finished || !probesDone) return;
+    /* v6.57 (his order): the launcher animation STAYS — Ready waits for
+       BOTH the probes AND the full Checking/Connecting sequence
+       (seqDone), as the probe header always said. v6.53's cosmetic
+       shortcut is reverted; v6.54's direct auto-open is gone too. */
+    if (finished || !probesDone || !seqDone) return;
     finishProbe();
   }
   rwServers.forEach(function(srv){
@@ -1323,7 +1312,7 @@ var probeDone = 0, probeTotal = 0;
     if (bestIdx < 0) { setStatus("Checking servers..."); setSrcLine("SERVER", 0); lauReadyIdx = -1; }
     else { setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; }
     renderSrvPanel();
-    setTimeout(function(){ autoOpenPicked(); }, 250); /* v6.54: direct open at Ready, no tap gate */
+    setTimeout(function(){ tryOpenFromLauncher(); }, 650); /* v6.57: tap gate restored (v6.50) — opens at once only if the user already tapped during probing; otherwise Ready waits for the tap */
   }
   /* v6.52: late adoption — finishProbe may end with no pick while natives
      are still checking. When a late probe lands usable (or every probe has
@@ -1338,7 +1327,7 @@ var probeDone = 0, probeTotal = 0;
       setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
       renderSrvPanel();
       lauReadyIdx = bestIdx;
-      autoOpenPicked();
+      tryOpenFromLauncher();
       return;
     }
     if (probeDone >= probeTotal) {
@@ -1346,7 +1335,7 @@ var probeDone = 0, probeTotal = 0;
       setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
       renderSrvPanel();
       lauReadyIdx = bestIdx;
-      autoOpenPicked();
+      tryOpenFromLauncher();
     }
   }
 })();
