@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 14:31 PKT: v6.57 -->
-<title>Nova Player — Test Preview v6.57</title>
+<!-- pages-rebuild 2026-11-25 15:14 PKT: v6.58 -->
+<title>Nova Player — v6.58</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -782,7 +782,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.57"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.58"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1197,7 +1197,16 @@ function setSrcLine(name, idx){
    opens the player as soon as it is Ready. Manual server picks in the
    panel still open directly. */
 var lauTapped = false, lauReadyIdx = -1;
-/* v6.57: auto-open removed on his order ("Direct na chala") — the tap gate below is the only opener. */
+/* v6.58: auto-open restored (his order 15:12 PKT — the v6.57 tap gate made
+   every website visitor tap twice: Play, then the launcher, because the
+   ad-tab detour eats the Play click's activation). The animation STAYS —
+   auto-open fires only at Ready. Taps still open at once via the gate. */
+function autoOpenFromLauncher(){
+  if (lauReadyIdx >= 0 && !$("launcher").classList.contains("hidden") && !$("srvPanel").classList.contains("open")) {
+    $("lauPlay").classList.add("hidden");
+    openPlayer(SERVERS[lauReadyIdx].id, false);
+  }
+}
 function tryOpenFromLauncher(){
   if (lauTapped && lauReadyIdx >= 0 && !$("launcher").classList.contains("hidden")) {
     $("lauPlay").classList.add("hidden");
@@ -1269,7 +1278,7 @@ var probeDone = 0, probeTotal = 0;
     /* v6.57 (his order): the launcher animation STAYS — Ready waits for
        BOTH the probes AND the full Checking/Connecting sequence
        (seqDone), as the probe header always said. v6.53's cosmetic
-       shortcut is reverted; v6.54's direct auto-open is gone too. */
+       shortcut is reverted. v6.58 restores auto-open AT Ready. */
     if (finished || !probesDone || !seqDone) return;
     finishProbe();
   }
@@ -1312,7 +1321,7 @@ var probeDone = 0, probeTotal = 0;
     if (bestIdx < 0) { setStatus("Checking servers..."); setSrcLine("SERVER", 0); lauReadyIdx = -1; }
     else { setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; }
     renderSrvPanel();
-    setTimeout(function(){ tryOpenFromLauncher(); }, 650); /* v6.57: tap gate restored (v6.50) — opens at once only if the user already tapped during probing; otherwise Ready waits for the tap */
+    setTimeout(function(){ autoOpenFromLauncher(); }, 650); /* v6.58: auto-open at Ready (animation kept); a tap during probing still opens at once via the gate */
   }
   /* v6.52: late adoption — finishProbe may end with no pick while natives
      are still checking. When a late probe lands usable (or every probe has
@@ -1327,7 +1336,7 @@ var probeDone = 0, probeTotal = 0;
       setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
       renderSrvPanel();
       lauReadyIdx = bestIdx;
-      tryOpenFromLauncher();
+      autoOpenFromLauncher();
       return;
     }
     if (probeDone >= probeTotal) {
@@ -1335,7 +1344,7 @@ var probeDone = 0, probeTotal = 0;
       setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
       renderSrvPanel();
       lauReadyIdx = bestIdx;
-      tryOpenFromLauncher();
+      autoOpenFromLauncher();
     }
   }
 })();
@@ -1586,6 +1595,19 @@ function attemptPlay(){
     autoMuted = true;
     syncVolIcon();
     try { toast("Tap to unmute", 4000); } catch(e){}
+    /* v6.58: the /watch page often loads in a background tab (ad-tab
+       detour) — if play was blocked while hidden, retry the moment the
+       tab becomes visible instead of leaving a paused player. */
+    if (document.hidden && !attemptPlay._visArmed) {
+      attemptPlay._visArmed = true;
+      var _vh = function(){
+        if (document.hidden) return;
+        document.removeEventListener("visibilitychange", _vh);
+        attemptPlay._visArmed = false;
+        if (isNativeLane() && video.paused) attemptPlay();
+      };
+      document.addEventListener("visibilitychange", _vh);
+    }
     var p2 = null;
     try { p2 = video.play(); } catch (e) { p2 = null; }
     var done = function(){
