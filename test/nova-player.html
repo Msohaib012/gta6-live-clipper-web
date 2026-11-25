@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 23:06 PKT: v6.91 -->
-<title>Nova Player — v6.91</title>
+<!-- pages-rebuild 2026-11-26 00:45 PKT: v6.92 -->
+<title>Nova Player — v6.92</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -849,7 +849,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.91"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.92"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1097,7 +1097,7 @@ var SERVERS = [
   { id: "cinesrc",  name: "Apex", lane: "embed", ds: "Alternative" },
   { id: "vidcore",  name: "Onyx", lane: "embed", ds: "Alternative" }
 ];
-var CASTLE_API = "https://castle-api.virtualsipra01.workers.dev";
+var CASTLE_API = "https://castle-api.mrbetadecodes.workers.dev";
 var VELVET_API = "https://moviebox-api.mkdrivedata.workers.dev";
 var WORKER = "https://thugtv-proxy.virtualsipra01.workers.dev/?url=";
 function serverById(id){ var s = SERVERS.filter(function(x){ return x.id === id; })[0]; return s || null; }
@@ -3345,7 +3345,7 @@ if (MEDIA_PLAY) {
 renderSrvPanel();
 updatePlayIco();
 
-/* ============ v6.91 PLAYER-PRESENCE HEARTBEAT (restores the stats page
+/* ============ v6.92 PLAYER-PRESENCE HEARTBEAT (restores the stats page
    "Player — live now" / "Player — today total" counts, lost in the v6.90
    live switch: the old player wrote these Firebase nodes; Nova had no
    tracker. Shape mirrors the site tracker (stats-track.js): persisted
