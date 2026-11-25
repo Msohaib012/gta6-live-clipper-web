@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-24 20:44 PKT: rollback trigger 2 -->
-<title>Nova Player — Test Preview v6.46</title>
+<!-- pages-rebuild 2026-11-25 11:55 PKT: v6.47 -->
+<title>Nova Player — Test Preview v6.47</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -780,7 +780,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.46"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.47"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1519,6 +1519,7 @@ function attemptPlay(){
     try { video.muted = true; } catch(e){}
     autoMuted = true;
     syncVolIcon();
+    try { toast("Tap to unmute", 4000); } catch(e){}
     var p2 = null;
     try { p2 = video.play(); } catch (e) { p2 = null; }
     var done = function(){
@@ -2192,6 +2193,19 @@ function toggleMute(){ autoMuted = false; /* v6.39: a manual mute choice ends th
    user gesture, so the browser opens the sound. Manual mutes are
    respected: only the autoplay-muted state is lifted by a tap. */
 video.addEventListener("click", function(){ if (autoMuted && video.muted) { video.muted = false; autoMuted = false; syncVolIcon(); } });
+/* v6.47: FIRST tap ANYWHERE on the player opens the sound (v6.39 only
+   unmuted on a tap on the video itself, so a tap on a control left the
+   video muted). pointerdown is a real gesture, so the browser opens the
+   sound at once. The mute button and volume slider are excluded: the
+   mute button's own click already toggles, and the slider already
+   unmutes on input — a manual mute choice is never undone here. */
+document.addEventListener("pointerdown", function(e){
+  if (!autoMuted || !video.muted) return;
+  if (!$("launcher").classList.contains("hidden")) return;
+  var t = e.target;
+  if (t && t.closest && (t.closest("#btnMute") || t.closest("#volSlider") || t.closest("#toastX"))) return;
+  video.muted = false; autoMuted = false; syncVolIcon();
+}, true);
 /* ============ control-button tooltips: transient on touch, never stuck ============
    Tips used to show on :hover only, which sticks after a tap on touch screens
    (there is no mouseleave). Hover tips are gated to (hover:hover) devices in
