@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 17:05 PKT: v6.71 -->
-<title>Nova Player — v6.71</title>
+<!-- pages-rebuild 2026-11-25 17:10 PKT: v6.72 -->
+<title>Nova Player — v6.72</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.71"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.72"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1061,7 +1061,15 @@ var PROBE_P = {};
 function probeLane(srv, fresh){
   var key = srv.id + "|" + MEDIA_TYPE + ":" + MEDIA_SEASON + ":" + MEDIA_EPISODE;
   if (fresh || !PROBE_P[key]) {
-    PROBE_P[key] = probeRW(srv).then(function(r){ PROBE[srv.id] = r; return r; });
+    PROBE_P[key] = probeRW(srv).then(function(r){
+      PROBE[srv.id] = r;
+      /* v6.72: the cross follows the LAST probe answer too — a lane the
+         chain skips on its probe alone (never opened) must still show
+         crossed. Any later ok answer lifts it; the chain's fresh
+         re-probe is the revival path for transient empties. */
+      if (r.ok) delete LANE_DEAD[srv.id]; else LANE_DEAD[srv.id] = true;
+      return r;
+    });
   }
   return PROBE_P[key];
 }
