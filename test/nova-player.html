@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 14:07 PKT: v6.53 -->
-<title>Nova Player — Test Preview v6.53</title>
+<!-- pages-rebuild 2026-11-25 14:17 PKT: v6.54 -->
+<title>Nova Player — Test Preview v6.54</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -782,7 +782,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.53"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.54"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1197,6 +1197,18 @@ function setSrcLine(name, idx){
    opens the player as soon as it is Ready. Manual server picks in the
    panel still open directly. */
 var lauTapped = false, lauReadyIdx = -1;
+/* v6.54: AUTO-OPEN — his order: after the launcher sequence the player
+   opens by itself, loading happens in the player, no tap needed to get
+   in. Sound: Chrome mutes a no-gesture open; the existing attemptPlay
+   starts muted with "Tap to unmute", and a tap unmutes without pausing
+   (v6.47/v6.48). The tap gate (tryOpenFromLauncher) stays for taps made
+   after Back-to-launcher. Guarded on launcher visibility so a second
+   call (late probe + finishProbe race) cannot re-open over a player. */
+function autoOpenPicked(){
+  if ($("launcher").classList.contains("hidden")) return;
+  if (lauReadyIdx < 0) return;
+  openPlayer(SERVERS[lauReadyIdx].id, false);
+}
 function tryOpenFromLauncher(){
   if (lauTapped && lauReadyIdx >= 0 && !$("launcher").classList.contains("hidden")) {
     $("lauPlay").classList.add("hidden");
@@ -1307,7 +1319,7 @@ var probeDone = 0, probeTotal = 0;
     if (bestIdx < 0) { setStatus("Checking servers..."); setSrcLine("SERVER", 0); lauReadyIdx = -1; }
     else { setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; }
     renderSrvPanel();
-    setTimeout(function(){ tryOpenFromLauncher(); }, 650); /* opens at once only if the user already tapped during probing (v6.49 gate, button hidden in v6.50) */
+    setTimeout(function(){ autoOpenPicked(); }, 250); /* v6.54: direct open at Ready, no tap gate */
   }
   /* v6.52: late adoption — finishProbe may end with no pick while natives
      are still checking. When a late probe lands usable (or every probe has
@@ -1322,7 +1334,7 @@ var probeDone = 0, probeTotal = 0;
       setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
       renderSrvPanel();
       lauReadyIdx = bestIdx;
-      tryOpenFromLauncher();
+      autoOpenPicked();
       return;
     }
     if (probeDone >= probeTotal) {
@@ -1330,7 +1342,7 @@ var probeDone = 0, probeTotal = 0;
       setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
       renderSrvPanel();
       lauReadyIdx = bestIdx;
-      tryOpenFromLauncher();
+      autoOpenPicked();
     }
   }
 })();
@@ -1614,6 +1626,14 @@ function applySubsFor(st){
 }
 /* v6.35: wait state for the deferred hls.js engine (see playPickedStream). */
 var hlsWaitSeq = 0, hlsWaitN = 0;
+/* v6.54: fail fast — hls.js defaults let one dead/slow lane burn ~60s+
+   (level 4 retries, frag 6 retries, 20s frag timeout, 64s retry cap).
+   Caps below keep slow-mobile loads working (8s timeouts) but move on
+   to the next server in seconds instead of a minute. */
+var HLS_OPTS = { maxBufferLength: 30, renderTextTracksNatively: false,
+  manifestLoadingTimeOut: 8000, manifestLoadingMaxRetry: 1, manifestLoadingRetryDelay: 500,
+  levelLoadingTimeOut: 8000, levelLoadingMaxRetry: 2, levelLoadingRetryDelay: 500, levelLoadingMaxRetryTimeout: 8000,
+  fragLoadingTimeOut: 8000, fragLoadingMaxRetry: 2, fragLoadingRetryDelay: 500, fragLoadingMaxRetryTimeout: 8000 };
 function playPickedStream(st, pos, autoplay){
   showSpin(true);
   hlsFailed = false;
@@ -1644,7 +1664,7 @@ function playPickedStream(st, pos, autoplay){
     hlsWaitN = 0;
   } else hlsWaitN = 0;
   if (window.Hls && Hls.isSupported() && needsHls) {
-    hls = new Hls({ maxBufferLength: 30, renderTextTracksNatively: false }); /* v6.32: never render HLS subtitles natively (DEFAULT=YES rendition showed captions on Bolt) */
+    hls = new Hls(HLS_OPTS); /* v6.32: never render HLS subtitles natively (DEFAULT=YES rendition showed captions on Bolt) */
     hls.loadSource(st.url);
     hls.attachMedia(video);
     hls.on(Hls.Events.MANIFEST_PARSED, function(){
@@ -1711,7 +1731,7 @@ function preloadNative(srvId, streams){
   if ((pick.force || pick.format === "hls" || /\.m3u8/i.test(decUrl)) && typeof window.Hls === "undefined") return;
   preload = { srvId: srvId, key: pick.url, hls: null };
   if (window.Hls && Hls.isSupported() && (pick.force || pick.format === "hls" || /\.m3u8/i.test(decUrl))) {
-    var ph = new Hls({ maxBufferLength: 30, renderTextTracksNatively: false });
+    var ph = new Hls(HLS_OPTS);
     preload.hls = ph;
     ph.loadSource(pick.url);
     ph.attachMedia(video);
@@ -1856,14 +1876,21 @@ function armWatchdog(srv){
     }, EMBED_COUNTDOWN_MS);
   }, EMBED_STUCK_MS);
 }
+/* v6.54: a lane counts as dead ONLY on the panel-cross condition — its
+   probe finished, failed, and was reachable. Unresolved / unreachable
+   lanes are NOT dead (no fake dead) and are tried in menu order. */
+function probeDead(id){ var pr = PROBE[id]; return !!(pr && !pr.ok && !pr.unreachable); }
 function nextFailoverCandidate(failedId){
-  var lane = laneOf(failedId);
-  var ordered = SERVERS.filter(function(s){ return s.lane === lane && s.id !== failedId; })
-    .concat(SERVERS.filter(function(s){ return s.lane !== lane; }));
-  for (var i = 0; i < ordered.length; i++) {
-    if (failChain.indexOf(ordered[i].id) < 0) return ordered[i].id;
+  var live = [], dead = [];
+  for (var i = 0; i < SERVERS.length; i++) {
+    var s = SERVERS[i];
+    if (s.id === failedId || failChain.indexOf(s.id) >= 0) continue;
+    (probeDead(s.id) ? dead : live).push(s.id);
   }
-  return null;
+  /* menu order, top to bottom as before; proven-dead lanes go last but
+     still get tried — never skipped, never called dead without proof. */
+  var ordered = live.concat(dead);
+  return ordered.length ? ordered[0] : null;
 }
 function failoverFrom(failedId, why){
   var next = nextFailoverCandidate(failedId);
