@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 17:10 PKT: v6.72 -->
-<title>Nova Player — v6.72</title>
+<!-- pages-rebuild 2026-11-25 17:30 PKT: v6.73 -->
+<title>Nova Player — v6.73</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.72"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.73"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -866,8 +866,47 @@ function scheduleMetaRetry(){
   var delay = metaTried < 2 ? 5000 : 30000;
   setTimeout(function(){ if (!metaDone) loadChunkMeta(); }, delay);
 }
+/* v6.73: the player fetches its OWN title from the host's TMDB proxy
+   (same-origin relative URL — the proxy holds the key server-side, so
+   no key ever enters this public file). The old paths raced: the host's
+   postMessage could land before this frame's listener existed, and the
+   SEO chunks miss titles (Wicker, Crouching Tiger showed "Title <id>").
+   Runs only while the title is still the fallback; the host title, when
+   it arrives, always wins (the flag is re-checked at response time). */
+function fetchProxyMeta(){
+  if (META_HAS_DEMO || !MEDIA_TMDB || !META_TITLE_IS_FALLBACK) return;
+  if (typeof fetch !== "function") return;
+  var ctl = null;
+  try { ctl = new AbortController(); } catch (e) {}
+  var to = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch (e) {} }, 8000);
+  fetch("/api/tmdb/" + (MEDIA_TYPE === "tv" ? "tv/" : "movie/") + MEDIA_TMDB, ctl ? { signal: ctl.signal } : undefined)
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      clearTimeout(to);
+      if (!d || !META_TITLE_IS_FALLBACK) return;
+      var t = d.title || d.name || "";
+      if (!t) return;
+      META.title = t;
+      META_HOST_TITLE = true; META_TITLE_IS_FALLBACK = false;
+      if (d.genres && d.genres.length) META.genres = d.genres.map(function(g){ return g.name; }).filter(Boolean);
+      var rd = (d.release_date || d.first_air_date || "").slice(0, 4);
+      if (rd) META.year = rd;
+      var bp = d.backdrop_path || "";
+      if (bp && !META.bg) {
+        META.bg = "https://image.tmdb.org/t/p/w780" + bp;
+        var lb = $("lauBg");
+        if (lb && !$("launcher").classList.contains("hidden")) {
+          lb.src = META.bg;
+          lb.addEventListener("load", function(){ lb.classList.add("loaded"); $("lauCenter").classList.add("in"); });
+        }
+      }
+      paintMetaTitles();
+      buildPausedOv();
+    })
+    .catch(function(){ clearTimeout(to); });
+}
 loadChunkMeta();
-/* v6.6: official title art (logo) — the hero banner renders the movie's
+fetchProxyMeta();/* v6.6: official title art (logo) — the hero banner renders the movie's
    own logo image when one exists and falls back to styled text. The
    test page fetches the same logo the same way (en -> no-language ->
    first), from a sharded logo file next to this page; the chunk entry's
@@ -1775,6 +1814,7 @@ var HLS_OPTS = { maxBufferLength: 30, renderTextTracksNatively: false,
 function playPickedStream(st, pos, autoplay){
   showSpin(true);
   hlsFailed = false;
+  playedOnce = false; /* v6.73: fresh attempt — nothing has played yet */
   var _si = -1; try { _si = curStreams.indexOf(st); } catch (e) {}
   if (_si >= 0) triedStreamIdx[_si] = true;
   armStuckWatch(); /* v6.70: a retry that never plays must still be caught */
@@ -2326,21 +2366,27 @@ video.addEventListener("pause", function(){ updatePlayIco(); if (video.readyStat
 /* v6.63: stuck watch — a native stream that stops advancing (buffering
    forever on a trickling CDN) fails over instead of spinning for
    minutes. Progress resets the clock; pause/switch clears it (stopAll). */
-var stuckTimer = null, stuckLastTime = -1;
+var stuckTimer = null, stuckLastTime = -1, playedOnce = false; /* v6.73: playedOnce separates a user-paused stream from one that never started */
 function armStuckWatch(){
   clearTimeout(stuckTimer); stuckTimer = null;
+  stuckLastTime = video.currentTime || 0; /* v6.73: progress is measured from the arm moment — a stream that never moves fails over at the first check instead of wasting a cycle */
   stuckTimer = setTimeout(function(){
     stuckTimer = null;
     try {
       if (!isNativeLane() || !curServer) return;
-      if (video.paused || video.ended) return;
+      if (video.ended) return;
       if (video.currentTime > stuckLastTime + 0.05) { stuckLastTime = video.currentTime; armStuckWatch(); return; }
+      /* v6.73: the old blanket "paused -> return" killed the watch with no
+         re-arm — a stream that never started sat at 0:00 forever (Wicker).
+         Paused AFTER playing = the user paused: keep watching, never fail
+         over. Paused WITHOUT ever playing = never started: fail over. */
+      if (video.paused && playedOnce) { armStuckWatch(); return; }
       failStream(serverName(curServer) + " stream stuck");
     } catch (e) {}
   }, 20000);
 }
 video.addEventListener("timeupdate", function(){ try { stuckLastTime = video.currentTime; } catch (e) {} });
-video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(2500); } stuckLastTime = video.currentTime || 0; armStuckWatch(); delete LANE_DEAD[curServer]; /* v6.71: it plays — the cross lifts */ if ($("srvPanel") && $("srvPanel").classList.contains("open")) renderSrvPanel(); });
+video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(2500); } stuckLastTime = video.currentTime || 0; playedOnce = true; armStuckWatch(); delete LANE_DEAD[curServer]; /* v6.71: it plays — the cross lifts */ if ($("srvPanel") && $("srvPanel").classList.contains("open")) renderSrvPanel(); });
   video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
 video.addEventListener("error", function(){
