@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 16:50 PKT: v6.69 -->
-<title>Nova Player — v6.69</title>
+<!-- pages-rebuild 2026-11-25 17:00 PKT: v6.70 -->
+<title>Nova Player — v6.70</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.69"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.70"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1758,6 +1758,9 @@ var HLS_OPTS = { maxBufferLength: 30, renderTextTracksNatively: false,
 function playPickedStream(st, pos, autoplay){
   showSpin(true);
   hlsFailed = false;
+  var _si = -1; try { _si = curStreams.indexOf(st); } catch (e) {}
+  if (_si >= 0) triedStreamIdx[_si] = true;
+  armStuckWatch(); /* v6.70: a retry that never plays must still be caught */
   video.classList.remove("hidden");
   frame.classList.add("hidden");
   applyVideoPrefs();
@@ -1804,7 +1807,7 @@ function playPickedStream(st, pos, autoplay){
     });
     hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(){ bindTextTracks(); refreshSettingsIfOpen(); });
     hls.on(Hls.Events.ERROR, function(ev, data){
-      if (data && data.fatal && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " stream failed"); }
+      if (data && data.fatal && !hlsFailed) { hlsFailed = true; showSpin(false); failStream(serverName(curServer) + " stream failed"); }
     });
   } else {
     video.src = st.url;
@@ -1884,14 +1887,14 @@ function preloadNative(srvId, streams){
            right server. (Once adopted, launcher is hidden — the last
            branch below handles that case: fail over, never stall.) */
         if (!$("launcher").classList.contains("hidden") && !hlsFailed && !curServer) { showSpin(false); destroyPreload(); }
-        else if (!$("launcher").classList.contains("hidden") && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " stream failed"); }
+        else if (!$("launcher").classList.contains("hidden") && !hlsFailed) { showSpin(false); destroyPreload(); /* v6.70: a background preload dying must never kill the server already playing behind the splash — just drop the preload */ }
         /* v6.55: ADOPTED load dying in the open player (launcher hidden)
            used to hit "else destroyPreload()" — a no-op, because preload
            is null after adoption — so the player stalled silently at 0:00
            with no toast and no failover (cloud v6.54: Bolt checked, stale
            ARENAFLIX label, 40s spinner). An adopted fatal must fail over
            exactly like a fresh-load fatal. */
-        else if (!hlsFailed && curServer) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " stream failed"); }
+        else if (!hlsFailed && curServer) { hlsFailed = true; showSpin(false); failStream(serverName(curServer) + " stream failed"); }
         else destroyPreload();
       }
     });
@@ -1917,9 +1920,31 @@ function maybePreload(){
     if (pr.ok && pr.streams && pr.streams.length) { preloadNative(s.id, pr.streams); return; }
   }
 }
+/* v6.70: a dead STREAM is not a dead SERVER. A lane lists several
+   streams (Bolt lists 10); abandoning the whole lane when the first
+   picked stream fails was the fake skip — the lane's other streams
+   were never tried, yet a fresh tap on the same server played fine.
+   failStream() exhausts the lane's own streams first; only when none
+   is left does it fail over to the next server. */
+var triedStreamIdx = {};
+function failStream(why){
+  try {
+    if (!isNativeLane() || !curStreams || !curStreams.length) { failoverFrom(curServer, why); return; }
+    for (var i = 0; i < curStreams.length; i++) {
+      if (!triedStreamIdx[i]) {
+        triedStreamIdx[i] = true;
+        curStreamIdx = i;
+        playPickedStream(curStreams[i], 0, true);
+        return;
+      }
+    }
+    failoverFrom(curServer, why);
+  } catch (e) { failoverFrom(curServer, why); }
+}
 function playNative(streams){
   curStreams = streams.map(parseStream).filter(function(x){ return x.url; });
   if (!curStreams.length) { failoverFrom(curServer, "No streams found on this server"); return; }
+  triedStreamIdx = {}; /* fresh lane attempt — every stream untried */
   var pick = curStreams[0], hi = -1;
   for (var i = 0; i < curStreams.length; i++) if (/hindi/i.test(curStreams[i].lang)) { hi = i; break; }
   if (hi >= 0) pick = curStreams[hi];
@@ -2059,6 +2084,7 @@ function openPlayer(srvId, manual){
     var p = PROBE[srvId];
     if (usePre) {
       hls = preload.hls; preload = null;
+      triedStreamIdx = {}; triedStreamIdx[curStreamIdx] = true; /* v6.70: the adopted preload stream counts as tried — its failure tries the lane's other streams */
       video.classList.remove("hidden");
       frame.classList.add("hidden");
       applyLaneChrome();
@@ -2067,25 +2093,34 @@ function openPlayer(srvId, manual){
     else if (p && p.streams && p.streams.length) playNative(p.streams);
     else {
       showSpin(true);
-      /* v6.63: bounded attempt — the pick never waits out a hanging lane.
-         6s without streams moves on instantly (official-player parity).
-         v6.64: the timeout only DEFERS the lane — its shared probe still
-         lands, and maybeAdoptDeferred adopts it if it proves ok while
-         nothing plays yet. Manual picks always re-probe fresh. */
-      var _settled = false;
-      var _to = setTimeout(function(){
-        if (_settled) return; _settled = true;
-        deferredLanes[srvId] = true;
-        if (curServer === srvId) failoverFrom(srvId, serverName(srvId) + " did not respond");
-      }, 6000);
+      /* v6.70: NO race — the chain awaits the lane's real answer. The
+         6s race skipped slow lanes that were actually available, and
+         the chain then settled on a later server (the fake skip). An
+         empty list is not proof of death either: the list APIs blip
+         transiently, and the same lane plays fine on a fresh tap
+         seconds later — so one fresh re-probe runs before the lane
+         is skipped. Probes are shared per lane+episode, so the retry
+         is the only extra fetch. */
+      var retryDone = false;
       probeLane(srv, !!manual).then(function(r){
         renderSrvPanel(); refreshSettingsIfOpen();
         maybeAdoptDeferred(srvId, r);
-        if (_settled) return;
-        _settled = true; clearTimeout(_to); showSpin(false);
         if (curServer !== srvId) return;
-        if (r.ok) playNative(r.streams);
-        else failoverFrom(srvId, serverName(srvId) + ": no stream found");
+        if (r.ok) { showSpin(false); playNative(r.streams); return; }
+        if (!manual && !retryDone) {
+          retryDone = true;
+          probeLane(srv, true).then(function(r2){
+            renderSrvPanel(); refreshSettingsIfOpen();
+            maybeAdoptDeferred(srvId, r2);
+            if (curServer !== srvId) return;
+            showSpin(false);
+            if (r2.ok) playNative(r2.streams);
+            else failoverFrom(srvId, serverName(srvId) + ": no stream found");
+          });
+          return;
+        }
+        showSpin(false);
+        failoverFrom(srvId, serverName(srvId) + ": no stream found");
       });
     }
   } else {
@@ -2279,7 +2314,7 @@ function armStuckWatch(){
       if (!isNativeLane() || !curServer) return;
       if (video.paused || video.ended) return;
       if (video.currentTime > stuckLastTime + 0.05) { stuckLastTime = video.currentTime; armStuckWatch(); return; }
-      failoverFrom(curServer, serverName(curServer) + " stream stuck");
+      failStream(serverName(curServer) + " stream stuck");
     } catch (e) {}
   }, 20000);
 }
@@ -2288,7 +2323,7 @@ video.addEventListener("playing", function(){ showSpin(false); clearTimeout(play
   video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
 video.addEventListener("error", function(){
-  if (isNativeLane() && !hlsFailed) { hlsFailed = true; failoverFrom(curServer, serverName(curServer) + " stream did not play"); }
+  if (isNativeLane() && !hlsFailed) { hlsFailed = true; failStream(serverName(curServer) + " stream did not play"); }
 });
 video.addEventListener("ended", function(){ if (setAutoNext && MEDIA_TYPE === "tv") stepEpisode(1); });
 video.addEventListener("loadedmetadata", function(){
