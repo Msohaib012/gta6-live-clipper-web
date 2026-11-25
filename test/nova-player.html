@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 17:38 PKT: v6.74 -->
-<title>Nova Player — v6.74</title>
+<!-- pages-rebuild 2026-11-25 18:12 PKT: v6.75 -->
+<title>Nova Player — v6.75</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.74"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.75"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -905,8 +905,43 @@ function fetchProxyMeta(){
     })
     .catch(function(){ clearTimeout(to); });
 }
+/* v6.75: episode stills + real names for the drawer. The drawer already
+   renders META.epStills / META.epNames (demo titles only) — real titles
+   never filled them, so every card showed a bare number. Same proxy as
+   the title fetch (key stays server-side). One fetch per season; the
+   drawer re-renders on arrival if it is open. */
+var EP_SEASON_DONE = {};
+function fetchSeasonMeta(season){
+  if (MEDIA_TYPE !== "tv" || !MEDIA_TMDB || !season) return;
+  if (EP_SEASON_DONE[season]) return;
+  EP_SEASON_DONE[season] = true;
+  if (typeof fetch !== "function") return;
+  var ctl = null;
+  try { ctl = new AbortController(); } catch (e) {}
+  var to = setTimeout(function(){ try { if (ctl) ctl.abort(); } catch (e) {} }, 8000);
+  fetch("/api/tmdb/tv/" + MEDIA_TMDB + "/season/" + season, ctl ? { signal: ctl.signal } : undefined)
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      clearTimeout(to);
+      if (!d || !d.episodes || !d.episodes.length) return;
+      if (!META.epStills) META.epStills = {};
+      if (!META.epNames) META.epNames = {};
+      var stills = [], names = [];
+      d.episodes.forEach(function(e){
+        var n = e.episode_number || (stills.length + 1);
+        stills[n - 1] = e.still_path ? "https://image.tmdb.org/t/p/w300" + e.still_path : "";
+        names[n - 1] = e.name || ("Episode " + n);
+      });
+      META.epStills[season] = stills;
+      META.epNames[season] = names;
+      if (!$("epDrawer").classList.contains("hidden")) renderEpDrawer(false);
+    })
+    .catch(function(){ clearTimeout(to); });
+}
 loadChunkMeta();
-fetchProxyMeta();/* v6.6: official title art (logo) — the hero banner renders the movie's
+fetchProxyMeta();
+if (MEDIA_TYPE === "tv") fetchSeasonMeta(MEDIA_SEASON); /* v6.75: episode stills + names for the drawer */
+/* v6.6: official title art (logo) — the hero banner renders the movie's
    own logo image when one exists and falls back to styled text. The
    test page fetches the same logo the same way (en -> no-language ->
    first), from a sharded logo file next to this page; the chunk entry's
@@ -1588,13 +1623,14 @@ $("epBody").addEventListener("click", function(e){
   var sb = e.target.closest("#epSeasonBtn");
   if (sb) { var menu = $("epSeasonMenu"); if (menu) menu.classList.toggle("hidden"); return; }
   var sn = e.target.closest("[data-season]");
-  if (sn) { curSeason = parseInt(sn.getAttribute("data-season"), 10); renderEpDrawer(false); return; }
+  if (sn) { curSeason = parseInt(sn.getAttribute("data-season"), 10); if (MEDIA_TYPE === "tv") fetchSeasonMeta(curSeason); renderEpDrawer(false); return; }
   var nv = e.target.closest("[data-nav]");
   if (nv) { if (!nv.disabled) stepEpisode(parseInt(nv.getAttribute("data-nav"), 10)); return; }
   var ep = e.target.closest("[data-ep]");
   if (ep) { switchEpisode(curSeason, parseInt(ep.getAttribute("data-ep"), 10)); return; }
 });
 function openEpDrawer(){
+  if (MEDIA_TYPE === "tv") fetchSeasonMeta(curSeason); /* v6.75: stills + names for the season being opened */
   renderEpDrawer(true);
   openDrawer("epDrawer");
 }
@@ -2424,7 +2460,7 @@ function armChainGuard(){
   }, 35000);
 }
 video.addEventListener("timeupdate", function(){ try { stuckLastTime = video.currentTime; } catch (e) {} });
-video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(2500); } stuckLastTime = video.currentTime || 0; playedOnce = true; armStuckWatch(); delete LANE_DEAD[curServer]; /* v6.71: it plays — the cross lifts */ if ($("srvPanel") && $("srvPanel").classList.contains("open")) renderSrvPanel(); });
+video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else clearSplash(); /* v6.75: playback starting while the tab is visible must dismiss the splash AT ONCE — the old 2.5s delay played sound behind the launcher whenever a server was detected instantly */ } stuckLastTime = video.currentTime || 0; playedOnce = true; armStuckWatch(); delete LANE_DEAD[curServer]; /* v6.71: it plays — the cross lifts */ if ($("srvPanel") && $("srvPanel").classList.contains("open")) renderSrvPanel(); });
   video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
 video.addEventListener("error", function(){
