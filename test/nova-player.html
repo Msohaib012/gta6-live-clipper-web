@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 20:04 PKT: v6.85 -->
-<title>Nova Player — v6.85</title>
+<!-- pages-rebuild 2026-11-25 20:10 PKT: v6.86 -->
+<title>Nova Player — v6.86</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -841,7 +841,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.85"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.86"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1482,6 +1482,18 @@ setInterval(function(){
 /* probe + status sequence (native lanes probed; embeds have no probe).
    The sequence genuinely dwells on CHECKING / CONNECTING TO per server
    (~350ms each) and READY waits for both the probes AND the sequence. */
+/* v6.86 ROOT CAUSE (proven in jsdom with the exact iframe URL): this block
+   died at parse. showSeq() reads bare `curServer`, but the only
+   `var curServer` lived in the NEXT script block (line ~1603) — at this
+   block's evaluation the binding does not exist yet, so the read throws
+   ReferenceError, probeAll's IIFE dies at showSeq(0), and everything
+   after it in this block dies too: no probe sequence, no probes from
+   probeAll, and the launcher's Back/Servers click bindings never run.
+   The chain could still start via directFirstPlay (later block), which
+   is why playback was intermittent — but the launcher stayed frozen on
+   the static INITIALIZING text with dead buttons whenever the probe
+   branch stalled. Shared state must be declared in THIS block. */
+var curServer = null;
 var probeDone = 0, probeTotal = 0;
 (function probeAll(){
   var rwServers = SERVERS.filter(function(s){ return s.rw; });
