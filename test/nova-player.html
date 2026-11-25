@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 21:19 PKT: v6.90 -->
-<title>Nova Player — v6.90</title>
+<!-- pages-rebuild 2026-11-25 23:06 PKT: v6.91 -->
+<title>Nova Player — v6.91</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -849,7 +849,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.90"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.91"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -3344,6 +3344,52 @@ if (MEDIA_PLAY) {
 }
 renderSrvPanel();
 updatePlayIco();
+
+/* ============ v6.91 PLAYER-PRESENCE HEARTBEAT (restores the stats page
+   "Player — live now" / "Player — today total" counts, lost in the v6.90
+   live switch: the old player wrote these Firebase nodes; Nova had no
+   tracker. Shape mirrors the site tracker (stats-track.js): persisted
+   af_play_ device id, PUT {ts} to /ppresence/<id>, PUT 1 to
+   /pdaily/<PKT-day>/<id>. Silent + best-effort: every failure swallowed,
+   no UI, playback never touched. ============ */
+(function(){
+  try {
+    var DB = "https://arenaflix-53ce8-default-rtdb.firebaseio.com";
+    var id = null;
+    try {
+      id = localStorage.getItem("af_play_device_id");
+      if (!id) {
+        id = "af_play_" + Date.now().toString(36) + "_" + Math.random().toString(36).substring(2, 8);
+        try { localStorage.setItem("af_play_device_id", id); } catch (e0) {}
+      }
+    } catch (e1) {
+      id = "af_play_" + Date.now().toString(36) + "_" + Math.random().toString(36).substring(2, 8);
+    }
+    function dayKey() { return new Date(Date.now() + 5 * 3600 * 1000).toISOString().slice(0, 10); }
+    function beat() {
+      try {
+        if (window.navigator && window.navigator.onLine === false) return;
+        fetch(DB + "/ppresence/" + id + ".json", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ts: Date.now() }),
+          keepalive: true
+        }).catch(function () {});
+        fetch(DB + "/pdaily/" + dayKey() + "/" + id + ".json", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: "1",
+          keepalive: true
+        }).catch(function () {});
+      } catch (e2) {}
+    }
+    beat();
+    setInterval(beat, 60000);
+    document.addEventListener("visibilitychange", function () {
+      try { if (document.visibilityState === "visible") beat(); } catch (e3) {}
+    });
+  } catch (e4) {}
+})();
 </script>
 </body>
 </html>
