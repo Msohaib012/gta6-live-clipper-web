@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 14:25 PKT: v6.55 -->
-<title>Nova Player — Test Preview v6.55</title>
+<!-- pages-rebuild 2026-11-25 14:28 PKT: v6.56 -->
+<title>Nova Player — Test Preview v6.56</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -782,7 +782,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.55"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.56"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1260,17 +1260,18 @@ var probeDone = 0, probeTotal = 0;
     else { seqDone = true; clearInterval(cycTimer); maybeFinish(); }
   }, SEQ_DWELL) : null;
   var finished = false, probesDone = false;
-  /* v6.53: index of the first native server usable among RESOLVED probes
-     (menu order), or -1. Unlike v6.34's firstUsableCertain, an unresolved
-     earlier lane (Arenaflix probing two URLs, no stream for this title)
-     no longer blocks a later ok lane (Bolt) — the launcher goes Ready
-     on the first working server it actually has. */
-  function firstUsableAny(){
+  /* v6.56 (his order, supersedes v6.53 race pick): index of the first
+     native server in MENU ORDER that is CERTAINLY available, or -1.
+     An unresolved earlier lane BLOCKS a later ok lane — the pick is
+     always the first-numbered ticked server, never whichever probe
+     happened to finish first. Resolved dead/unreachable lanes are
+     skipped (their crosses prove it); only unresolved lanes block. */
+  function firstUsableCertain(){
     for (var i = 0; i < SERVERS.length; i++) {
       var s = SERVERS[i];
       if (s.lane !== "native") continue;
       var pr = PROBE[s.id];
-      if (pr === undefined) continue;
+      if (pr === undefined) return -1;
       if (pr.ok && pr.streams && pr.streams.length) return i;
     }
     return -1;
@@ -1292,7 +1293,7 @@ var probeDone = 0, probeTotal = 0;
       /* v6.34: a hung lane must not hold the launcher to the 14s cap — once
          the first usable server is certain, the probes are done for
          launcher purposes; late probes still land in PROBE/panel. */
-      if (probeDone >= probeTotal || firstUsableAny() >= 0) { probesDone = true; maybeFinish(); }
+      if (probeDone >= probeTotal || firstUsableCertain() >= 0) { probesDone = true; maybeFinish(); }
       maybeAdoptLate(); /* v6.52: late probes can claim an unpicked launcher */
     });
   });
@@ -1305,6 +1306,9 @@ var probeDone = 0, probeTotal = 0;
        them as unusable, so a slow first server is never wrongly marked dead. */
     maybePreload(); /* the first usable server can still preload during the 650ms Ready delay */
     bestIdx = -1;
+    /* v6.56: the early finish (probe trigger) already used certainty; this
+       loop runs at the 14s cap, where unresolved lanes can never become
+       certain — so the cap fallback is the first resolved-ok lane. */
     for (var i = 0; i < SERVERS.length; i++) {
       var pr0 = PROBE[SERVERS[i].id];
       if (SERVERS[i].lane === "native" && pr0 && pr0.ok) { bestIdx = i; break; }
@@ -1328,7 +1332,7 @@ var probeDone = 0, probeTotal = 0;
   function maybeAdoptLate(){
     if (!finished || $("launcher").classList.contains("hidden")) return;
     if (lauReadyIdx >= 0) return;
-    var idx = firstUsableAny();
+    var idx = firstUsableCertain();
     if (idx >= 0) {
       bestIdx = idx;
       setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
@@ -1792,7 +1796,7 @@ function maybePreload(){
     var s = SERVERS[i];
     if (s.lane !== "native") continue;
     var pr = PROBE[s.id];
-    if (pr === undefined) continue; /* v6.53: an earlier lane still checking must not block preloading a later ok lane */
+    if (pr === undefined) return; /* v6.56: preload only the certain first pick, so the adopted load is the picked server — a later ok lane never preloads ahead of an earlier checking lane */
     if (pr.ok && pr.streams && pr.streams.length) { preloadNative(s.id, pr.streams); return; }
   }
 }
