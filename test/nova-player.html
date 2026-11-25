@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 20:33 PKT: v6.88 -->
-<title>Nova Player — v6.88</title>
+<!-- pages-rebuild 2026-11-25 21:03 PKT: v6.89 -->
+<title>Nova Player — v6.89</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -797,9 +797,13 @@ var META = DEMO[MEDIA_TMDB] || {
 var META_HOST_TITLE = !DEMO[MEDIA_TMDB] && !!qp.get("title");
 function paintBg(){
   if (!META.bg) return;
+  /* v6.89: cap host-supplied backdrop art at w780 (the TMDB-fetched path
+     already uses w780) — an original/w1280 backdrop is dead weight on a
+     slow net while the launcher paints. */
+  var bgUrl = String(META.bg).replace(/\/t\/p\/(original|w1280)\//, "/t/p/w780/");
   var lb = $("lauBg");
-  if (lb && lb.getAttribute("src") !== META.bg) {
-    lb.src = META.bg;
+  if (lb && lb.getAttribute("src") !== bgUrl) {
+    lb.src = bgUrl;
     if (!lb._bgBound) { lb._bgBound = true; lb.addEventListener("load", function(){ lb.classList.add("loaded"); var c = $("lauCenter"); if (c) c.classList.add("in"); }); }
   }
 }
@@ -841,7 +845,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.88"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.89"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2210,6 +2214,25 @@ function playNative(streams){
   var pick = curStreams[0], hi = -1;
   for (var i = 0; i < curStreams.length; i++) if (/hindi/i.test(curStreams[i].lang)) { hi = i; break; }
   if (hi >= 0) pick = curStreams[hi];
+  /* v6.89 FAST START (his idea 20:59 PKT — 1080p to 720p loads faster):
+     a 1080p single-variant playlist stalls before first frame on a slow
+     net while its 720p twin plays at once. The initial pick prefers the
+     best quality AT OR BELOW 720p among the picked language's streams;
+     if none is <=720p the pick above stands (language still wins over
+     quality — a Hindi 1080p beats a 720p other-language stream). The
+     Quality menu still offers every variant (Auto = highest), so
+     nothing is taken away — only the first-play default is lighter. */
+  (function(){
+    var best720 = null, best720q = -1;
+    for (var j = 0; j < curStreams.length; j++) {
+      var st = curStreams[j];
+      if (st.lang !== pick.lang) continue;
+      var q = parseInt(st.qual, 10);
+      if (isNaN(q) || q > 720 || q <= best720q) continue;
+      best720q = q; best720 = st;
+    }
+    if (best720) pick = best720;
+  })();
   curStreamIdx = curStreams.indexOf(pick);
   /* v6.6: MP4 lanes have no HLS levels; show the picked stream's quality. */
   if (pick.qual && !pick.force) qualityLabel = pick.qual;
