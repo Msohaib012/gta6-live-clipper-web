@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 15:14 PKT: v6.58 -->
-<title>Nova Player — v6.58</title>
+<!-- pages-rebuild 2026-11-25 15:49 PKT: v6.59 -->
+<title>Nova Player — v6.59</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -782,7 +782,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.58"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.59"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1349,7 +1349,7 @@ var probeDone = 0, probeTotal = 0;
   }
 })();
 
-$("btnBackL").addEventListener("click", function(){ history.back(); });
+$("btnBackL").addEventListener("click", function(){ exitToDetail(); });
 $("btnCloudL").addEventListener("click", function(){ renderSrvPanel(); openPop("srvPanel"); });
 </script>
 <script>
@@ -1986,6 +1986,21 @@ function backToLauncher(){
   if (bi >= 0) { setStatus("Ready"); setSrcLine(SERVERS[bi].name, bi); lauReadyIdx = bi; }
 }
 
+/* v6.59: one-press exit (his report 15:47 PKT — gesture back left in one
+   press, but the player's own Back button needed two: player -> launcher
+   -> out). When embedded on a site host, both Back buttons now leave
+   straight to the detail page. The standalone test link (github.io/file:)
+   keeps the old launcher behavior. */
+function exitToDetail(){
+  var host = location.hostname || "";
+  var siteHost = /(workers\.dev|arenaflix\.co\.uk|vercel\.app)$/.test(host);
+  if (siteHost && window.self !== window.top) {
+    try { stopAll(); } catch (e) {}
+    try { window.top.location.href = "/detail?type=" + MEDIA_TYPE + "&id=" + MEDIA_TMDB; return; } catch (e) {}
+  }
+  backToLauncher();
+}
+
 /* ============ bars auto-hide + paused overlay ============ */
 function povMetaLine(){
   var parts = [];
@@ -2125,7 +2140,7 @@ $("vw").addEventListener("mousemove", function(e){
   if (Date.now() - lastTouchAt < 500) return;
   if ($("launcher").classList.contains("hidden")) pokeBars();
 });
-$("btnBack").addEventListener("click", backToLauncher);
+$("btnBack").addEventListener("click", exitToDetail);
 
 /* ============ video events ============ */
 video.addEventListener("play", function(){ showSpin(false); updatePlayIco(); pokeBars(); });
