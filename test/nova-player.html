@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 20:19 PKT: v6.87 -->
-<title>Nova Player — v6.87</title>
+<!-- pages-rebuild 2026-11-25 20:33 PKT: v6.88 -->
+<title>Nova Player — v6.88</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -841,7 +841,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.87"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.88"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2283,16 +2283,22 @@ function armWatchdog(srv){
    on a mere probe reading. Unresolved / untried lanes show no mark. */
 function probeDead(id){ var pr = PROBE[id]; return !!(pr && !pr.ok && !pr.unreachable); }
 function nextFailoverCandidate(failedId){
-  var live = [], dead = [];
+  /* v6.88 FAKE SKIP FIX (his report 20:27 PKT, Spider-Man 969681): STRICT
+     menu order, no probe-based reordering. The old code sent lanes with
+     one empty probe answer to the back of the queue — but one empty
+     answer is weak evidence (the list APIs blip once and answer fine the
+     next second), so a live lane sat last while a later, worse server
+     played, and the chain stopped before ever trying it. His order IS
+     the priority order: first server best, each next one a step down,
+     last ones backup-only. The probe inside openPlayer (with the fresh
+     re-probe) is the only judge of whether a lane plays — ordering
+     must never pre-judge it. Untried lanes are never skipped. */
   for (var i = 0; i < SERVERS.length; i++) {
     var s = SERVERS[i];
     if (s.id === failedId || failChain.indexOf(s.id) >= 0) continue;
-    (probeDead(s.id) ? dead : live).push(s.id);
+    return s.id;
   }
-  /* menu order, top to bottom as before; proven-dead lanes go last but
-     still get tried — never skipped, never called dead without proof. */
-  var ordered = live.concat(dead);
-  return ordered.length ? ordered[0] : null;
+  return null;
 }
 function failoverFrom(failedId, why){
   chainActive = true;
@@ -2359,9 +2365,11 @@ function openPlayer(srvId, manual){
          can time out while the lane is available (it plays on a retry
          seconds later: his report 19:07 PKT). An unanswered probe retries
          the SAME lane, bounded; only an API that actually answered "no
-         streams" skips it. A resolved empty answer fails over at once.
+         streams" skips it. A resolved empty answer fails over at once
+         (v6.88: only after ONE fresh re-probe also comes back empty).
          Manual taps keep a single fresh round — the user can re-tap. */
       var unreachRounds = 0;
+      var emptyRounds = 0; /* v6.88: one fresh re-probe on a resolved empty too (see probeAgain) */
       /* v6.85: probe backstop — probeLane's legs are bounded (~16s/round,
          3 rounds), so a probe still unanswered at 60s is wedged beyond its
          design bounds. Fail over with a toast instead of sitting black and
@@ -2377,6 +2385,19 @@ function openPlayer(srvId, manual){
           maybeAdoptDeferred(srvId, r);
           if (curServer !== srvId) return;
           if (r.ok) { delete LANE_DEAD[srvId]; showSpin(false); playNative(r.streams); return; }
+          /* v6.88 FAKE SKIP FIX (his report 20:27 PKT, Spider-Man 969681):
+             a resolved empty answer is NOT proof the lane is dead — the
+             list APIs blip transiently (one "count: 0" answer, healthy the
+             next second), and the auto chain trusted the background
+             probe's single cached answer without ever re-fetching, so it
+             crossed a live lane and settled on a later server. The user
+             never opens the panel — whatever plays is what plays — so a
+             skip must be earned: the auto chain gets ONE fresh re-probe
+             on an empty answer before the lane is crossed or skipped.
+             Only two empty answers in a row fail over. Manual taps keep
+             a single fresh round (re-tap to retry). This restores the
+             v6.70 rule that v6.81 dropped. */
+          if (!r.unreachable && !manual && emptyRounds < 1) { emptyRounds++; setStatus("Retrying " + serverName(srvId) + "…"); probeAgain(true); return; }
           if (!r.unreachable) { showSpin(false); LANE_DEAD[srvId] = true; failoverFrom(srvId, serverName(srvId) + ": no stream found"); return; }
           if (!manual && unreachRounds < 2) { unreachRounds++; setStatus("Retrying " + serverName(srvId) + "…"); probeAgain(true); return; }
           showSpin(false);
