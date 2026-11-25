@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 12:39 PKT: v6.50 -->
-<title>Nova Player — Test Preview v6.50</title>
+<!-- pages-rebuild 2026-11-25 12:46 PKT: v6.51 -->
+<title>Nova Player — Test Preview v6.51</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
 <link rel="preconnect" href="https://image.tmdb.org">
-<script>!function(){try{var q=new URLSearchParams(location.search);var ty=q.get("type")==="tv"?"tv":"movie";var id=parseInt(q.get("tmdb")||(ty==="tv"?"66732":"550"),10)||550;var b=((id%100)+100)%100;var u1="https://cdn.jsdelivr.net/gh/Msohaib012/gta6-live-clipper-web@main/test/seo-logos/"+b+".json";var u2="https://raw.githubusercontent.com/Msohaib012/gta6-live-clipper-web/main/test/seo-logos/"+b+".json";function get(u){return fetch(u).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}window.__logoBucketP=Promise.race([get(u1),get(u2)]).then(function(j){if(j)window.__logoBucketData=j;return j;}).catch(function(){return null;});}catch(e){}}();</script>
+<script>!function(){try{var q=new URLSearchParams(location.search);var ty=q.get("type")==="tv"?"tv":"movie";var id=parseInt(q.get("tmdb")||(ty==="tv"?"66732":"969681"),10)||969681;var b=((id%100)+100)%100;var u1="https://cdn.jsdelivr.net/gh/Msohaib012/gta6-live-clipper-web@main/test/seo-logos/"+b+".json";var u2="https://raw.githubusercontent.com/Msohaib012/gta6-live-clipper-web/main/test/seo-logos/"+b+".json";function get(u){return fetch(u).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});}window.__logoBucketP=Promise.race([get(u1),get(u2)]).then(function(j){if(j)window.__logoBucketData=j;return j;}).catch(function(){return null;});}catch(e){}}();</script>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&family=Inter:wght@800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&family=Geist+Mono&family=Lexend+Deca:wght@500&family=Lexend:wght@400&family=Permanent+Marker&family=Audiowide&family=Inter:wght@800&display=swap" rel="stylesheet"></noscript>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@1" defer></script>
@@ -732,7 +732,7 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
    No Vidstuck code, logo, or brand assets copied. No TMDB key anywhere. ============ */
 var qp = new URLSearchParams(location.search);
 var MEDIA_TYPE = qp.get("type") === "tv" ? "tv" : "movie";
-var MEDIA_TMDB = parseInt(qp.get("tmdb") || (MEDIA_TYPE === "tv" ? "66732" : "550"), 10);
+var MEDIA_TMDB = parseInt(qp.get("tmdb") || (MEDIA_TYPE === "tv" ? "66732" : "969681"), 10);
 var MEDIA_SEASON = parseInt(qp.get("s") || "1", 10);
 var MEDIA_EPISODE = parseInt(qp.get("e") || "1", 10);
 var MEDIA_PLAY = qp.get("play") === "1";
@@ -760,7 +760,8 @@ var META = DEMO[MEDIA_TMDB] || {
   logo: "", bg: "", seasons: MEDIA_TYPE === "tv" ? { 1: 8 } : null, epNames: null
 };
 
-/* ============ v6.5: metadata enrichment for non-DEMO ids ============
+/* v6.51: default test movie is now Spider-Man: Brand New Day (TMDB 969681, his order) — replaces Swapped (1007757) as the link movie and Fight Club (550) as the bare-link default. Metadata comes from the FlickAtlas SEO chunks like any non-DEMO id; ?tmdb=550 still opens the Fight Club demo.
+   ============ v6.5: metadata enrichment for non-DEMO ids ===========
    DEMO ids (550/66732) keep their hardcoded logo/backdrop/title and never
    fetch. Any other id loads its real title/genres/art from the public
    FlickAtlas SEO chunks (keyless, CORS-open raw.githubusercontent.com).
@@ -781,7 +782,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.50"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.51"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
