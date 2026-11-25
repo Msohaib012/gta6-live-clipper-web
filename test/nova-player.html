@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 16:41 PKT: v6.67 -->
-<title>Nova Player — v6.67</title>
+<!-- pages-rebuild 2026-11-25 16:45 PKT: v6.68 -->
+<title>Nova Player — v6.68</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.67"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.68"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1261,6 +1261,7 @@ function tryOpenFromLauncher(){
 $("lauPlay").addEventListener("click", function(){ lauTapped = true; tryOpenFromLauncher(); });
 $("launcher").addEventListener("pointerdown", function(e){
   if (e.target.closest && e.target.closest("#lauTop")) return; /* Back/Servers buttons: interaction counts, but do not auto-open over the panel */
+  if (splashHold) { clearSplash(); return; } /* v6.68: a tap on the held splash only dismisses it — it never switches the server already playing behind it */
   lauTapped = true; tryOpenFromLauncher();
 });
 /* tips rotator: coarse pointer -> common + touch tips; else common + keyboard tips */
@@ -1620,7 +1621,7 @@ function armSplashHide(ms){
   splashTimer = setTimeout(clearSplash, ms);
 }
 document.addEventListener("visibilitychange", function(){
-  if (!document.hidden && splashHold) armSplashHide(1500);
+  if (!document.hidden && splashHold) armSplashHide(4000); /* v6.68: a proper beat after return — 1.5s flashed by unseen */
 });
 function maybeAdoptDeferred(srvId, r){
   try {
@@ -2277,7 +2278,7 @@ function armStuckWatch(){
   }, 20000);
 }
 video.addEventListener("timeupdate", function(){ try { stuckLastTime = video.currentTime; } catch (e) {} });
-video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(1500); } stuckLastTime = video.currentTime || 0; armStuckWatch(); });
+video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(2500); } stuckLastTime = video.currentTime || 0; armStuckWatch(); });
   video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
 video.addEventListener("error", function(){
@@ -2528,7 +2529,7 @@ function flashTip(btn){
        after 3s, and never delays the pick. v6.67: only count visible
        time — while the ad tab covers this tab, no timer runs. */
     splashHold = true;
-    if (!document.hidden) armSplashHide(3000);
+    if (!document.hidden) armSplashHide(4000);
     openPlayer(first, false);
   } catch (e) {}
 })();
