@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 21:03 PKT: v6.89 -->
-<title>Nova Player — v6.89</title>
+<!-- pages-rebuild 2026-11-25 21:19 PKT: v6.90 -->
+<title>Nova Player — v6.90</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -795,12 +795,16 @@ var META = DEMO[MEDIA_TMDB] || {
    already fetched TMDB) paints instantly — no waiting on the SEO-chunk or
    logo-bucket fetches, and no "Title <id>" fallback flash. */
 var META_HOST_TITLE = !DEMO[MEDIA_TMDB] && !!qp.get("title");
+/* v6.90 LAUNCHER-ART CAP (his correction 21:15 PKT — the FRONT art + BACKGROUND
+   in the launcher, NOT the video stream): TMDB art URLs are capped at USE time
+   so every source (SEO chunks, logo bucket, host meta, DEMO) loads the light
+   file and the launcher paints fast on a slow net. Backdrop: original/w1280
+   -> w780. Front logo: original/w780/w1280 -> w500 (crisp on phones). */
+function capBgUrl(u){ return String(u || "").replace(/\/t\/p\/(original|w1280)\//, "/t/p/w780/"); }
+function capLogoUrl(u){ return String(u || "").replace(/\/t\/p\/(original|w780|w1280)\//, "/t/p/w500/"); }
 function paintBg(){
   if (!META.bg) return;
-  /* v6.89: cap host-supplied backdrop art at w780 (the TMDB-fetched path
-     already uses w780) — an original/w1280 backdrop is dead weight on a
-     slow net while the launcher paints. */
-  var bgUrl = String(META.bg).replace(/\/t\/p\/(original|w1280)\//, "/t/p/w780/");
+  var bgUrl = capBgUrl(META.bg);
   var lb = $("lauBg");
   if (lb && lb.getAttribute("src") !== bgUrl) {
     lb.src = bgUrl;
@@ -845,7 +849,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.89"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.90"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -866,7 +870,7 @@ function applyChunkMeta(e){
   if (e.ld.aggregateRating && e.ld.aggregateRating.ratingValue) META.rate = e.ld.aggregateRating.ratingValue;
   var art = e.img || e.ld.image || "";
   if (art && !META.bg){
-    META.bg = art;
+    META.bg = capBgUrl(art);
     var lb = $("lauBg");
     if (lb && !$("launcher").classList.contains("hidden")){
       lb.src = META.bg;
@@ -1013,7 +1017,8 @@ var logoTried = 0, logoDone = false;
 function paintLogo(){
   var li = $("logoImg"); if (!li) return;
   if (META.logo) {
-    if (li.getAttribute("src") !== META.logo) { li.src = META.logo; li.alt = META.title || ""; }
+    var logoUrl = capLogoUrl(META.logo);
+    if (li.getAttribute("src") !== logoUrl) { li.src = logoUrl; li.alt = META.title || ""; }
     li.classList.remove("hidden");
     var lt = $("lauTitle"); if (lt) lt.classList.add("hidden");
     if (!li._logoBound) { li._logoBound = true;
@@ -1035,7 +1040,7 @@ function applyLogoBucket(j, wantId, wantType){
     if (u.n && META_TITLE_IS_FALLBACK) META.title = u.n;
     if (u.g && u.g.length) META.genres = u.g.slice();
     if (u.b && !META.bg) {
-      META.bg = u.b;
+      META.bg = capBgUrl(u.b);
       var lb = $("lauBg");
       if (lb && !$("launcher").classList.contains("hidden")) {
         lb.src = META.bg;
@@ -2214,25 +2219,9 @@ function playNative(streams){
   var pick = curStreams[0], hi = -1;
   for (var i = 0; i < curStreams.length; i++) if (/hindi/i.test(curStreams[i].lang)) { hi = i; break; }
   if (hi >= 0) pick = curStreams[hi];
-  /* v6.89 FAST START (his idea 20:59 PKT — 1080p to 720p loads faster):
-     a 1080p single-variant playlist stalls before first frame on a slow
-     net while its 720p twin plays at once. The initial pick prefers the
-     best quality AT OR BELOW 720p among the picked language's streams;
-     if none is <=720p the pick above stands (language still wins over
-     quality — a Hindi 1080p beats a 720p other-language stream). The
-     Quality menu still offers every variant (Auto = highest), so
-     nothing is taken away — only the first-play default is lighter. */
-  (function(){
-    var best720 = null, best720q = -1;
-    for (var j = 0; j < curStreams.length; j++) {
-      var st = curStreams[j];
-      if (st.lang !== pick.lang) continue;
-      var q = parseInt(st.qual, 10);
-      if (isNaN(q) || q > 720 || q <= best720q) continue;
-      best720q = q; best720 = st;
-    }
-    if (best720) pick = best720;
-  })();
+  /* v6.90 REVERT of the v6.89 stream pick: the 720p-first default was MY
+     misread — he never asked for the VIDEO quality to change (his
+     correction 21:15 PKT). The pick is back to provider-first + Hindi-first. */
   curStreamIdx = curStreams.indexOf(pick);
   /* v6.6: MP4 lanes have no HLS levels; show the picked stream's quality. */
   if (pick.qual && !pick.force) qualityLabel = pick.qual;
@@ -2481,7 +2470,7 @@ function fmtRuntime(rt){
 function buildPausedOv(){
   var logo = $("pLogo");
   if (logo) {
-    if (META.logo) { logo.src = META.logo; logo.classList.remove("hidden"); if (!logo._pErr) { logo._pErr = true; logo.addEventListener("error", function(){ logo.classList.add("hidden"); var tt = $("pTitle"); if (tt) tt.style.display = ""; }); } }
+    if (META.logo) { logo.src = capLogoUrl(META.logo); logo.classList.remove("hidden"); if (!logo._pErr) { logo._pErr = true; logo.addEventListener("error", function(){ logo.classList.add("hidden"); var tt = $("pTitle"); if (tt) tt.style.display = ""; }); } }
     else { logo.classList.add("hidden"); logo.removeAttribute("src"); }
   }
   var t = $("pTitle"); if (t) { t.textContent = META.title || ""; t.style.display = META.logo ? "none" : ""; }
