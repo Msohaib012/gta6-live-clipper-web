@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 13:16 PKT: v6.52 -->
-<title>Nova Player — Test Preview v6.52</title>
+<!-- pages-rebuild 2026-11-25 14:07 PKT: v6.53 -->
+<title>Nova Player — Test Preview v6.53</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -782,7 +782,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.52"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.53"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1248,22 +1248,27 @@ var probeDone = 0, probeTotal = 0;
     else { seqDone = true; clearInterval(cycTimer); maybeFinish(); }
   }, SEQ_DWELL) : null;
   var finished = false, probesDone = false;
-  /* v6.34: index of the first native server certainly usable (every earlier
-     native server resolved, this one ok with streams), or -1. Mirrors the
-     maybePreload scan — the launcher may finish on this without waiting
-     for hung later lanes (Velvet's streams route hangs: 8s + 8s fallback). */
-  function firstUsableCertain(){
+  /* v6.53: index of the first native server usable among RESOLVED probes
+     (menu order), or -1. Unlike v6.34's firstUsableCertain, an unresolved
+     earlier lane (Arenaflix probing two URLs, no stream for this title)
+     no longer blocks a later ok lane (Bolt) — the launcher goes Ready
+     on the first working server it actually has. */
+  function firstUsableAny(){
     for (var i = 0; i < SERVERS.length; i++) {
       var s = SERVERS[i];
       if (s.lane !== "native") continue;
       var pr = PROBE[s.id];
-      if (pr === undefined) return -1;
+      if (pr === undefined) continue;
       if (pr.ok && pr.streams && pr.streams.length) return i;
     }
     return -1;
   }
   function maybeFinish(){
-    if (finished || !probesDone || !seqDone) return;
+    /* v6.53: READY no longer waits for the 2.8s Checking/Connecting
+       sequence (seqDone) — the sequence is cosmetic; once a usable
+       server is certain, finish at once. The no-pick path still waits
+       on probes / the 14s cap as before. */
+    if (finished || !probesDone) return;
     finishProbe();
   }
   rwServers.forEach(function(srv){
@@ -1275,7 +1280,7 @@ var probeDone = 0, probeTotal = 0;
       /* v6.34: a hung lane must not hold the launcher to the 14s cap — once
          the first usable server is certain, the probes are done for
          launcher purposes; late probes still land in PROBE/panel. */
-      if (probeDone >= probeTotal || firstUsableCertain() >= 0) { probesDone = true; maybeFinish(); }
+      if (probeDone >= probeTotal || firstUsableAny() >= 0) { probesDone = true; maybeFinish(); }
       maybeAdoptLate(); /* v6.52: late probes can claim an unpicked launcher */
     });
   });
@@ -1311,7 +1316,7 @@ var probeDone = 0, probeTotal = 0;
   function maybeAdoptLate(){
     if (!finished || $("launcher").classList.contains("hidden")) return;
     if (lauReadyIdx >= 0) return;
-    var idx = firstUsableCertain();
+    var idx = firstUsableAny();
     if (idx >= 0) {
       bestIdx = idx;
       setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
@@ -1760,7 +1765,7 @@ function maybePreload(){
     var s = SERVERS[i];
     if (s.lane !== "native") continue;
     var pr = PROBE[s.id];
-    if (pr === undefined) return; /* an earlier server is still checking — wait */
+    if (pr === undefined) continue; /* v6.53: an earlier lane still checking must not block preloading a later ok lane */
     if (pr.ok && pr.streams && pr.streams.length) { preloadNative(s.id, pr.streams); return; }
   }
 }
