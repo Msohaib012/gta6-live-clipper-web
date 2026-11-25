@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 16:31 PKT: v6.65 -->
-<title>Nova Player — v6.65</title>
+<!-- pages-rebuild 2026-11-25 16:36 PKT: v6.66 -->
+<title>Nova Player — v6.66</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.65"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.66"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2199,32 +2199,29 @@ function barsAfterSheets(){
   if ($("launcher").classList.contains("hidden")) pokeBars();
 }
 $("vw").addEventListener("click", function(e){
-  /* v6.65: tap ANYWHERE on the screen toggles play/pause (his order) —
-     only real controls are exempt, so a button's own handler runs alone
-     and never double-fires with the toggle. Sheets still swallow taps. */
-  var t = e.target;
-  if (t.closest && t.closest("button, input, select, textarea, a, .popover, .drawer, #toast, #lauTop")) return;
+  if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest("#centerCtl") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#lauTop") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls via the overlay handler */
+  /* v6.23: a sheet open swallows screen taps — the bars stay hidden until
+     a manual tap (v6.37: closing a sheet no longer brings them back). */
   if (openPopId || openDrawerId) return;
+  /* v6.7: overlay up — a tap only reveals the controls, never resumes. */
+  if ($("pausedOv").classList.contains("show")) { pokeBars(); return; }
   if (!$("launcher").classList.contains("hidden")) return;
-  /* v6.33: a tap TOGGLES play/pause — but only once it is known to be a
-     SINGLE tap. The toggle waits 300ms: a second tap's touchstart
-     cancels the pending toggle, seeks, and sets dtFired, so the click
-     that follows returns without toggling (double-tap seek NEVER
-     toggles). */
+  /* v6.66: tap NEVER toggles play/pause (his order — the v6.63/v6.65
+     tap-toggle is removed). A tap on empty video area only TOGGLES THE
+     BARS, once it is known to be a SINGLE tap: the toggle waits 300ms,
+     a second tap's touchstart cancels it, seeks, and sets dtFired, so
+     the click that follows returns without touching the bars.
+     Double-tap seek NEVER shows the bars. */
   if (dtFired) { dtFired = false; return; }
+  if (touchShowed) { touchShowed = false; return; }
   if (isEmbedLane()) { pokeBars(); return; }
   clearTimeout(tapTimer); tapTimer = null;
   tapTimer = setTimeout(function(){
     tapTimer = null;
     if (openPopId || openDrawerId) return;
-    /* v6.63: a tap toggles play/pause (official-player parity). A tap
-       whose job was unmuting never toggles. */
-    if (justUnmuted) { justUnmuted = false; pokeBars(); return; }
-    if (isNativeLane()) {
-      if (video.paused) { try { video.play(); } catch (e) {} }
-      else { try { video.pause(); } catch (e) {} }
-    }
-    pokeBars();
+    if ($("pausedOv").classList.contains("show")) { pokeBars(); return; }
+    if (barsHidden) pokeBars();
+    else { clearTimeout(barTimer); barTimer = null; clearTimeout(hideTimer2); hideTimer2 = null; setBars(false); }
   }, 300);
 });
 ["topbar", "botblock"].forEach(function(id){ $(id).addEventListener("pointermove", pokeBars); });
@@ -2373,12 +2370,12 @@ $("vw").addEventListener("touchstart", function(e){
   /* v6.23: taps do nothing to the bars while a sheet is open. */
   if (openPopId || openDrawerId) return;
   /* v6.7: overlay up — reveal the controls at touchstart (before any
-     synthesized mousemove). v6.65: the tap itself now resumes via the
-     click toggle — no touchShowed swallow any more. */
+     synthesized mousemove), but NEVER resume: only the play button
+     resumes. Not gated on the double-tap setting. */
   if (isNativeLane() && $("pausedOv").classList.contains("show") &&
       !e.target.closest("#topbar") && !e.target.closest("#botblock") &&
       !e.target.closest(".popover") && !e.target.closest(".drawer") && !e.target.closest("#toast")) {
-    pokeBars(); lastTap = 0; return;
+    pokeBars(); touchShowed = true; lastTap = 0; return;
   }
   if (!setDoubleTap || !isNativeLane()) return;
   if (e.target.closest("#topbar") || e.target.closest("#botblock") || e.target.closest(".popover") || e.target.closest(".drawer") || e.target.closest("#toast") || e.target.closest("#pausedOv")) return; /* v6.7: overlay taps reveal controls, never resume */
@@ -2454,7 +2451,7 @@ function toggleMute(){ autoMuted = false; /* v6.39: a manual mute choice ends th
 /* v6.39: unmute on video tap (official-player parity) — a tap is a real
    user gesture, so the browser opens the sound. Manual mutes are
    respected: only the autoplay-muted state is lifted by a tap. */
-video.addEventListener("click", function(){ if (autoMuted && video.muted) { video.muted = false; autoMuted = false; justUnmuted = true; syncVolIcon(); } });
+video.addEventListener("click", function(){ if (autoMuted && video.muted) { video.muted = false; autoMuted = false; syncVolIcon(); } });
 /* v6.47: FIRST tap ANYWHERE on the player opens the sound (v6.39 only
    unmuted on a tap on the video itself, so a tap on a control left the
    video muted). pointerdown is a real gesture, so the browser opens the
