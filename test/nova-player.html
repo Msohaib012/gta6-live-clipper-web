@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 16:36 PKT: v6.66 -->
-<title>Nova Player — v6.66</title>
+<!-- pages-rebuild 2026-11-25 16:41 PKT: v6.67 -->
+<title>Nova Player — v6.67</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.66"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.67"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1254,7 +1254,7 @@ function autoOpenFromLauncher(){
 function tryOpenFromLauncher(){
   if (lauTapped && lauReadyIdx >= 0 && !$("launcher").classList.contains("hidden")) {
     $("lauPlay").classList.add("hidden");
-    splashHold = false; $("launcher").classList.add("hidden"); /* a user tap wants the video, not the splash */
+    clearSplash(); /* a user tap wants the video, not the splash */
     openPlayer(SERVERS[lauReadyIdx].id, false);
   }
 }
@@ -1602,8 +1602,26 @@ var failChain = [], hlsFailed = false;
 var chainActive = false, deferredLanes = {}, adoptedDeferred = {};
 /* v6.65: splash hold — the launcher stays visible as a FAKE (cosmetic)
    animation while the direct chain loads behind it, and hides on first
-   playback or after 3s. It never gates the pick. */
-var splashHold = false;
+   playback or after 3s. It never gates the pick.
+   v6.67: the hold is VISIBILITY-aware — on his phone the Play tap opens
+   an ad tab, so the first seconds run while this tab is hidden; a blind
+   timer or a backgrounded 'playing' event hid the splash before he ever
+   saw it. The splash now only counts VISIBLE time: it hides 1.5s after
+   the tab is seen (or 1.5s after playback starts while visible). */
+var splashHold = false, splashTimer = null;
+function clearSplash(){
+  if (!splashHold) return;
+  splashHold = false;
+  clearTimeout(splashTimer); splashTimer = null;
+  var l = $("launcher"); if (l) l.classList.add("hidden");
+}
+function armSplashHide(ms){
+  clearTimeout(splashTimer); splashTimer = null;
+  splashTimer = setTimeout(clearSplash, ms);
+}
+document.addEventListener("visibilitychange", function(){
+  if (!document.hidden && splashHold) armSplashHide(1500);
+});
 function maybeAdoptDeferred(srvId, r){
   try {
     if (!chainActive || !r || !r.ok || !r.streams || !r.streams.length) return;
@@ -2259,7 +2277,7 @@ function armStuckWatch(){
   }, 20000);
 }
 video.addEventListener("timeupdate", function(){ try { stuckLastTime = video.currentTime; } catch (e) {} });
-video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { splashHold = false; $("launcher").classList.add("hidden"); } stuckLastTime = video.currentTime || 0; armStuckWatch(); });
+video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(1500); } stuckLastTime = video.currentTime || 0; armStuckWatch(); });
   video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
 video.addEventListener("error", function(){
@@ -2507,9 +2525,10 @@ function flashTip(btn){
     chainActive = true;
     /* v6.65: hold the launcher as a fake splash — it shows its title/art
        animation while the chain loads behind it, hides on playback or
-       after 3s, and never delays the pick. */
+       after 3s, and never delays the pick. v6.67: only count visible
+       time — while the ad tab covers this tab, no timer runs. */
     splashHold = true;
-    setTimeout(function(){ if (splashHold) { splashHold = false; var l = $("launcher"); if (l) l.classList.add("hidden"); } }, 3000);
+    if (!document.hidden) armSplashHide(3000);
     openPlayer(first, false);
   } catch (e) {}
 })();
