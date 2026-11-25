@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 18:12 PKT: v6.75 -->
-<title>Nova Player — v6.75</title>
+<!-- pages-rebuild 2026-11-25 18:10 PKT: v6.76 -->
+<title>Nova Player — v6.76</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -152,7 +152,7 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
 @media (orientation:landscape) and (max-height:500px){#botblock{padding:12px 12px;gap:4px}}
 /* v6.38 (his order): in portrait the bottom bar sat flush with the bottom
    edge — lift it a touch, portrait phones only. Landscape + desktop untouched. */
-@media (orientation:portrait) and (max-width:767px){#botblock{padding-bottom:calc(32px + env(safe-area-inset-bottom, 0px))}}
+@media (orientation:portrait) and (max-width:767px){#botblock{bottom:8px;padding-bottom:calc(32px + env(safe-area-inset-bottom, 0px))}} /* v6.76: bottom bar lifted a touch off the phone's bottom edge (his order — barely, 8px) */
 #botblock.hide{opacity:0;transform:translateY(30px);pointer-events:none}
 #deskTitle{display:none}
 @media (min-width:768px){
@@ -389,7 +389,7 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
    server (right) side untouched. */
 @media (orientation:landscape) and (max-height:500px){
   #topbar{padding:calc(10px + env(safe-area-inset-top, 0px)) calc(14px + env(safe-area-inset-right, 0px)) 10px min(16px, calc(2px + env(safe-area-inset-left, 0px)))}
-  #botblock{padding:14px calc(14px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) min(16px, calc(2px + env(safe-area-inset-left, 0px)))}
+  #botblock{bottom:8px;padding:14px calc(14px + env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) min(16px, calc(2px + env(safe-area-inset-left, 0px)))} /* v6.76: lifted a touch off the bottom edge in landscape too */
   /* v6.19: center play/pause + 15s buttons show in landscape too (were phone-portrait only). */
   #centerCtl{display:flex}
   #srvPanel{width:min(252px,calc(100vw - 24px));right:10px;top:54px;max-height:calc(100dvh - 92px)}
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.75"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.76"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
