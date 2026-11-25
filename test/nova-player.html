@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 12:20 PKT: v6.48 -->
-<title>Nova Player — Test Preview v6.48</title>
+<!-- pages-rebuild 2026-11-25 12:30 PKT: v6.49 -->
+<title>Nova Player — Test Preview v6.49</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -661,6 +661,7 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
         <span id="wobDesk"><span class="wobble" style="display:block;width:300px"><i></i></span></span>
         <span id="wobLand"><span class="wobble" style="display:block;width:100px"><i></i></span></span>
         <div id="lauSrcLine"><span id="lauSrcName">SERVER</span><span class="sep">/</span><span id="lauSrcNum">Source 01</span></div>
+        <button id="lauPlay" class="hidden" style="margin-top:20px;padding:14px 38px;font-size:18px;font-weight:700;color:#fff;background:#e50914;border:0;border-radius:999px;cursor:pointer" aria-label="Play">▶ Play</button>
       </div>
     </div>
     <div id="lauTips"></div>
@@ -780,7 +781,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.48"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.49"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1182,6 +1183,28 @@ function setSrcLine(name, idx){
   $("lauSrcName").textContent = name || "SERVER";
   $("lauSrcNum").textContent = "Source " + pad2((idx || 0) + 1);
 }
+/* v6.49: Play gate for sound autoplay. Chrome allows sound autoplay only
+   after the user has interacted with the DOMAIN in the browsing session
+   (chromium.org wording). This test link opens fresh from another app on
+   github.io, with no such interaction, so load-time play always starts
+   muted. The player therefore waits for ONE tap on this page (the Play
+   button, or any tap on the launcher) before opening — that tap IS the
+   domain interaction, so the stream can start with sound. Probes still
+   run in the background; the Play button appears when a server is Ready.
+   A tap made during probing is remembered and opens the player as soon
+   as it is Ready. Manual server picks in the panel still open directly. */
+var lauTapped = false, lauReadyIdx = -1;
+function tryOpenFromLauncher(){
+  if (lauTapped && lauReadyIdx >= 0 && !$("launcher").classList.contains("hidden")) {
+    $("lauPlay").classList.add("hidden");
+    openPlayer(SERVERS[lauReadyIdx].id, false);
+  }
+}
+$("lauPlay").addEventListener("click", function(){ lauTapped = true; tryOpenFromLauncher(); });
+$("launcher").addEventListener("pointerdown", function(e){
+  if (e.target.closest && e.target.closest("#lauTop")) return; /* Back/Servers buttons: interaction counts, but do not auto-open over the panel */
+  lauTapped = true; tryOpenFromLauncher();
+});
 /* tips rotator: coarse pointer -> common + touch tips; else common + keyboard tips */
 var TIPS_COMMON = ["Tap a failed server to try it again.", "Switch servers if the video gets stuck.", "Check your internet connection if buffering occurs.", "Change playback speed in the player settings."];
 var TIPS_TOUCH = ["Tap twice on the left or right to skip 15 seconds.", "Swipe and tap to select a different server."];
@@ -1266,11 +1289,11 @@ var probeDone = 0, probeTotal = 0;
       if (SERVERS[i].lane === "native" && pr0 && pr0.ok) { bestIdx = i; break; }
     }
     if (bestIdx < 0) bestIdx = 4; /* Vega, first embed server */
-    setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
+    setStatus("Tap Play to watch"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
     renderSrvPanel();
-    setTimeout(function(){
-      if (!$("launcher").classList.contains("hidden")) openPlayer(SERVERS[bestIdx].id, false);
-    }, 650);
+    lauReadyIdx = bestIdx;
+    $("lauPlay").classList.remove("hidden");
+    setTimeout(function(){ tryOpenFromLauncher(); }, 650); /* opens at once only if the user already tapped during probing (v6.49 gate) */
   }
 })();
 
@@ -1858,7 +1881,7 @@ function backToLauncher(){
   disarmWatchdog();
   closeAllSheets();
   $("launcher").classList.remove("hidden");
-  if (bestIdx >= 0) { setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx); }
+  if (bestIdx >= 0) { setStatus("Tap Play to watch"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; $("lauPlay").classList.remove("hidden"); }
 }
 
 /* ============ bars auto-hide + paused overlay ============ */
