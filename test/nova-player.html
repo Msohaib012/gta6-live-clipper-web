@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 19:31 PKT: v6.83 -->
-<title>Nova Player — v6.83</title>
+<!-- pages-rebuild 2026-11-25 19:34 PKT: v6.84 -->
+<title>Nova Player — v6.84</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -524,25 +524,25 @@ video::cue, video::-webkit-media-text-track-display{display:none !important}
 .epEmpty{text-align:center;padding:32px 12px}
 .epEmpty h2{font-size:18px;line-height:26px;font-weight:600}
 .epEmpty p{margin-top:8px;font-size:14px;line-height:20px;color:var(--mut);max-width:320px;margin-inline:auto}
-/* v6.83: mobile landscape ONLY (his order — "landscape me ek baar me 3 ki
-   jaga 6 episodes show ho"). The drawer showed one row of 3 big cards
-   and the rest needed scrolling in a ~360px-tall viewport. Now 6 cards
-   sit in ONE row with compact thumbs/fonts, so all 6 episodes of a
-   season are visible at once with no scroll. Portrait + PC untouched. */
+/* v6.84: mobile landscape ONLY (his correction 19:34 PKT — "ek time me
+   8 episode, ek line me nahi, 2 lines me rows me"). 4 cards per row, 2
+   rows visible at once = 8 episodes without scrolling; compact
+   thumbs/fonts/paddings so both rows fit a ~360px-tall viewport.
+   Supersedes v6.83's single row of 6. Portrait + PC untouched. */
 @media (orientation:landscape) and (max-height:500px){
-  #epDrawer .drBody{padding:10px 12px 12px}
-  .epTopRow{gap:8px;margin-bottom:8px}
+  #epDrawer .drBody{padding:8px 10px 10px}
+  .epTopRow{gap:8px;margin-bottom:6px}
   .epTopRow .epTitle{font-size:14px;line-height:20px}
   #epSeasonBtn{width:112px;padding:6px 8px;font-size:13px;line-height:18px}
   #epSeasonMenu{width:112px}
   #epSeasonMenu button{padding:6px 8px;font-size:13px;line-height:18px}
-  .epnav2{gap:6px;margin-bottom:8px}
-  .epnav2 button{padding:7px 6px;font-size:12px;line-height:16px}
-  .epgrid{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px}
-  .epcard{padding:3px}
+  .epnav2{gap:6px;margin-bottom:6px}
+  .epnav2 button{padding:6px 6px;font-size:12px;line-height:16px}
+  .epgrid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+  .epcard{padding:2px}
   .epcard .th b{font-size:24px;line-height:28px}
   .epcard .th .now{left:4px;bottom:4px;padding:1px 5px;font-size:9px;line-height:13px}
-  .epcard .en{margin-top:5px;font-size:12px;line-height:16px}
+  .epcard .en{margin-top:4px;font-size:12px;line-height:16px}
   .epcard .em{font-size:11px;line-height:14px}
 }
 
@@ -841,7 +841,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.83"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.84"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
