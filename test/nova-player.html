@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 17:00 PKT: v6.70 -->
-<title>Nova Player — v6.70</title>
+<!-- pages-rebuild 2026-11-25 17:05 PKT: v6.71 -->
+<title>Nova Player — v6.71</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.70"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.71"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1446,10 +1446,14 @@ function parseStream(s){
    in Settings > Media. Failed servers keep the .fail style (dimmed,
    struck-through name) as the only failure signal. */
 function srvRowHtml(srv){
-  var p = PROBE[srv.id];
   var sel = srv.id === curServer;
-  var fail = !!(srv.lane === "native" && p && !p.ok && !p.unreachable);
-  return '<button class="srv' + (fail ? " fail" : "") + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + "</span>" + (sel ? '<span class="st ok">' + ckSvg() + "</span>" : "") + "</span></button>";
+  /* v6.71: the cross means "proven unplayable" — skipped for any reason
+     (empty probe, dead streams, dead embed). The old probe-only rule
+     left skipped servers uncrossed (unreachable probes, ok-probe-but-
+     dead-streams, and all embed lanes never crossed). A dead lane
+     never shows the tick, even if it is still the current one. */
+  var fail = !!LANE_DEAD[srv.id];
+  return '<button class="srv' + (fail ? " fail" : "") + (sel ? " sel" : "") + '" data-srv="' + srv.id + '"><span class="r1"><span class="nm">' + srv.name + "</span>" + ((sel && !fail) ? '<span class="st ok">' + ckSvg() + "</span>" : "") + "</span></button>";
 }
 function ckSvg(){ return '<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>'; }
 function xSvg(){ return '<svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>'; }
@@ -1557,7 +1561,7 @@ function switchEpisode(s, e){
   closeAllSheets();
   openPlayer(curServer || "arenahls", true);
   chainActive = true; /* new episode, new auto chain (the manual=true above only picked the episode) */
-  deferredLanes = {}; adoptedDeferred = {};
+  deferredLanes = {}; adoptedDeferred = {}; LANE_DEAD = {}; /* v6.71: new episode, new facts — dead marks reset */
 }
 function stepEpisode(dir){
   var n = epCount(MEDIA_SEASON);
@@ -1601,6 +1605,11 @@ var failChain = [], hlsFailed = false;
    is deferred, not dead: when its probe lands ok while no server is
    playing yet and the user has not picked manually, it is adopted. */
 var chainActive = false, deferredLanes = {}, adoptedDeferred = {};
+/* v6.71: LANE_DEAD = proven unplayable for THIS title/episode — the panel
+   cross. Set only at a decision point (probe empty after retry, every
+   stream failed, dead embed), never on a mere probe reading; cleared
+   when the lane plays again or the episode changes. */
+var LANE_DEAD = {};
 /* v6.65: splash hold — the launcher stays visible as a FAKE (cosmetic)
    animation while the direct chain loads behind it, and hides on first
    playback or after 3s. It never gates the pick.
@@ -1929,17 +1938,19 @@ function maybePreload(){
 var triedStreamIdx = {};
 function failStream(why){
   try {
-    if (!isNativeLane() || !curStreams || !curStreams.length) { failoverFrom(curServer, why); return; }
-    for (var i = 0; i < curStreams.length; i++) {
-      if (!triedStreamIdx[i]) {
-        triedStreamIdx[i] = true;
-        curStreamIdx = i;
-        playPickedStream(curStreams[i], 0, true);
-        return;
+    if (isNativeLane() && curStreams && curStreams.length) {
+      for (var i = 0; i < curStreams.length; i++) {
+        if (!triedStreamIdx[i]) {
+          triedStreamIdx[i] = true;
+          curStreamIdx = i;
+          playPickedStream(curStreams[i], 0, true);
+          return;
+        }
       }
     }
+    LANE_DEAD[curServer] = true; /* v6.71: every stream tried (or none existed) — proven dead, cross it */
     failoverFrom(curServer, why);
-  } catch (e) { failoverFrom(curServer, why); }
+  } catch (e) { try { LANE_DEAD[curServer] = true; } catch (e2) {} failoverFrom(curServer, why); }
 }
 function playNative(streams){
   curStreams = streams.map(parseStream).filter(function(x){ return x.url; });
@@ -2026,13 +2037,14 @@ function armWatchdog(srv){
       clearInterval(embedTimer3); embedTimer3 = null;
       if (!watchdogArmed) return;
       watchdogArmed = false;
+      LANE_DEAD[srv] = true; /* v6.71: dead embed — cross it */
       failoverFrom(srv, serverName(srv) + " did not respond");
     }, EMBED_COUNTDOWN_MS);
   }, EMBED_STUCK_MS);
 }
-/* v6.54: a lane counts as dead ONLY on the panel-cross condition — its
-   probe finished, failed, and was reachable. Unresolved / unreachable
-   lanes are NOT dead (no fake dead) and are tried in menu order. */
+/* v6.71: the panel cross is LANE_DEAD, set only at decision points
+   (probe empty after retry, every stream failed, dead embed) — never
+   on a mere probe reading. Unresolved / untried lanes show no mark. */
 function probeDead(id){ var pr = PROBE[id]; return !!(pr && !pr.ok && !pr.unreachable); }
 function nextFailoverCandidate(failedId){
   var live = [], dead = [];
@@ -2106,7 +2118,7 @@ function openPlayer(srvId, manual){
         renderSrvPanel(); refreshSettingsIfOpen();
         maybeAdoptDeferred(srvId, r);
         if (curServer !== srvId) return;
-        if (r.ok) { showSpin(false); playNative(r.streams); return; }
+        if (r.ok) { delete LANE_DEAD[srvId]; showSpin(false); playNative(r.streams); return; }
         if (!manual && !retryDone) {
           retryDone = true;
           probeLane(srv, true).then(function(r2){
@@ -2114,12 +2126,13 @@ function openPlayer(srvId, manual){
             maybeAdoptDeferred(srvId, r2);
             if (curServer !== srvId) return;
             showSpin(false);
-            if (r2.ok) playNative(r2.streams);
-            else failoverFrom(srvId, serverName(srvId) + ": no stream found");
+            if (r2.ok) { delete LANE_DEAD[srvId]; playNative(r2.streams); }
+            else { LANE_DEAD[srvId] = true; failoverFrom(srvId, serverName(srvId) + ": no stream found"); }
           });
           return;
         }
         showSpin(false);
+        LANE_DEAD[srvId] = true;
         failoverFrom(srvId, serverName(srvId) + ": no stream found");
       });
     }
@@ -2319,7 +2332,7 @@ function armStuckWatch(){
   }, 20000);
 }
 video.addEventListener("timeupdate", function(){ try { stuckLastTime = video.currentTime; } catch (e) {} });
-video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(2500); } stuckLastTime = video.currentTime || 0; armStuckWatch(); });
+video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(2500); } stuckLastTime = video.currentTime || 0; armStuckWatch(); delete LANE_DEAD[curServer]; /* v6.71: it plays — the cross lifts */ if ($("srvPanel") && $("srvPanel").classList.contains("open")) renderSrvPanel(); });
   video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
 video.addEventListener("error", function(){
