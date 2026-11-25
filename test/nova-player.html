@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 12:30 PKT: v6.49 -->
-<title>Nova Player — Test Preview v6.49</title>
+<!-- pages-rebuild 2026-11-25 12:39 PKT: v6.50 -->
+<title>Nova Player — Test Preview v6.50</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -781,7 +781,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.49"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.50"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1190,9 +1190,11 @@ function setSrcLine(name, idx){
    muted. The player therefore waits for ONE tap on this page (the Play
    button, or any tap on the launcher) before opening — that tap IS the
    domain interaction, so the stream can start with sound. Probes still
-   run in the background; the Play button appears when a server is Ready.
-   A tap made during probing is remembered and opens the player as soon
-   as it is Ready. Manual server picks in the panel still open directly. */
+   run in the background. v6.50 (his order): the Play button itself is
+   NEVER shown — the gate is the tap anywhere on the launcher, invisible;
+   status stays "Ready". A tap made during probing is remembered and
+   opens the player as soon as it is Ready. Manual server picks in the
+   panel still open directly. */
 var lauTapped = false, lauReadyIdx = -1;
 function tryOpenFromLauncher(){
   if (lauTapped && lauReadyIdx >= 0 && !$("launcher").classList.contains("hidden")) {
@@ -1289,11 +1291,10 @@ var probeDone = 0, probeTotal = 0;
       if (SERVERS[i].lane === "native" && pr0 && pr0.ok) { bestIdx = i; break; }
     }
     if (bestIdx < 0) bestIdx = 4; /* Vega, first embed server */
-    setStatus("Tap Play to watch"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
+    setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
     renderSrvPanel();
     lauReadyIdx = bestIdx;
-    $("lauPlay").classList.remove("hidden");
-    setTimeout(function(){ tryOpenFromLauncher(); }, 650); /* opens at once only if the user already tapped during probing (v6.49 gate) */
+    setTimeout(function(){ tryOpenFromLauncher(); }, 650); /* opens at once only if the user already tapped during probing (v6.49 gate, button hidden in v6.50) */
   }
 })();
 
@@ -1881,7 +1882,7 @@ function backToLauncher(){
   disarmWatchdog();
   closeAllSheets();
   $("launcher").classList.remove("hidden");
-  if (bestIdx >= 0) { setStatus("Tap Play to watch"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; $("lauPlay").classList.remove("hidden"); }
+  if (bestIdx >= 0) { setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; }
 }
 
 /* ============ bars auto-hide + paused overlay ============ */
