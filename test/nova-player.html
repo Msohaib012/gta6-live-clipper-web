@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 18:45 PKT: v6.78 -->
-<title>Nova Player — v6.78</title>
+<!-- pages-rebuild 2026-11-25 18:50 PKT: v6.79 -->
+<title>Nova Player — v6.79</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -820,7 +820,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.78"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.79"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2160,33 +2160,18 @@ function maybeRearmWatchdog(){
   armWatchdog(curServer);
 }
 function armWatchdog(srv){
+  /* v6.79: REMOVED — the embed watchdog was a pure 15s timer with no
+     signal from the cross-origin iframe, so it faked switches while the
+     embed was actually playing ("Vega has not started yet" over a playing
+     movie, his screenshot 2026-11-25). Embed playback is unobservable:
+     no events cross the iframe boundary, so no honest auto-switch exists.
+     His order: auto-switch lives ONLY on our own (native) lanes, where
+     probes + stream errors are real signals; embed lanes never auto-switch
+     — the user picks another server in the panel if an embed is dead.
+     Kept as a no-op so playEmbed / maybeRearmWatchdog call sites stay
+     untouched; cancelWatchdog/disarmWatchdog still clear the timers. */
   cancelWatchdog();
-  watchdogArmed = true;
-  embedTimer1 = setTimeout(function(){
-    if (!watchdogArmed) return;
-    var next = nextFailoverCandidate(srv);
-    var nextName = next ? serverName(next) : null;
-    var remain = Math.round(EMBED_COUNTDOWN_MS / 1000);
-    var msg = function(n){
-      return serverName(srv) + " has not started yet — " + (nextName ? nextName + " will be tried" : "the server panel will open") + " in " + n + " seconds. Tap the cloud button to stop.";
-    };
-    toast(msg(remain), EMBED_COUNTDOWN_MS + 1500);
-    clearInterval(embedTimer3);
-    embedTimer3 = setInterval(function(){
-      if (!watchdogArmed) { clearInterval(embedTimer3); embedTimer3 = null; return; }
-      remain--;
-      if (remain <= 0) { clearInterval(embedTimer3); embedTimer3 = null; return; }
-      var t = $("toastTxt");
-      if (t && !$("toast").classList.contains("hidden")) t.textContent = msg(remain);
-    }, 1000);
-    embedTimer2 = setTimeout(function(){
-      clearInterval(embedTimer3); embedTimer3 = null;
-      if (!watchdogArmed) return;
-      watchdogArmed = false;
-      LANE_DEAD[srv] = true; /* v6.71: dead embed — cross it */
-      failoverFrom(srv, serverName(srv) + " did not respond");
-    }, EMBED_COUNTDOWN_MS);
-  }, EMBED_STUCK_MS);
+  watchdogArmed = false;
 }
 /* v6.71: the panel cross is LANE_DEAD, set only at decision points
    (probe empty after retry, every stream failed, dead embed) — never
