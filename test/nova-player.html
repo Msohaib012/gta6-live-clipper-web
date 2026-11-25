@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 18:50 PKT: v6.79 -->
-<title>Nova Player — v6.79</title>
+<!-- pages-rebuild 2026-11-25 19:04 PKT: v6.80 -->
+<title>Nova Player — v6.80</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -820,7 +820,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.79"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.80"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1130,8 +1130,24 @@ function probeArenaHls(){
     return { ok: true, streams: [{ url: ARENA_PROXY + encodeURIComponent(hlsUrl), name: "Arenaflix", quality: "", forceHls: true }] };
   }).catch(function(){ return { ok: false, streams: [] }; });
 }
+/* v6.80: preview-ness is a URL STRUCTURE signal, never a substring.
+   The old /preview/i test killed playable streams whose CDN filename
+   merely contains the word — Student of the Year (138122) Prime serves
+   index_preview_287.m3u8, a real media playlist (HTTP 200, segments),
+   and the filter emptied the lane, crossed it, and pushed playback to
+   Vega while the official player played the same stream. Only a
+   /preview/ path segment, a preview query param, or a bare preview
+   filename counts as a preview now. */
+function isPreviewUrl(u){
+  u = String(u || "");
+  if (/\/preview\//i.test(u)) return true;
+  if (/[?&]preview(=|&|#|$)/i.test(u)) return true;
+  var file = u.split("?")[0].split("#")[0].split("/").pop() || "";
+  if (/^preview\./i.test(file)) return true;
+  return false;
+}
 function stripPreviews(d){
-  if (d && d.streams) d.streams = d.streams.filter(function(s){ return !/preview/i.test(s.url || ""); });
+  if (d && d.streams) d.streams = d.streams.filter(function(s){ return !isPreviewUrl(s.url); });
   return d;
 }
 function fetchJSON(url, ms){
@@ -1175,8 +1191,12 @@ function probeLane(srv, fresh){
       /* v6.72: the cross follows the LAST probe answer too — a lane the
          chain skips on its probe alone (never opened) must still show
          crossed. Any later ok answer lifts it; the chain's fresh
-         re-probe is the revival path for transient empties. */
-      if (r.ok) delete LANE_DEAD[srv.id]; else LANE_DEAD[srv.id] = true;
+         re-probe is the revival path for transient empties.
+         v6.80: a TIMEOUT is not an answer — both fetches unanswered
+         (unreachable) means the lane was never reached, usually a slow
+         net, and must never cross it. Only an API that actually answered
+         "no streams" earns the cross. */
+      if (r.ok) delete LANE_DEAD[srv.id]; else if (!r.unreachable) LANE_DEAD[srv.id] = true;
       return r;
     });
   }
@@ -1316,6 +1336,12 @@ attachDragClose("epDrawer", "epBody", closeDrawers); attachDragClose("settings",
 
 /* ============ launcher ============ */
 var lauBg = $("lauBg");
+/* v6.80: the launcher content must never wait for the backdrop image —
+   #lauCenter starts at opacity 0 and .in was added only on the image
+   load, so on a slow net the launcher sat empty for 1–2s and then the
+   title/logo popped in: the flicker he reported. Content shows at once;
+   the backdrop still fades in behind it via .loaded. */
+$("lauCenter").classList.add("in");
 if (META.bg) {
   lauBg.src = META.bg;
   lauBg.addEventListener("load", function(){ lauBg.classList.add("loaded"); $("lauCenter").classList.add("in"); });
@@ -2263,12 +2289,12 @@ function openPlayer(srvId, manual){
             if (curServer !== srvId) return;
             showSpin(false);
             if (r2.ok) { delete LANE_DEAD[srvId]; playNative(r2.streams); }
-            else { LANE_DEAD[srvId] = true; failoverFrom(srvId, serverName(srvId) + ": no stream found"); }
+            else { if (!r2.unreachable) LANE_DEAD[srvId] = true; /* v6.80: an unanswered re-probe moves the chain on but never crosses — a timeout is slowness, not death */ failoverFrom(srvId, serverName(srvId) + ": no stream found"); }
           });
           return;
         }
         showSpin(false);
-        LANE_DEAD[srvId] = true;
+        if (!r.unreachable) LANE_DEAD[srvId] = true; /* v6.80: see the re-probe branch above */
         failoverFrom(srvId, serverName(srvId) + ": no stream found");
       });
     }
@@ -2455,8 +2481,10 @@ video.addEventListener("pause", function(){ updatePlayIco(); if (video.readyStat
    forever on a trickling CDN) fails over instead of spinning for
    minutes. Progress resets the clock; pause/switch clears it (stopAll). */
 var stuckTimer = null, stuckLastTime = -1, playedOnce = false; /* v6.73: playedOnce separates a user-paused stream from one that never started */
+var lastProgressAt = 0; /* v6.80: set only by real `progress` events (bytes arriving) — the stuck/chain-guard killers must never murder a lane that is still loading on a slow net */
 function armStuckWatch(){
   clearTimeout(stuckTimer); stuckTimer = null;
+  var armedAt = Date.now(); /* v6.80: the window this arm watches — progress after this instant means the lane is alive */
   stuckLastTime = video.currentTime || 0; /* v6.73: progress is measured from the arm moment — a stream that never moves fails over at the first check instead of wasting a cycle */
   stuckTimer = setTimeout(function(){
     stuckTimer = null;
@@ -2464,6 +2492,11 @@ function armStuckWatch(){
       if (!isNativeLane() || !curServer) return;
       if (video.ended) return;
       if (video.currentTime > stuckLastTime + 0.05) { stuckLastTime = video.currentTime; armStuckWatch(); return; }
+      /* v6.80: bytes arrived during this window — the lane is loading, not
+         dead. On a slow net a healthy stream can sit at 0:00 for the whole
+         20s while segments trickle in; killing it here is the fake death
+         that crossed every native lane and pushed playback to Vega. */
+      if (lastProgressAt >= armedAt) { armStuckWatch(); return; }
       /* v6.73: the old blanket "paused -> return" killed the watch with no
          re-arm — a stream that never started sat at 0:00 forever (Wicker).
          Paused AFTER playing = the user paused: keep watching, never fail
@@ -2489,6 +2522,7 @@ function armStuckWatch(){
 var chainGuardTimer = null, chainGuardSeq = 0, chainGuardAt = 0;
 function armChainGuard(){
   var seq = ++chainGuardSeq;
+  var armedAt = Date.now(); /* v6.80: same progress gate as the stuck watch */
   clearTimeout(chainGuardTimer); chainGuardTimer = null;
   chainGuardAt = video.currentTime || 0;
   chainGuardTimer = setTimeout(function(){
@@ -2499,6 +2533,7 @@ function armChainGuard(){
       if (video.ended) return;
       if (video.paused && playedOnce) { armChainGuard(); return; }
       if (video.currentTime > chainGuardAt + 0.05) { armChainGuard(); return; }
+      if (lastProgressAt >= armedAt) { armChainGuard(); return; } /* v6.80: loading, not dead */
       failStream(serverName(curServer) + " did not start");
     } catch (e) {}
   }, 35000);
@@ -2507,6 +2542,7 @@ video.addEventListener("timeupdate", function(){ try { stuckLastTime = video.cur
 video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else maybeClearSplash(); /* v6.77: dismiss on playback, but not before the minimum beat and never with sound behind the splash — the old at-once dismiss (v6.75) made the launcher flash by unseen on fast nets */ } stuckLastTime = video.currentTime || 0; playedOnce = true; armStuckWatch(); delete LANE_DEAD[curServer]; /* v6.71: it plays — the cross lifts */ if ($("srvPanel") && $("srvPanel").classList.contains("open")) renderSrvPanel(); });
   video.addEventListener("canplay", function(){ if (video.readyState >= 3) showSpin(false); });
 video.addEventListener("waiting", function(){ if (isNativeLane()) showSpin(true); });
+video.addEventListener("progress", function(){ lastProgressAt = Date.now(); }); /* v6.80: bytes-arriving signal for the stuck/chain-guard gates */
 video.addEventListener("error", function(){
   if (isNativeLane() && !hlsFailed) { hlsFailed = true; failStream(serverName(curServer) + " stream did not play"); }
 });
