@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 11:55 PKT: v6.47 -->
-<title>Nova Player — Test Preview v6.47</title>
+<!-- pages-rebuild 2026-11-25 12:20 PKT: v6.48 -->
+<title>Nova Player — Test Preview v6.48</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -780,7 +780,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.47"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.48"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -2061,6 +2061,11 @@ function armPlayWatchdog(attempt){
   }, 2500);
 }
 function togglePlay(){
+  /* v6.48: swallow the Play/Pause click that belongs to the tap which
+     just opened the sound, when the video was playing — that tap only
+     unmutes, it never pauses. */
+  if (unmuteTapAt && unmuteTapWhilePlaying && Date.now() - unmuteTapAt < 600) { unmuteTapAt = 0; return; }
+  unmuteTapAt = 0;
   if (video.classList.contains("hidden")) return;
   if (video.paused) { video.play().catch(function(){}); armPlayWatchdog(0); }
   else video.pause();
@@ -2199,11 +2204,20 @@ video.addEventListener("click", function(){ if (autoMuted && video.muted) { vide
    sound at once. The mute button and volume slider are excluded: the
    mute button's own click already toggles, and the slider already
    unmutes on input — a manual mute choice is never undone here. */
+/* v6.48: the tap that opens the sound must NEVER pause a playing video.
+   His phone report: tap anywhere -> video stops AND unmutes. Cause: this
+   pointerdown unmutes, then the same tap's click on the centre or bottom
+   Play/Pause button runs togglePlay and pauses. So this tap is recorded;
+   togglePlay swallows it when the video was playing. A paused video is
+   NOT swallowed: that tap plays it with sound. */
+var unmuteTapAt = 0, unmuteTapWhilePlaying = false;
 document.addEventListener("pointerdown", function(e){
   if (!autoMuted || !video.muted) return;
   if (!$("launcher").classList.contains("hidden")) return;
   var t = e.target;
   if (t && t.closest && (t.closest("#btnMute") || t.closest("#volSlider") || t.closest("#toastX"))) return;
+  unmuteTapWhilePlaying = !video.paused;
+  unmuteTapAt = Date.now();
   video.muted = false; autoMuted = false; syncVolIcon();
 }, true);
 /* ============ control-button tooltips: transient on touch, never stuck ============
