@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 12:46 PKT: v6.51 -->
-<title>Nova Player — Test Preview v6.51</title>
+<!-- pages-rebuild 2026-11-25 13:16 PKT: v6.52 -->
+<title>Nova Player — Test Preview v6.52</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -782,7 +782,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player Test v6.51"; } catch(e){}
+  try { document.title = META.title + " — Nova Player Test v6.52"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -933,7 +933,7 @@ var CASTLE_API = "https://castle-api.virtualsipra01.workers.dev";
 var VELVET_API = "https://moviebox-api.mkdrivedata.workers.dev";
 var WORKER = "https://thugtv-proxy.virtualsipra01.workers.dev/?url=";
 function serverById(id){ var s = SERVERS.filter(function(x){ return x.id === id; })[0]; return s || null; }
-function serverName(id){ var s = serverById(id); return s ? s.name : id; }
+function serverName(id){ var s = serverById(id); return s ? s.name : "Stream"; }
 function laneOf(id){ var s = serverById(id); return s ? s.lane : "embed"; }
 function serverIndex(id){ for (var i = 0; i < SERVERS.length; i++) if (SERVERS[i].id === id) return i; return 0; }
 function embedUrl(srv){
@@ -1276,6 +1276,7 @@ var probeDone = 0, probeTotal = 0;
          the first usable server is certain, the probes are done for
          launcher purposes; late probes still land in PROBE/panel. */
       if (probeDone >= probeTotal || firstUsableCertain() >= 0) { probesDone = true; maybeFinish(); }
+      maybeAdoptLate(); /* v6.52: late probes can claim an unpicked launcher */
     });
   });
   setTimeout(function(){ if (probeDone < probeTotal) { probesDone = true; maybeFinish(); } }, 14000);
@@ -1291,11 +1292,41 @@ var probeDone = 0, probeTotal = 0;
       var pr0 = PROBE[SERVERS[i].id];
       if (SERVERS[i].lane === "native" && pr0 && pr0.ok) { bestIdx = i; break; }
     }
-    if (bestIdx < 0) bestIdx = 4; /* Vega, first embed server */
-    setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
+    /* v6.52: Vega is the fallback ONLY when every native probe has resolved
+       and none is usable (all proven dead — the panel crosses them). If
+       natives are still checking or unreachable, there is NO pick: the
+       launcher stays, late probes adopt it below, and a tap never opens
+       the empty embed server. A missing cross is NOT proof a server
+       works — it also means its probe never finished. */
+    if (bestIdx < 0 && probeDone >= probeTotal) bestIdx = 4; /* Vega, first embed server */
+    if (bestIdx < 0) { setStatus("Checking servers..."); setSrcLine("SERVER", 0); lauReadyIdx = -1; }
+    else { setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; }
     renderSrvPanel();
-    lauReadyIdx = bestIdx;
     setTimeout(function(){ tryOpenFromLauncher(); }, 650); /* opens at once only if the user already tapped during probing (v6.49 gate, button hidden in v6.50) */
+  }
+  /* v6.52: late adoption — finishProbe may end with no pick while natives
+     are still checking. When a late probe lands usable (or every probe has
+     resolved dead), claim the launcher now. Never touches an open player
+     or an already-picked server. */
+  function maybeAdoptLate(){
+    if (!finished || $("launcher").classList.contains("hidden")) return;
+    if (lauReadyIdx >= 0) return;
+    var idx = firstUsableCertain();
+    if (idx >= 0) {
+      bestIdx = idx;
+      setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
+      renderSrvPanel();
+      lauReadyIdx = bestIdx;
+      tryOpenFromLauncher();
+      return;
+    }
+    if (probeDone >= probeTotal) {
+      bestIdx = 4; /* all natives resolved dead — Vega fallback, as before */
+      setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
+      renderSrvPanel();
+      lauReadyIdx = bestIdx;
+      tryOpenFromLauncher();
+    }
   }
 })();
 
@@ -1698,7 +1729,16 @@ function preloadNative(srvId, streams){
     ph.on(Hls.Events.SUBTITLE_TRACKS_UPDATED, function(){ bindTextTracks(); refreshSettingsIfOpen(); });
     ph.on(Hls.Events.ERROR, function(ev, data){
       if (data && data.fatal) {
-        if (!$("launcher").classList.contains("hidden") && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " stream failed"); }
+        /* v6.52: a preload-phase failure must NEVER hijack the launcher.
+           curServer is still null here, so the old failover printed "null
+           stream failed" and auto-opened Vega before the user ever tapped,
+           even though the probe said the server was usable. Just drop the
+           preload and stay on the launcher; a tap re-loads the server
+           fresh with a real curServer, so any later failover names the
+           right server. (Once adopted, launcher is hidden, so this branch
+           no longer runs for playback errors.) */
+        if (!$("launcher").classList.contains("hidden") && !hlsFailed && !curServer) { showSpin(false); destroyPreload(); }
+        else if (!$("launcher").classList.contains("hidden") && !hlsFailed) { hlsFailed = true; showSpin(false); failoverFrom(curServer, serverName(curServer) + " stream failed"); }
         else destroyPreload();
       }
     });
@@ -1883,7 +1923,13 @@ function backToLauncher(){
   disarmWatchdog();
   closeAllSheets();
   $("launcher").classList.remove("hidden");
-  if (bestIdx >= 0) { setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; }
+  /* v6.52: re-pick from the CURRENT probe state — a server that landed
+     usable after the first pick (e.g. Prime via a manual play) must be the
+     launcher pick on the way back, not a stale Vega fallback. */
+  var bi = -1;
+  for (var i = 0; i < SERVERS.length; i++) { var prb = PROBE[SERVERS[i].id]; if (SERVERS[i].lane === "native" && prb && prb.ok) { bi = i; break; } }
+  if (bi < 0) bi = bestIdx;
+  if (bi >= 0) { setStatus("Ready"); setSrcLine(SERVERS[bi].name, bi); lauReadyIdx = bi; }
 }
 
 /* ============ bars auto-hide + paused overlay ============ */
