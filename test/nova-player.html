@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 17:30 PKT: v6.73 -->
-<title>Nova Player — v6.73</title>
+<!-- pages-rebuild 2026-11-25 17:38 PKT: v6.74 -->
+<title>Nova Player — v6.74</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -809,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.73"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.74"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1340,6 +1340,7 @@ var probeDone = 0, probeTotal = 0;
   var seqNames = rwServers.map(function(s){ return s.name; });
   var seqTotal = seqNames.length * 2;
   function showSeq(i){
+    if (curServer) return; /* v6.74: the chain owns the header label once picked — the sequence must not overwrite it */
     var nm = seqNames[Math.floor(i / 2)];
     setStatus((i % 2 ? "Connecting to " : "Checking ") + nm);
     setSrcLine(nm, Math.floor(i / 2));
@@ -1412,8 +1413,8 @@ var probeDone = 0, probeTotal = 0;
        the empty embed server. A missing cross is NOT proof a server
        works — it also means its probe never finished. */
     if (bestIdx < 0 && probeDone >= probeTotal) bestIdx = 4; /* Vega, first embed server */
-    if (bestIdx < 0) { setStatus("Checking servers..."); setSrcLine("SERVER", 0); lauReadyIdx = -1; }
-    else { setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; }
+    if (bestIdx < 0) { setStatus("Checking servers..."); if (!curServer) setSrcLine("SERVER", 0); lauReadyIdx = -1; }
+    else { setStatus("Ready"); if (!curServer) setSrcLine(SERVERS[bestIdx].name, bestIdx); lauReadyIdx = bestIdx; }
     renderSrvPanel();
     setTimeout(function(){ autoOpenFromLauncher(); }, 650); /* v6.58: auto-open at Ready (animation kept); a tap during probing still opens at once via the gate */
   }
@@ -1427,7 +1428,7 @@ var probeDone = 0, probeTotal = 0;
     var idx = firstUsableCertain();
     if (idx >= 0) {
       bestIdx = idx;
-      setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
+      setStatus("Ready"); if (!curServer) setSrcLine(SERVERS[bestIdx].name, bestIdx);
       renderSrvPanel();
       lauReadyIdx = bestIdx;
       autoOpenFromLauncher();
@@ -1435,7 +1436,7 @@ var probeDone = 0, probeTotal = 0;
     }
     if (probeDone >= probeTotal) {
       bestIdx = 4; /* all natives resolved dead — Vega fallback, as before */
-      setStatus("Ready"); setSrcLine(SERVERS[bestIdx].name, bestIdx);
+      setStatus("Ready"); if (!curServer) setSrcLine(SERVERS[bestIdx].name, bestIdx);
       renderSrvPanel();
       lauReadyIdx = bestIdx;
       autoOpenFromLauncher();
@@ -1709,6 +1710,7 @@ function isEmbedLane(){ return curServer && laneOf(curServer) === "embed" && !fr
 function stopAll(keepMedia){
   cancelWatchdog();
   clearTimeout(stuckTimer); stuckTimer = null; /* v6.63: stuck watch dies with the stream */
+  clearTimeout(chainGuardTimer); chainGuardTimer = null; /* v6.74: the chain guard dies with the attempt */
   /* v6.33: keepMedia (launcher preload adopt) — the preloaded Hls + video
      element survive; everything else resets as before. */
   if (!keepMedia) {
@@ -1818,6 +1820,7 @@ function playPickedStream(st, pos, autoplay){
   var _si = -1; try { _si = curStreams.indexOf(st); } catch (e) {}
   if (_si >= 0) triedStreamIdx[_si] = true;
   armStuckWatch(); /* v6.70: a retry that never plays must still be caught */
+  armChainGuard(); /* v6.74: the backstop — nothing but a new attempt resets it */
   video.classList.remove("hidden");
   frame.classList.add("hidden");
   applyVideoPrefs();
@@ -2139,6 +2142,10 @@ function openPlayer(srvId, manual){
   buildPausedOv();
   syncNextEpBtn();
   renderSrvPanel();
+  /* v6.74: the header label belongs to the chain once a server is picked —
+     before this, only the launcher sequence ever wrote it, so it froze on
+     the sequence's last lane ("Bolt / Source 02") while Prime played. */
+  (function(){ var bi = -1; for (var k = 0; k < SERVERS.length; k++) if (SERVERS[k].id === srvId) { bi = k; break; } setSrcLine(serverName(srvId), bi < 0 ? 0 : bi); })();
   var srv = serverById(srvId);
   if (srv && srv.lane === "native") {
     var p = PROBE[srvId];
@@ -2148,6 +2155,7 @@ function openPlayer(srvId, manual){
       video.classList.remove("hidden");
       frame.classList.add("hidden");
       applyLaneChrome();
+      armChainGuard(); /* v6.74: the adopted load stalls without ever entering playPickedStream — guard it too */
       attemptPlay();
     }
     else if (p && p.streams && p.streams.length) playNative(p.streams);
@@ -2384,6 +2392,36 @@ function armStuckWatch(){
       failStream(serverName(curServer) + " stream stuck");
     } catch (e) {}
   }, 20000);
+}
+/* v6.74: CHAIN GUARD — the backstop the stuck watch could not be. The
+   stuck watch is re-armed by playPickedStream, the `playing` event and
+   its own progress branch, so event churn (repeated openPlayer calls,
+   hls re-attachments, play/pause cycling) can keep resetting its 20s
+   before it ever fires — Spider-Man sat at 0:00 on Bolt for 60s+ on
+   v6.73 with no toast and no failover. This guard is armed ONLY by
+   playPickedStream (and the preload-adopt branch) and NEVER by any
+   playback event, so nothing but a new attempt resets it: 35s after an
+   attempt starts, if time has not advanced and the user has not paused
+   a stream that already played, the stream is declared dead and the
+   chain moves on. A working stream always advances (re-arm); a
+   user-paused stream always re-arms; only a never-starting attempt
+   fails over. */
+var chainGuardTimer = null, chainGuardSeq = 0, chainGuardAt = 0;
+function armChainGuard(){
+  var seq = ++chainGuardSeq;
+  clearTimeout(chainGuardTimer); chainGuardTimer = null;
+  chainGuardAt = video.currentTime || 0;
+  chainGuardTimer = setTimeout(function(){
+    chainGuardTimer = null;
+    try {
+      if (seq !== chainGuardSeq) return;
+      if (!isNativeLane() || !curServer) return;
+      if (video.ended) return;
+      if (video.paused && playedOnce) { armChainGuard(); return; }
+      if (video.currentTime > chainGuardAt + 0.05) { armChainGuard(); return; }
+      failStream(serverName(curServer) + " did not start");
+    } catch (e) {}
+  }, 35000);
 }
 video.addEventListener("timeupdate", function(){ try { stuckLastTime = video.currentTime; } catch (e) {} });
 video.addEventListener("playing", function(){ showSpin(false); clearTimeout(playWatchdog); playWatchdog = null; chainActive = false; if (splashHold) { if (document.hidden) { /* v6.67: do not hide unseen — the visibility handler shows it on return */ } else armSplashHide(2500); } stuckLastTime = video.currentTime || 0; playedOnce = true; armStuckWatch(); delete LANE_DEAD[curServer]; /* v6.71: it plays — the cross lifts */ if ($("srvPanel") && $("srvPanel").classList.contains("open")) renderSrvPanel(); });
