@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-25 15:49 PKT: v6.59 -->
-<title>Nova Player — v6.59</title>
+<!-- pages-rebuild 2026-11-25 15:52 PKT: v6.60 -->
+<title>Nova Player — v6.60</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -757,8 +757,35 @@ var DEMO = {
 var META = DEMO[MEDIA_TMDB] || {
   title: qp.get("title") || ("Title " + MEDIA_TMDB), kind: MEDIA_TYPE === "tv" ? "Series" : "Movie",
   year: "", runtime: "", rate: "", tagline: "", ov: "", genres: [],
-  logo: "", bg: "", seasons: MEDIA_TYPE === "tv" ? { 1: 8 } : null, epNames: null
+  logo: "", bg: qp.get("backdrop") || qp.get("poster") || "", seasons: MEDIA_TYPE === "tv" ? { 1: 8 } : null, epNames: null
 };
+/* v6.60: host-supplied metadata (title/backdrop from the /watch page, which
+   already fetched TMDB) paints instantly — no waiting on the SEO-chunk or
+   logo-bucket fetches, and no "Title <id>" fallback flash. */
+var META_HOST_TITLE = !DEMO[MEDIA_TMDB] && !!qp.get("title");
+function paintBg(){
+  if (!META.bg) return;
+  var lb = $("lauBg");
+  if (lb && lb.getAttribute("src") !== META.bg) {
+    lb.src = META.bg;
+    if (!lb._bgBound) { lb._bgBound = true; lb.addEventListener("load", function(){ lb.classList.add("loaded"); var c = $("lauCenter"); if (c) c.classList.add("in"); }); }
+  }
+}
+function applyHostMeta(d){
+  if (!d || typeof d !== "object") return;
+  var changed = false;
+  if (typeof d.title === "string" && d.title) { META.title = d.title; META_HOST_TITLE = true; META_TITLE_IS_FALLBACK = false; changed = true; }
+  var art = d.backdrop || d.poster || "";
+  if (art && !META.bg) { META.bg = art; paintBg(); changed = true; }
+  if (changed) { paintLogo(); paintMetaTitles(); try { if (typeof buildPausedOv === "function") buildPausedOv(); } catch (e) {} }
+}
+window.addEventListener("message", function(e){
+  try {
+    if (e.origin !== location.origin) return;
+    var d = e.data;
+    if (d && d.type === "af-meta") applyHostMeta(d);
+  } catch (err) {}
+});
 
 /* v6.51: default test movie is now Spider-Man: Brand New Day (TMDB 969681, his order) — replaces Swapped (1007757) as the link movie and Fight Club (550) as the bare-link default. Metadata comes from the FlickAtlas SEO chunks like any non-DEMO id; ?tmdb=550 still opens the Fight Club demo.
    ============ v6.5: metadata enrichment for non-DEMO ids ===========
@@ -770,10 +797,10 @@ var META = DEMO[MEDIA_TMDB] || {
    over the chunk name. Stale responses (id/type changed meanwhile) are
    ignored. */
 var META_HAS_DEMO = !!DEMO[MEDIA_TMDB];
-var META_TITLE_IS_FALLBACK = !META_HAS_DEMO && !qp.get("title");
+var META_TITLE_IS_FALLBACK = !META_HAS_DEMO && !META_HOST_TITLE;
 function paintMetaTitles(){
   var suf = MEDIA_TYPE === "tv" ? "  S" + MEDIA_SEASON + " E" + MEDIA_EPISODE : "";
-  var lt = $("lauTitle"); if (lt && (META.logo || META_HAS_DEMO || logoDone || metaDone)) lt.textContent = META.title;
+  var lt = $("lauTitle"); if (lt && (META.logo || META_HAS_DEMO || logoDone || metaDone || META_HOST_TITLE)) lt.textContent = META.title;
   var lg = $("lauGenre"); if (lg) lg.textContent = (META.genres || []).slice(0, 2).join(" / ");
   var wt = $("watchTitle"); if (wt) wt.textContent = META.title + suf;
   var dh = $("deskH1"); if (dh) dh.textContent = META.title + suf;
@@ -782,7 +809,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.59"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.60"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -840,6 +867,9 @@ function scheduleMetaRetry(){
   setTimeout(function(){ if (!metaDone) loadChunkMeta(); }, delay);
 }
 loadChunkMeta();
+/* v6.60: paint host-supplied title/backdrop at once — before the chunk and
+   logo-bucket fetches resolve. */
+paintBg(); paintLogo(); paintMetaTitles();
 /* v6.6: official title art (logo) — the hero banner renders the movie's
    own logo image when one exists and falls back to styled text. The
    test page fetches the same logo the same way (en -> no-language ->
@@ -860,7 +890,7 @@ function paintLogo(){
     }
   } else {
     li.classList.add("hidden"); li.removeAttribute("src");
-    var lt2 = $("lauTitle"); if (lt2) { if (META_HAS_DEMO || logoDone || metaDone) { lt2.textContent = META.title; lt2.classList.remove("hidden"); } else { lt2.classList.add("hidden"); } }
+    var lt2 = $("lauTitle"); if (lt2) { if (META_HAS_DEMO || logoDone || metaDone || META_HOST_TITLE) { lt2.textContent = META.title; lt2.classList.remove("hidden"); } else { lt2.classList.add("hidden"); } }
   }
 }
 function applyLogoBucket(j, wantId, wantType){
