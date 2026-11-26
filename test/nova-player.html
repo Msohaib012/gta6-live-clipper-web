@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<!-- pages-rebuild 2026-11-26 00:45 PKT: v6.92 -->
-<title>Nova Player — v6.92</title>
+<!-- pages-rebuild 2026-11-26 13:45 PKT: v6.93 -->
+<title>Nova Player — v6.93</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://raw.githubusercontent.com">
@@ -849,7 +849,7 @@ function paintMetaTitles(){
   if (dp){ var pills = '<span>' + META.kind + '</span>'; if (META.genres && META.genres.length) pills += '<span>' + META.genres[0] + '</span>'; if (META.year) pills += '<span>' + META.year + '</span>'; dp.innerHTML = pills; }
   var pp = $("pPills");
   if (pp) pp.innerHTML = (META.genres || []).slice(0, 4).map(function(g){ return "<span>" + g + "</span>"; }).join("");
-  try { document.title = META.title + " — Nova Player v6.92"; } catch(e){}
+  try { document.title = META.title + " — Nova Player v6.93"; } catch(e){}
 }
 /* v6.5: slow-network-proof metadata fetch. The v6.4 fetch used one 8s
    timeout; the 322KB Swapped chunk needs ~13s at the user's measured
@@ -1787,6 +1787,10 @@ $("epBack").addEventListener("click", closeDrawers);
 $("btnCloseEp").addEventListener("click", closeDrawers);
 function switchEpisode(s, e){
   MEDIA_SEASON = s; MEDIA_EPISODE = e; curSeason = s;
+  /* v6.93 EPISODE-SWITCH FIX (his report 13:32 PKT — E2/E3/E6 taps kept playing E1): PROBE is keyed by server only and the launcher preload holds E1's HLS — both must die on a switch or openPlayer replays E1's stream under the new episode's title. The per-episode probe promises (PROBE_P) are keyed by episode and stay valid. */
+  PROBE = {};
+  destroyPreload();
+  hlsFailed = false;
   var q = new URLSearchParams(location.search);
   q.set("type", "tv"); q.set("tmdb", MEDIA_TMDB); q.set("s", String(s)); q.set("e", String(e));
   history.replaceState(null, "", location.pathname + "?" + q.toString());
@@ -3345,7 +3349,7 @@ if (MEDIA_PLAY) {
 renderSrvPanel();
 updatePlayIco();
 
-/* ============ v6.92 PLAYER-PRESENCE HEARTBEAT (restores the stats page
+/* ============ v6.93 PLAYER-PRESENCE HEARTBEAT (restores the stats page
    "Player — live now" / "Player — today total" counts, lost in the v6.90
    live switch: the old player wrote these Firebase nodes; Nova had no
    tracker. Shape mirrors the site tracker (stats-track.js): persisted
