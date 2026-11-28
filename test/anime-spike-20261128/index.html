@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Staging spike — Madoka Magica + Korean lane (NOT live)</title>
+<style>
+  body{background:#0b0b10;color:#eee;font-family:system-ui,sans-serif;margin:0;padding:16px}
+  h1{font-size:20px;margin:0 0 4px}
+  p.note{color:#aaa;font-size:14px;margin:0 0 16px}
+  h2{font-size:17px;margin:24px 0 8px}
+  .btns{margin:0 0 10px}
+  button{background:#1d4ed8;color:#fff;border:0;border-radius:8px;padding:10px 18px;font-size:15px;margin-right:8px;cursor:pointer}
+  button.active{background:#059669}
+  .frame{position:relative;width:100%;max-width:960px;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden}
+  .frame iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  a{color:#7cb3ff}
+  #status{font-size:14px;color:#fcd34d;white-space:pre-wrap;word-break:break-all;margin:8px 0}
+  video{width:100%;max-width:960px;background:#000;border-radius:8px}
+  .warn{color:#fca5a5;font-size:14px}
+</style>
+</head>
+<body>
+<h1>Staging spike — anime / Korean servers (NOT live)</h1>
+<p class="note">Sirf test ke liye. Live player me kuch add nahi hua. Server ka apna player dikhta hai — koi auto-switch nahi.</p>
+
+<h2>1) Madoka Magica — The Movie: Walpurgisnacht Rising (2026)</h2>
+<p class="note">Gojolive ke Vid aur Beta hosts. Pehle click par aik ad popup khul sakta hai — use band kar ke wapas aao.</p>
+<div class="btns">
+  <button id="btn-vid" onclick="switchHost('vid')">Vid host</button>
+  <button id="btn-beta" onclick="switchHost('beta')">Beta host</button>
+</div>
+<div class="frame"><iframe id="player" allow="autoplay; fullscreen; encrypted-media" allowfullscreen></iframe></div>
+<p class="note">Seedha link (agar frame na chale):<br>
+<a id="direct" href="#" target="_blank" rel="noopener">open</a></p>
+
+<h2>2) Korean lane — Dr. Romantic, Episode 1 (Korean audio + English subs)</h2>
+<p class="note">KissKH proxy API se browser ke andar resolve hota hai (link IP-bound hota hai, is liye server-side fetch nahi).</p>
+<button id="btn-kr" onclick="loadKorean()">Load Korean episode</button>
+<div id="status"></div>
+<video id="krvideo" controls playsinline crossorigin="anonymous" style="display:none"></video>
+<p class="warn" id="krwarn" style="display:none"></p>
+
+<script>
+var HOSTS = {
+  vid:  "https://gojolive.site/anime/watch?id=133007&host=vid&epid=&ep=1&type=sub",
+  beta: "https://gojolive.site/anime/watch?id=133007&host=beta&epid=&ep=1&type=sub"
+};
+function switchHost(name){
+  var f = document.getElementById('player');
+  f.src = HOSTS[name];
+  document.getElementById('btn-vid').className = name === 'vid' ? 'active' : '';
+  document.getElementById('btn-beta').className = name === 'beta' ? 'active' : '';
+  var d = document.getElementById('direct');
+  d.href = HOSTS[name];
+  d.textContent = HOSTS[name];
+}
+switchHost('vid');
+
+function pickSub(subs){
+  if(!subs || !subs.length) return null;
+  for(var i=0;i<subs.length;i++){
+    var s = subs[i];
+    var label = (s.label || s.lang || s.language || s.name || '').toString().toLowerCase();
+    if(label.indexOf('english') !== -1 || label === 'en' || label.indexOf('eng') !== -1) return s;
+  }
+  return subs[0];
+}
+function subUrl(s){ return s.file || s.src || s.url || ''; }
+
+function loadKorean(){
+  var st = document.getElementById('status');
+  var v = document.getElementById('krvideo');
+  var w = document.getElementById('krwarn');
+  st.textContent = 'Resolving…';
+  fetch('https://kisskh.asianc.sr/api/resolve/9731', {headers: {'Accept': 'application/json'}})
+    .then(function(r){ if(!r.ok) throw new Error('API HTTP ' + r.status); return r.json(); })
+    .then(function(data){
+      var file = data.file || data.url || data.stream || '';
+      if(!file) throw new Error('No file URL in resolve response: ' + JSON.stringify(data).slice(0, 200));
+      v.style.display = 'block';
+      v.src = file;
+      var old = v.querySelector('track'); if(old) old.remove();
+      var sub = pickSub(data.subtitles);
+      if(sub && subUrl(sub)){
+        var tr = document.createElement('track');
+        tr.kind = 'subtitles'; tr.label = 'English'; tr.srclang = 'en';
+        tr.src = subUrl(sub); tr.default = true;
+        v.appendChild(tr);
+        st.textContent = 'Loaded. English subtitles: ' + subUrl(sub);
+      } else {
+        st.textContent = 'Loaded video, no subtitle track found in response.';
+      }
+      v.play().catch(function(e){ st.textContent += ' (tap play: ' + e.message + ')'; });
+    })
+    .catch(function(e){
+      st.textContent = 'FAILED: ' + e.message;
+      w.style.display = 'block';
+      w.textContent = 'Korean lane is waqt browser se resolve nahi ho rahi (CORS ya API masla ho sakta hai). Ye spike ka test result hai — live me kuch nahi gaya.';
+    });
+}
+</script>
+</body>
+</html>
